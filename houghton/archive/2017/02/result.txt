@@ -1,0 +1,1079 @@
+Sat Feb 18 21:06:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 29 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:01 p.m.
+DEPARTURE
+Actual date:
+Fri, Feb 17
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:11 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 17
+
+5141
+STATUS
+Arrived Gate 28 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+9:58 a.m.
+DEPARTURE
+Actual date:
+Fri, Feb 17
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:12 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 17
+
+5001
+STATUS
+Arrived Gate 40 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:05 p.m.
+DEPARTURE
+Actual date:
+Fri, Feb 17
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:19 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 17
+
+5109
+STATUS
+Arrived Gate 37 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:21 a.m.
+DEPARTURE
+Actual date:
+Fri, Feb 17
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:37 a.m.
+ARRIVAL
+Actual date:
+Fri, Feb 17
+
+Sun Feb 19 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 22 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:02 p.m.
+DEPARTURE
+Actual date:
+Sat, Feb 18
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:18 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 18
+
+5141
+STATUS
+Arrived Gate 17 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:03 a.m.
+DEPARTURE
+Actual date:
+Sat, Feb 18
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:23 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 18
+
+5001
+STATUS
+Arrived Gate 42 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:05 p.m.
+DEPARTURE
+Actual date:
+Sat, Feb 18
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:17 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 18
+
+5109
+STATUS
+Arrived Gate 24 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:21 a.m.
+DEPARTURE
+Actual date:
+Sat, Feb 18
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:50 a.m.
+ARRIVAL
+Actual date:
+Sat, Feb 18
+
+Mon Feb 20 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 18 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:02 p.m.
+DEPARTURE
+Actual date:
+Sun, Feb 19
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:22 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 19
+
+5141
+STATUS
+Arrived Gate 18 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:04 a.m.
+DEPARTURE
+Actual date:
+Sun, Feb 19
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:22 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 19
+
+5001
+STATUS
+Arrived Gate 34 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:05 p.m.
+DEPARTURE
+Actual date:
+Sun, Feb 19
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:25 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 19
+
+5109
+STATUS
+Arrived Gate 22 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:23 a.m.
+DEPARTURE
+Actual date:
+Sun, Feb 19
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:52 a.m.
+ARRIVAL
+Actual date:
+Sun, Feb 19
+
+Tue Feb 21 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 31 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:01 p.m.
+DEPARTURE
+Actual date:
+Mon, Feb 20
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:09 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 20
+
+5141
+STATUS
+Arrived Gate 8 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:08 a.m.
+DEPARTURE
+Actual date:
+Mon, Feb 20
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:32 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 20
+
+5001
+STATUS
+Arrived Gate 4 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:11 p.m.
+DEPARTURE
+Actual date:
+Mon, Feb 20
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:55 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 20
+
+5109
+STATUS
+Arrived Gate 27 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:23 a.m.
+DEPARTURE
+Actual date:
+Mon, Feb 20
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:47 a.m.
+ARRIVAL
+Actual date:
+Mon, Feb 20
+
+Wed Feb 22 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 26 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:00 p.m.
+DEPARTURE
+Actual date:
+Tue, Feb 21
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:14 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 21
+
+5141
+STATUS
+Arrived Gate 22 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:00 a.m.
+DEPARTURE
+Actual date:
+Tue, Feb 21
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:18 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 21
+
+5001
+STATUS
+Arrived Gate 30 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:07 p.m.
+DEPARTURE
+Actual date:
+Tue, Feb 21
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:29 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 21
+
+5109
+STATUS
+Arrived Gate 18 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:31 a.m.
+DEPARTURE
+Actual date:
+Tue, Feb 21
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:56 a.m.
+ARRIVAL
+Actual date:
+Tue, Feb 21
+
+Thu Feb 23 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 28 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:00 p.m.
+DEPARTURE
+Actual date:
+Wed, Feb 22
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:12 p.m.
+ARRIVAL
+Actual date:
+Wed, Feb 22
+
+5141
+STATUS
+Arrived Gate 26 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:02 a.m.
+DEPARTURE
+Actual date:
+Wed, Feb 22
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:14 p.m.
+ARRIVAL
+Actual date:
+Wed, Feb 22
+
+5001
+STATUS
+Arrived Gate 23 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:13 p.m.
+DEPARTURE
+Actual date:
+Wed, Feb 22
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:36 p.m.
+ARRIVAL
+Actual date:
+Wed, Feb 22
+
+5109
+STATUS
+Arrived Gate 29 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:21 a.m.
+DEPARTURE
+Actual date:
+Wed, Feb 22
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:45 a.m.
+ARRIVAL
+Actual date:
+Wed, Feb 22
+
+Fri Feb 24 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 4 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:18 p.m.
+DEPARTURE
+Actual date:
+Thu, Feb 23
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:36 p.m.
+ARRIVAL
+Actual date:
+Thu, Feb 23
+
+5141
+STATUS
+Arrived Gate 22 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:03 a.m.
+DEPARTURE
+Actual date:
+Thu, Feb 23
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:18 p.m.
+ARRIVAL
+Actual date:
+Thu, Feb 23
+
+5001
+STATUS
+Arrived Gate 30 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:05 p.m.
+DEPARTURE
+Actual date:
+Thu, Feb 23
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:29 p.m.
+ARRIVAL
+Actual date:
+Thu, Feb 23
+
+5109
+STATUS
+Delayed due to severe weather conditions in our route network (arrived gate 9 minutes late)
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:58 a.m.
+DEPARTURE
+Actual date:
+Thu, Feb 23
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+6:23 a.m.
+ARRIVAL
+Actual date:
+Thu, Feb 23
+
+Sat Feb 25 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 10 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:16 p.m.
+DEPARTURE
+Actual date:
+Fri, Feb 24
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:30 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 24
+
+5141
+STATUS
+Delayed due to operational difficulties (arrived gate 2 hours 17 minutes late)
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+12:31 p.m.
+DEPARTURE
+Actual date:
+Fri, Feb 24
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+2:57 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 24
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 2 hours 24 minutes late)
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+3:31 p.m.
+DEPARTURE
+Actual date:
+Fri, Feb 24
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+4:23 p.m.
+ARRIVAL
+Actual date:
+Fri, Feb 24
+
+5109
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 1 minute late)
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:34 a.m.
+DEPARTURE
+Actual date:
+Fri, Feb 24
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+6:15 a.m.
+ARRIVAL
+Actual date:
+Fri, Feb 24
+
+Sun Feb 26 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 21 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+8:59 p.m.
+DEPARTURE
+Actual date:
+Sat, Feb 25
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:19 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 25
+
+5141
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 7 minutes late)
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:14 a.m.
+DEPARTURE
+Actual date:
+Sat, Feb 25
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:47 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 25
+
+5001
+STATUS
+Arrived Gate 20 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:11 p.m.
+DEPARTURE
+Actual date:
+Sat, Feb 25
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:39 p.m.
+ARRIVAL
+Actual date:
+Sat, Feb 25
+
+5109
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 15 minutes late)
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:53 a.m.
+DEPARTURE
+Actual date:
+Sat, Feb 25
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+6:29 a.m.
+ARRIVAL
+Actual date:
+Sat, Feb 25
+
+Mon Feb 27 16:00:01 UTC 2017
+
+5061
+STATUS
+Delayed due to operational difficulties (arrived gate 1 minute late)
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:17 p.m.
+DEPARTURE
+Actual date:
+Sun, Feb 26
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:41 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 26
+
+5141
+STATUS
+Arrived Gate 19 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:03 a.m.
+DEPARTURE
+Actual date:
+Sun, Feb 26
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:21 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 26
+
+5001
+STATUS
+Arrived Gate 2 Minutes Late
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:02 p.m.
+DEPARTURE
+Actual date:
+Sun, Feb 26
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+2:01 p.m.
+ARRIVAL
+Actual date:
+Sun, Feb 26
+
+5109
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 25 minutes late)
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:57 a.m.
+DEPARTURE
+Actual date:
+Sun, Feb 26
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+6:39 a.m.
+ARRIVAL
+Actual date:
+Sun, Feb 26
+
+Tue Feb 28 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 34 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+8:57 p.m.
+DEPARTURE
+Actual date:
+Mon, Feb 27
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:06 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 27
+
+5141
+STATUS
+Arrived Gate 27 Minutes Early
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+10:01 a.m.
+DEPARTURE
+Actual date:
+Mon, Feb 27
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+12:13 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 27
+
+5001
+STATUS
+Arrived Gate 13 Minutes Early
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+1:05 p.m.
+DEPARTURE
+Actual date:
+Mon, Feb 27
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+1:46 p.m.
+ARRIVAL
+Actual date:
+Mon, Feb 27
+
+5109
+STATUS
+Arrived Gate 9 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:27 a.m.
+DEPARTURE
+Actual date:
+Mon, Feb 27
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+6:05 a.m.
+ARRIVAL
+Actual date:
+Mon, Feb 27
+
+Wed Mar  1 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 23 Minutes Early
+DEPARTURE
+Scheduled time:
+9:10 p.m.
+DEPARTURE
+Actual time:
+9:05 p.m.
+DEPARTURE
+Actual date:
+Tue, Feb 28
+ARRIVAL
+Scheduled time:
+11:40 p.m.
+ARRIVAL
+Actual time:
+11:17 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 28
+
+5141
+STATUS
+Delayed due to operational difficulties (arrived gate 34 minutes late)
+DEPARTURE
+Scheduled time:
+10:10 a.m.
+DEPARTURE
+Actual time:
+11:03 a.m.
+DEPARTURE
+Actual date:
+Tue, Feb 28
+ARRIVAL
+Scheduled time:
+12:40 p.m.
+ARRIVAL
+Actual time:
+1:14 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 28
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 39 minutes late)
+DEPARTURE
+Scheduled time:
+1:15 p.m.
+DEPARTURE
+Actual time:
+2:04 p.m.
+DEPARTURE
+Actual date:
+Tue, Feb 28
+ARRIVAL
+Scheduled time:
+1:59 p.m.
+ARRIVAL
+Actual time:
+2:38 p.m.
+ARRIVAL
+Actual date:
+Tue, Feb 28
+
+5109
+STATUS
+Arrived Gate 30 Minutes Early
+DEPARTURE
+Scheduled time:
+5:30 a.m.
+DEPARTURE
+Actual time:
+5:24 a.m.
+DEPARTURE
+Actual date:
+Tue, Feb 28
+ARRIVAL
+Scheduled time:
+6:14 a.m.
+ARRIVAL
+Actual time:
+5:44 a.m.
+ARRIVAL
+Actual date:
+Tue, Feb 28
