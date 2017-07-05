@@ -1,948 +1,48 @@
-Fri Jun  2 16:00:01 UTC 2017
+Sun Jul  2 16:00:01 UTC 2017
 
 5061
 STATUS
-Arrived Gate 3 Minutes Late
+Arrived Gate 5 Minutes Early
 DEPARTURE
 Scheduled time:
-9:10 p.m.
+9:08 p.m.
 DEPARTURE
 Actual time:
-8:58 p.m.
+9:02 p.m.
 DEPARTURE
 Actual date:
-Thu, Jun 1
+Sat, Jul 1
 ARRIVAL
 Scheduled time:
-11:36 p.m.
+11:34 p.m.
 ARRIVAL
 Actual time:
-11:39 p.m.
+11:29 p.m.
 ARRIVAL
 Actual date:
-Thu, Jun 1
+Sat, Jul 1
 
 5141
-STATUS
-Arrived Gate 14 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:22 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 1
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:42 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 1
-
-5001
-STATUS
-Arrived Gate 16 Minutes Early
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:12 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 1
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:48 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 1
-
-5109
-STATUS
-Arrived Gate 22 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-6:01 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 1
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:25 a.m.
-ARRIVAL
-Actual date:
-Thu, Jun 1
-
-Sat Jun  3 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 2 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:03 p.m.
-DEPARTURE
-Actual date:
-Fri, Jun 2
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:38 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 2
-
-5141
-STATUS
-Arrived Gate 16 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:20 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 2
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:40 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 2
-
-5001
-STATUS
-Arrived Gate 28 Minutes Early
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:20 p.m.
-DEPARTURE
-Actual date:
-Fri, Jun 2
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:36 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 2
-
-5109
-STATUS
-Arrived Gate 10 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-6:23 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 2
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:37 a.m.
-ARRIVAL
-Actual date:
-Fri, Jun 2
-
-Sun Jun  4 16:00:02 UTC 2017
-
-5061
-STATUS
-Arrived Gate 2 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:09 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 3
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:38 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 3
-
-5141
-STATUS
-Arrived Gate 10 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:25 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 3
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:46 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 3
-
-5001
-STATUS
-Arrived Gate 2 Minutes Late
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:24 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 3
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:06 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 3
-
-5109
-STATUS
-Arrived Gate 17 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-6:01 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 3
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:30 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 3
-
-Mon Jun  5 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 14 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:05 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 4
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:22 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 4
-
-5141
-STATUS
-Arrived Gate 6 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:27 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 4
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:50 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 4
-
-5001
 STATUS
 Arrived Gate 4 Minutes Early
 DEPARTURE
 Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:24 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 4
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:00 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 4
-
-5109
-STATUS
-Arrived Gate 20 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-6:02 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 4
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:27 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 4
-
-Tue Jun  6 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 8 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:08 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 5
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:28 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 5
-
-5141
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
 10:30 a.m.
 DEPARTURE
 Actual time:
-10:32 a.m.
+10:28 a.m.
 DEPARTURE
 Actual date:
-Mon, Jun 5
+Sat, Jul 1
 ARRIVAL
 Scheduled time:
 12:56 p.m.
 ARRIVAL
 Actual time:
-12:44 p.m.
+12:52 p.m.
 ARRIVAL
 Actual date:
-Mon, Jun 5
-
-5001
-STATUS
-Arrived Gate 30 Minutes Early
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:15 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 5
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:34 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 5
-
-5109
-STATUS
-Arrived Gate 14 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-6:04 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 5
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:33 a.m.
-ARRIVAL
-Actual date:
-Mon, Jun 5
-
-Wed Jun  7 16:00:02 UTC 2017
-
-5061
-STATUS
-Arrived Gate 2 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:20 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 6
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:38 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 6
-
-5141
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:21 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 6
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:44 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 6
-
-5001
-STATUS
-Arrived Gate 21 Minutes Early
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:15 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 6
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:43 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 6
-
-5109
-STATUS
-Arrived Gate 21 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-5:58 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 6
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:26 a.m.
-ARRIVAL
-Actual date:
-Tue, Jun 6
-
-Thu Jun  8 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 10 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-8:57 p.m.
-DEPARTURE
-Actual date:
-Wed, Jun 7
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:26 p.m.
-ARRIVAL
-Actual date:
-Wed, Jun 7
-
-5141
-STATUS
-Arrived Gate 10 Minutes Early
-DEPARTURE
-Scheduled time:
-10:30 a.m.
-DEPARTURE
-Actual time:
-10:20 a.m.
-DEPARTURE
-Actual date:
-Wed, Jun 7
-ARRIVAL
-Scheduled time:
-12:56 p.m.
-ARRIVAL
-Actual time:
-12:46 p.m.
-ARRIVAL
-Actual date:
-Wed, Jun 7
-
-5001
-STATUS
-Arrived Gate 9 Minutes Early
-DEPARTURE
-Scheduled time:
-1:27 p.m.
-DEPARTURE
-Actual time:
-1:29 p.m.
-DEPARTURE
-Actual date:
-Wed, Jun 7
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:55 p.m.
-ARRIVAL
-Actual date:
-Wed, Jun 7
-
-5109
-STATUS
-Arrived Gate 18 Minutes Early
-DEPARTURE
-Scheduled time:
-6:10 a.m.
-DEPARTURE
-Actual time:
-5:57 a.m.
-DEPARTURE
-Actual date:
-Wed, Jun 7
-ARRIVAL
-Scheduled time:
-6:47 a.m.
-ARRIVAL
-Actual time:
-6:29 a.m.
-ARRIVAL
-Actual date:
-Wed, Jun 7
-
-Fri Jun  9 16:00:02 UTC 2017
-
-5061
-STATUS
-Delayed due to a late inbound aircraft arrival (arrived gate 21 minutes late)
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:40 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 8
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:57 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 8
-
-5141
-STATUS
-Arrived Gate 24 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:21 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 8
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:36 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 8
-
-5001
-STATUS
-Arrived Gate 6 Minutes Late
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:20 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 8
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:10 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 8
-
-5109
-STATUS
-Delayed due to operational difficulties (arrived gate 4 minutes late)
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-6:18 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 8
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:33 a.m.
-ARRIVAL
-Actual date:
-Thu, Jun 8
-
-Sat Jun 10 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 38 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:38 p.m.
-DEPARTURE
-Actual date:
-Fri, Jun 9
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-12:14 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 10
-
-5141
-STATUS
-Arrived Gate 7 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:26 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 9
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:53 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 9
-
-5001
-STATUS
-Arrived Gate 9 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:28 p.m.
-DEPARTURE
-Actual date:
-Fri, Jun 9
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:55 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 9
-
-5109
-STATUS
-Arrived Gate 6 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:55 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 9
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:23 a.m.
-ARRIVAL
-Actual date:
-Fri, Jun 9
-
-Sun Jun 11 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 6 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:04 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 10
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:30 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 10
-
-5141
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:32 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 10
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:48 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 10
-
-5001
-STATUS
-Arrived Gate 3 Minutes Late
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:20 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 10
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:07 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 10
-
-5109
-STATUS
-Delayed due to aircraft preparation (arrived gate 18 minutes late)
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-6:12 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 10
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:47 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 10
-
-Mon Jun 12 16:00:02 UTC 2017
-
-5061
-STATUS
-Arrived Gate 51 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:35 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 11
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-12:27 a.m.
-ARRIVAL
-Actual date:
-Mon, Jun 12
-
-5141
-STATUS
-Arrived Gate 23 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:29 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 11
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:37 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 11
+Sat, Jul 1
 
 5001
 STATUS
@@ -951,11 +51,8 @@ DEPARTURE
 Scheduled time:
 1:30 p.m.
 DEPARTURE
-Actual time:
-1:22 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 11
+Scheduled date:
+Sat, Jul 1
 ARRIVAL
 Scheduled time:
 2:04 p.m.
@@ -964,793 +61,7 @@ Actual time:
 1:57 p.m.
 ARRIVAL
 Actual date:
-Sun, Jun 11
-
-5109
-STATUS
-Arrived Gate 5 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:50 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 11
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:24 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 11
-
-Tue Jun 13 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 1 Hour 54 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-10:50 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 12
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-1:30 a.m.
-ARRIVAL
-Actual date:
-Tue, Jun 13
-
-5141
-STATUS
-Arrived Gate 14 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:27 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 12
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:46 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 12
-
-5001
-STATUS
-Arrived Gate 23 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:19 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 12
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:41 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 12
-
-5109
-STATUS
-Arrived Gate 10 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:57 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 12
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:19 a.m.
-ARRIVAL
-Actual date:
-Mon, Jun 12
-
-Wed Jun 14 16:00:02 UTC 2017
-
-5061
-STATUS
-Arrived Gate 4 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:04 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 13
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:40 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 13
-
-5141
-STATUS
-Arrived Gate 17 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:24 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 13
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:43 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 13
-
-5001
-STATUS
-Arrived Gate 4 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:20 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 13
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:00 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 13
-
-5109
-STATUS
-Arrived Gate 4 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:53 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 13
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:25 a.m.
-ARRIVAL
-Actual date:
-Tue, Jun 13
-
-Thu Jun 15 16:00:01 UTC 2017
-
-5061
-STATUS
-Canceled due to air traffic control conditions impacting our flight operations
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Scheduled date:
-Wed, Jun 14
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Scheduled date:
-Wed, Jun 14
-
-5141
-STATUS
-Arrived Gate On Time
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Scheduled date:
-Wed, Jun 14
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Scheduled date:
-Wed, Jun 14
-
-5001
-STATUS
-Canceled due to air traffic control conditions impacting our flight operations
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Scheduled date:
-Wed, Jun 14
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Scheduled date:
-Wed, Jun 14
-
-5109
-STATUS
-Arrived Gate 2 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:53 a.m.
-DEPARTURE
-Actual date:
-Wed, Jun 14
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:27 a.m.
-ARRIVAL
-Actual date:
-Wed, Jun 14
-
-Fri Jun 16 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 4 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:05 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 15
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:32 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 15
-
-5141
-STATUS
-Arrived Gate 9 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:29 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 15
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:51 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 15
-
-5001
-STATUS
-Arrived Gate 11 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:21 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 15
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:53 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 15
-
-5109
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:56 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 15
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:17 a.m.
-ARRIVAL
-Actual date:
-Thu, Jun 15
-
-Sat Jun 17 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 25 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:12 p.m.
-DEPARTURE
-Actual date:
-Fri, Jun 16
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-12:01 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 17
-
-5141
-STATUS
-Arrived Gate 18 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:27 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 16
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:42 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 16
-
-5001
-STATUS
-Arrived Gate 13 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Scheduled date:
-Fri, Jun 16
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:51 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 16
-
-5109
-STATUS
-Arrived Gate 8 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:49 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 16
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:21 a.m.
-ARRIVAL
-Actual date:
-Fri, Jun 16
-
-Sun Jun 18 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 46 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:02 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 17
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-12:22 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 18
-
-5141
-STATUS
-Arrived Gate 13 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:28 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 17
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:47 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 17
-
-5001
-STATUS
-Arrived Gate 13 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:22 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 17
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:51 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 17
-
-5109
-STATUS
-Arrived Gate 2 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-6:02 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 17
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:27 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 17
-
-Mon Jun 19 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 7 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:03 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 18
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:29 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 18
-
-5141
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:29 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 18
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:48 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 18
-
-5001
-STATUS
-Arrived Gate 3 Minutes Late
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Scheduled date:
-Sun, Jun 18
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:07 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 18
-
-5109
-STATUS
-Arrived Gate 8 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:56 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 18
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:21 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 18
-
-Tue Jun 20 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 8 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:07 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 19
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:28 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 19
-
-5141
-STATUS
-Arrived Gate 11 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:31 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 19
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:49 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 19
-
-5001
-STATUS
-Arrived Gate 29 Minutes Late
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:22 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 19
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:33 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 19
-
-5109
-STATUS
-Arrived Gate 4 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:54 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 19
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:25 a.m.
-ARRIVAL
-Actual date:
-Mon, Jun 19
-
-Wed Jun 21 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 38 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:46 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 20
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-12:14 a.m.
-ARRIVAL
-Actual date:
-Wed, Jun 21
-
-5141
-STATUS
-Arrived Gate 3 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:31 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 20
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:57 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 20
-
-5001
-STATUS
-Arrived Gate 5 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:27 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 20
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:59 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 20
+Sat, Jul 1
 
 5109
 STATUS
@@ -1763,7 +74,7 @@ Actual time:
 5:55 a.m.
 DEPARTURE
 Actual date:
-Tue, Jun 20
+Sat, Jul 1
 ARRIVAL
 Scheduled time:
 6:29 a.m.
@@ -1772,259 +83,169 @@ Actual time:
 6:24 a.m.
 ARRIVAL
 Actual date:
-Tue, Jun 20
+Sat, Jul 1
 
-Thu Jun 22 16:00:01 UTC 2017
+Mon Jul  3 16:00:01 UTC 2017
 
 5061
 STATUS
-Arrived Gate 18 Minutes Early
+Arrived Gate 16 Minutes Early
 DEPARTURE
 Scheduled time:
-9:10 p.m.
+9:08 p.m.
 DEPARTURE
 Actual time:
 9:00 p.m.
 DEPARTURE
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 ARRIVAL
 Scheduled time:
-11:36 p.m.
+11:34 p.m.
 ARRIVAL
 Actual time:
 11:18 p.m.
 ARRIVAL
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 
 5141
 STATUS
-Arrived Gate 1 Minute Early
+Arrived Gate 9 Minutes Early
 DEPARTURE
 Scheduled time:
-10:34 a.m.
+10:30 a.m.
 DEPARTURE
 Actual time:
-10:32 a.m.
+10:25 a.m.
 DEPARTURE
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 ARRIVAL
 Scheduled time:
-1:00 p.m.
+12:56 p.m.
 ARRIVAL
 Actual time:
-12:59 p.m.
+12:47 p.m.
 ARRIVAL
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 
 5001
 STATUS
-Delayed due to flight preparation (arrived gate 7 minutes late)
+Arrived Gate 7 Minutes Early
 DEPARTURE
 Scheduled time:
 1:30 p.m.
 DEPARTURE
 Actual time:
-1:50 p.m.
+1:18 p.m.
 DEPARTURE
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 ARRIVAL
 Scheduled time:
 2:04 p.m.
 ARRIVAL
 Actual time:
-2:11 p.m.
+1:57 p.m.
 ARRIVAL
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 
 5109
 STATUS
-Arrived Gate 12 Minutes Early
+Arrived Gate 7 Minutes Early
 DEPARTURE
 Scheduled time:
 6:00 a.m.
 DEPARTURE
 Actual time:
-5:50 a.m.
+5:54 a.m.
 DEPARTURE
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 ARRIVAL
 Scheduled time:
 6:29 a.m.
 ARRIVAL
 Actual time:
-6:17 a.m.
+6:22 a.m.
 ARRIVAL
 Actual date:
-Wed, Jun 21
+Sun, Jul 2
 
-Fri Jun 23 16:00:01 UTC 2017
+Tue Jul  4 16:00:02 UTC 2017
 
 5061
 STATUS
-Arrived Gate 8 Minutes Late
+Arrived Gate 1 Minute Late
 DEPARTURE
 Scheduled time:
-9:10 p.m.
+6:15 p.m.
 DEPARTURE
 Actual time:
-9:09 p.m.
+6:10 p.m.
 DEPARTURE
 Actual date:
-Thu, Jun 22
+Mon, Jul 3
 ARRIVAL
 Scheduled time:
-11:36 p.m.
+8:41 p.m.
 ARRIVAL
 Actual time:
-11:44 p.m.
+8:42 p.m.
 ARRIVAL
 Actual date:
-Thu, Jun 22
+Mon, Jul 3
 
 5141
-STATUS
-Arrived Gate 21 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:24 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 22
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:39 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 22
-
-5001
-STATUS
-Arrived Gate 6 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:24 p.m.
-DEPARTURE
-Actual date:
-Thu, Jun 22
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:58 p.m.
-ARRIVAL
-Actual date:
-Thu, Jun 22
-
-5109
-STATUS
-Delayed due to severe weather conditions in our route network (arrived gate 27 minutes late)
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-6:03 a.m.
-DEPARTURE
-Actual date:
-Thu, Jun 22
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:56 a.m.
-ARRIVAL
-Actual date:
-Thu, Jun 22
-
-Sat Jun 24 16:00:01 UTC 2017
-
-5061
 STATUS
 Arrived Gate 13 Minutes Early
 DEPARTURE
 Scheduled time:
-9:10 p.m.
+10:30 a.m.
 DEPARTURE
 Actual time:
-9:03 p.m.
+10:20 a.m.
 DEPARTURE
 Actual date:
-Fri, Jun 23
+Mon, Jul 3
 ARRIVAL
 Scheduled time:
-11:36 p.m.
+12:56 p.m.
 ARRIVAL
 Actual time:
-11:23 p.m.
+12:43 p.m.
 ARRIVAL
 Actual date:
-Fri, Jun 23
-
-5141
-STATUS
-Delayed due to a late inbound aircraft arrival (arrived gate 6 minutes late)
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:44 a.m.
-DEPARTURE
-Actual date:
-Fri, Jun 23
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-1:06 p.m.
-ARRIVAL
-Actual date:
-Fri, Jun 23
+Mon, Jul 3
 
 5001
 STATUS
-Arrived Gate 1 Minute Early
+Arrived Gate 15 Minutes Early
 DEPARTURE
 Scheduled time:
 1:30 p.m.
 DEPARTURE
 Actual time:
-1:31 p.m.
+1:20 p.m.
 DEPARTURE
 Actual date:
-Fri, Jun 23
+Mon, Jul 3
 ARRIVAL
 Scheduled time:
 2:04 p.m.
 ARRIVAL
 Actual time:
-2:03 p.m.
+1:49 p.m.
 ARRIVAL
 Actual date:
-Fri, Jun 23
+Mon, Jul 3
 
 5109
 STATUS
-Arrived Gate 5 Minutes Early
+Arrived Gate 22 Minutes Early
 DEPARTURE
 Scheduled time:
 6:00 a.m.
@@ -2033,374 +254,14 @@ Actual time:
 5:53 a.m.
 DEPARTURE
 Actual date:
-Fri, Jun 23
+Mon, Jul 3
 ARRIVAL
 Scheduled time:
 6:29 a.m.
 ARRIVAL
 Actual time:
-6:24 a.m.
+6:07 a.m.
 ARRIVAL
 Actual date:
-Fri, Jun 23
-
-Sun Jun 25 16:00:01 UTC 2017
-
-5061
-STATUS
-Delayed due to severe weather conditions in our route network (arrived gate 10 hours 14 minutes late)
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-7:21 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 25
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-9:50 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 25
-
-5141
-STATUS
-Arrived Gate 20 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:24 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 24
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:40 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 24
-
-5001
-STATUS
-Arrived Gate 21 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:19 p.m.
-DEPARTURE
-Actual date:
-Sat, Jun 24
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:43 p.m.
-ARRIVAL
-Actual date:
-Sat, Jun 24
-
-5109
-STATUS
-Arrived Gate 8 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:51 a.m.
-DEPARTURE
-Actual date:
-Sat, Jun 24
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:21 a.m.
-ARRIVAL
-Actual date:
-Sat, Jun 24
-
-Mon Jun 26 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 6 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:12 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 25
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:30 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 25
-
-5141
-STATUS
-Arrived Gate 32 Minutes Late
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-11:16 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 25
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-1:32 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 25
-
-5001
-STATUS
-Delayed due to aircraft preparation (arrived gate 29 minutes late)
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-2:05 p.m.
-DEPARTURE
-Actual date:
-Sun, Jun 25
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-2:33 p.m.
-ARRIVAL
-Actual date:
-Sun, Jun 25
-
-5109
-STATUS
-Delayed due to aircraft preparation (arrived gate 4 hours 20 minutes late)
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-10:25 a.m.
-DEPARTURE
-Actual date:
-Sun, Jun 25
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-10:49 a.m.
-ARRIVAL
-Actual date:
-Sun, Jun 25
-
-Tue Jun 27 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:05 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 26
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:24 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 26
-
-5141
-STATUS
-Arrived Gate 18 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:26 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 26
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:42 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 26
-
-5001
-STATUS
-Arrived Gate 30 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:14 p.m.
-DEPARTURE
-Actual date:
-Mon, Jun 26
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:34 p.m.
-ARRIVAL
-Actual date:
-Mon, Jun 26
-
-5109
-STATUS
-Arrived Gate 9 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:50 a.m.
-DEPARTURE
-Actual date:
-Mon, Jun 26
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:20 a.m.
-ARRIVAL
-Actual date:
-Mon, Jun 26
-
-Wed Jun 28 16:00:01 UTC 2017
-
-5061
-STATUS
-Arrived Gate 4 Minutes Late
-DEPARTURE
-Scheduled time:
-9:10 p.m.
-DEPARTURE
-Actual time:
-9:02 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 27
-ARRIVAL
-Scheduled time:
-11:36 p.m.
-ARRIVAL
-Actual time:
-11:40 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 27
-
-5141
-STATUS
-Arrived Gate 16 Minutes Early
-DEPARTURE
-Scheduled time:
-10:34 a.m.
-DEPARTURE
-Actual time:
-10:27 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 27
-ARRIVAL
-Scheduled time:
-1:00 p.m.
-ARRIVAL
-Actual time:
-12:44 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 27
-
-5001
-STATUS
-Arrived Gate 12 Minutes Early
-DEPARTURE
-Scheduled time:
-1:30 p.m.
-DEPARTURE
-Actual time:
-1:21 p.m.
-DEPARTURE
-Actual date:
-Tue, Jun 27
-ARRIVAL
-Scheduled time:
-2:04 p.m.
-ARRIVAL
-Actual time:
-1:52 p.m.
-ARRIVAL
-Actual date:
-Tue, Jun 27
-
-5109
-STATUS
-Arrived Gate 16 Minutes Early
-DEPARTURE
-Scheduled time:
-6:00 a.m.
-DEPARTURE
-Actual time:
-5:50 a.m.
-DEPARTURE
-Actual date:
-Tue, Jun 27
-ARRIVAL
-Scheduled time:
-6:29 a.m.
-ARRIVAL
-Actual time:
-6:13 a.m.
-ARRIVAL
-Actual date:
-Tue, Jun 27
+Mon, Jul 3
 
