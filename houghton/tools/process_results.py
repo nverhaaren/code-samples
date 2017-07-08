@@ -44,7 +44,7 @@ for line in data:
 tagged_rows = []
 tags = [ 'timestamp', 'flight', 'STATUS', 'DEPARTURE Scheduled time:', 'DEPARTURE Actual time:',
                'DEPARTURE Actual date:', 'ARRIVAL Scheduled time:',
-               'ARRIVAL Actual time:', 'ARRIVAL Actual date:', 'raw' ]
+               'ARRIVAL Actual time:', 'ARRIVAL Actual date:', 'parsed status', 'raw' ]
 blank_row = {}
 for tag in tags:
     blank_row[tag] = ''
@@ -77,7 +77,24 @@ for row in rows:
             colon = ''
 
     tagged_row['raw'] = '{' + ','.join(map(lambda s: "'" + s.replace('\'', '\\\'').replace('\\', '\\\\') + "'", row[1:])) + '}'
-    tagged_rows.append(dict(tagged_row))
+    if tagged_row['STATUS']:
+        tagged_status = tagged_row['STATUS']
+        if re.match('Arrived.*Late', tagged_status) or re.match('Delayed.*\(arrived.*late\)', tagged_status):
+            parsed_status = 'late'
+        elif re.match('Arrived.*Early', tagged_status) or re.match('Delayed.*\(arrived.*early\)', tagged_status):
+            parsed_status = 'early'
+        elif re.match('Arrived.*On Time', tagged_status) or re.match('Delayed.*\(arrived.*on time\)', tagged_status):
+            parsed_status = 'on time'
+        elif re.match('Canceled', tagged_status):
+            parsed_status = 'canceled'
+        elif re.match('Delayed', tagged_status):
+            parsed_status = 'delayed'
+        elif re.match('In Flight', tagged_status):
+            parsed_status = 'in flight'
+        else:
+            parsed_status = 'unknown'
+        tagged_row['parsed status'] = parsed_status
+        tagged_rows.append(dict(tagged_row))
     tagged_row = dict(blank_row)
 
 #sys.stderr.write(repr(tagged_rows) + '\n')
