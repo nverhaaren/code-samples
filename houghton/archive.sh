@@ -18,7 +18,7 @@ for FILE in `find $MAIN -regex "$MAIN/[^/]*[.]html$" -print`; do
     mv $FILE $MAIN/archive/$FILE_YEAR/$FILE_MONTH
 done
 
-if [ `cat $MAIN/errors` ]; then
+if [ "`cat $MAIN/errors`" ]; then
     date >> $MAIN/archive/$YEAR/$MONTH/errors
     cat $MAIN/errors >> $MAIN/archive/$YEAR/$MONTH/errors
     echo "Found errors in error file:" >&2
