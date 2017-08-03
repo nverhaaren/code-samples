@@ -3,6 +3,11 @@
 YEAR=`date +%Y`
 MONTH=`date +%b`
 MONTH_NUM=`date +%m`
+
+if [ ${MONTH_NUM:0:1} == "0" ]; then
+    MONTH_NUM=${MONTH_NUM:1:1}
+fi
+
 PMONTH_NUM=$(( $MONTH_NUM - 1 ))
 if [ $PMONTH_NUM -eq 0 ]; then
     PMONTH_NUM=12
