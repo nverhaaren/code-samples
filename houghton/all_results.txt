@@ -12971,3 +12971,1668 @@ Actual time:
 ARRIVAL
 Actual date:
 Wed, Jul 19
+Fri Jul 21 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 31 Minutes Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:39 p.m.
+DEPARTURE
+Actual date:
+Thu, Jul 20
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+12:05 a.m.
+ARRIVAL
+Actual date:
+Fri, Jul 21
+
+5141
+STATUS
+Canceled due to air traffic control conditions impacting our flight operations
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Scheduled date:
+Thu, Jul 20
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Scheduled date:
+Thu, Jul 20
+
+5001
+STATUS
+Arrived Gate 5 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:21 p.m.
+DEPARTURE
+Actual date:
+Thu, Jul 20
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:59 p.m.
+ARRIVAL
+Actual date:
+Thu, Jul 20
+
+5109
+STATUS
+Arrived Gate 6 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:51 a.m.
+DEPARTURE
+Actual date:
+Thu, Jul 20
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:23 a.m.
+ARRIVAL
+Actual date:
+Thu, Jul 20
+
+Sat Jul 22 16:00:01 UTC 2017
+
+5061
+STATUS
+Canceled due to air traffic control conditions impacting our flight operations
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Scheduled date:
+Fri, Jul 21
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Scheduled date:
+Fri, Jul 21
+
+5141
+STATUS
+Arrived Gate 2 Hours 57 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+1:32 p.m.
+DEPARTURE
+Actual date:
+Fri, Jul 21
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+3:53 p.m.
+ARRIVAL
+Actual date:
+Fri, Jul 21
+
+5001
+STATUS
+Arrived Gate 5 Hours 36 Minutes Late (Late inbound aircraft arrival) -- Returned to Gate in Hancock, MI, US (CMX)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+6:58 p.m.
+DEPARTURE
+Actual date:
+Fri, Jul 21
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+7:40 p.m.
+ARRIVAL
+Actual date:
+Fri, Jul 21
+
+5109
+STATUS
+Arrived Gate 3 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Scheduled date:
+Fri, Jul 21
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:26 a.m.
+ARRIVAL
+Actual date:
+Fri, Jul 21
+
+Sun Jul 23 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 1 Minute Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:10 p.m.
+DEPARTURE
+Actual date:
+Sat, Jul 22
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:35 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 22
+
+5141
+STATUS
+Arrived Gate 6 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:29 a.m.
+DEPARTURE
+Actual date:
+Sat, Jul 22
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:50 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 22
+
+5001
+STATUS
+Arrived Gate 13 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:28 p.m.
+DEPARTURE
+Actual date:
+Sat, Jul 22
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:51 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 22
+
+5109
+STATUS
+Arrived Gate 7 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:56 a.m.
+DEPARTURE
+Actual date:
+Sat, Jul 22
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:22 a.m.
+ARRIVAL
+Actual date:
+Sat, Jul 22
+
+Mon Jul 24 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate On Time
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:07 p.m.
+DEPARTURE
+Actual date:
+Sun, Jul 23
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Scheduled date:
+Sun, Jul 23
+
+5141
+STATUS
+Arrived Gate 9 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:29 a.m.
+DEPARTURE
+Actual date:
+Sun, Jul 23
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:47 p.m.
+ARRIVAL
+Actual date:
+Sun, Jul 23
+
+5001
+STATUS
+Arrived Gate 9 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:21 p.m.
+DEPARTURE
+Actual date:
+Sun, Jul 23
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:55 p.m.
+ARRIVAL
+Actual date:
+Sun, Jul 23
+
+5109
+STATUS
+Arrived Gate 17 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:48 a.m.
+DEPARTURE
+Actual date:
+Sun, Jul 23
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:12 a.m.
+ARRIVAL
+Actual date:
+Sun, Jul 23
+
+Tue Jul 25 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 56 Minutes Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+10:15 p.m.
+DEPARTURE
+Actual date:
+Mon, Jul 24
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+12:30 a.m.
+ARRIVAL
+Actual date:
+Tue, Jul 25
+
+5141
+STATUS
+Arrived Gate 2 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:24 a.m.
+DEPARTURE
+Actual date:
+Mon, Jul 24
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:58 p.m.
+ARRIVAL
+Actual date:
+Mon, Jul 24
+
+5001
+STATUS
+Arrived Gate 11 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:23 p.m.
+DEPARTURE
+Actual date:
+Mon, Jul 24
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:53 p.m.
+ARRIVAL
+Actual date:
+Mon, Jul 24
+
+5109
+STATUS
+Arrived Gate 8 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:50 a.m.
+DEPARTURE
+Actual date:
+Mon, Jul 24
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:21 a.m.
+ARRIVAL
+Actual date:
+Mon, Jul 24
+
+Wed Jul 26 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 11 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:02 p.m.
+DEPARTURE
+Actual date:
+Tue, Jul 25
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:23 p.m.
+ARRIVAL
+Actual date:
+Tue, Jul 25
+
+5141
+STATUS
+Arrived Gate 12 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:24 a.m.
+DEPARTURE
+Actual date:
+Tue, Jul 25
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:44 p.m.
+ARRIVAL
+Actual date:
+Tue, Jul 25
+
+5001
+STATUS
+Arrived Gate 7 Minutes Late
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:12 p.m.
+DEPARTURE
+Actual date:
+Tue, Jul 25
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:11 p.m.
+ARRIVAL
+Actual date:
+Tue, Jul 25
+
+5109
+STATUS
+Arrived Gate 6 Minutes Late
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:50 a.m.
+DEPARTURE
+Actual date:
+Tue, Jul 25
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:35 a.m.
+ARRIVAL
+Actual date:
+Tue, Jul 25
+
+Thu Jul 27 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 19 Minutes Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:03 p.m.
+DEPARTURE
+Actual date:
+Wed, Jul 26
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:53 p.m.
+ARRIVAL
+Actual date:
+Wed, Jul 26
+
+5141
+STATUS
+Arrived Gate 21 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:19 a.m.
+DEPARTURE
+Actual date:
+Wed, Jul 26
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:35 p.m.
+ARRIVAL
+Actual date:
+Wed, Jul 26
+
+5001
+STATUS
+Arrived Gate 7 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:16 p.m.
+DEPARTURE
+Actual date:
+Wed, Jul 26
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:57 p.m.
+ARRIVAL
+Actual date:
+Wed, Jul 26
+
+5109
+STATUS
+Delayed due to aircraft maintenance (arrived gate 36 minutes late)
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+6:55 a.m.
+DEPARTURE
+Actual date:
+Wed, Jul 26
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+7:05 a.m.
+ARRIVAL
+Actual date:
+Wed, Jul 26
+
+Fri Jul 28 16:00:01 UTC 2017
+
+5061
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 1 hour 6 minutes late)
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+10:00 p.m.
+DEPARTURE
+Actual date:
+Thu, Jul 27
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+12:40 a.m.
+ARRIVAL
+Actual date:
+Fri, Jul 28
+
+5141
+STATUS
+Arrived Gate 27 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:53 a.m.
+DEPARTURE
+Actual date:
+Thu, Jul 27
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+1:23 p.m.
+ARRIVAL
+Actual date:
+Thu, Jul 27
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 24 minutes late)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:53 p.m.
+DEPARTURE
+Actual date:
+Thu, Jul 27
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:28 p.m.
+ARRIVAL
+Actual date:
+Thu, Jul 27
+
+5109
+STATUS
+Arrived Gate On Time
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:50 a.m.
+DEPARTURE
+Actual date:
+Thu, Jul 27
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Scheduled date:
+Thu, Jul 27
+
+Sat Jul 29 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 10 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Scheduled date:
+Fri, Jul 28
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:24 p.m.
+ARRIVAL
+Actual date:
+Fri, Jul 28
+
+5141
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 49 minutes late)
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+11:30 a.m.
+DEPARTURE
+Actual date:
+Fri, Jul 28
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+1:45 p.m.
+ARRIVAL
+Actual date:
+Fri, Jul 28
+
+5001
+STATUS
+Arrived Gate 34 Minutes Late
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+2:07 p.m.
+DEPARTURE
+Actual date:
+Fri, Jul 28
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:38 p.m.
+ARRIVAL
+Actual date:
+Fri, Jul 28
+
+5109
+STATUS
+Arrived Gate 6 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:50 a.m.
+DEPARTURE
+Actual date:
+Fri, Jul 28
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:23 a.m.
+ARRIVAL
+Actual date:
+Fri, Jul 28
+
+Sun Jul 30 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 16 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:00 p.m.
+DEPARTURE
+Actual date:
+Sat, Jul 29
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:18 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 29
+
+5141
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 1 hour 28 minutes late)
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+12:09 p.m.
+DEPARTURE
+Actual date:
+Sat, Jul 29
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+2:24 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 29
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 1 hour 12 minutes late)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+2:50 p.m.
+DEPARTURE
+Actual date:
+Sat, Jul 29
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+3:16 p.m.
+ARRIVAL
+Actual date:
+Sat, Jul 29
+
+5109
+STATUS
+Arrived Gate 9 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:50 a.m.
+DEPARTURE
+Actual date:
+Sat, Jul 29
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:20 a.m.
+ARRIVAL
+Actual date:
+Sat, Jul 29
+
+Mon Jul 31 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 2 Hours  Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+11:20 p.m.
+DEPARTURE
+Actual date:
+Sun, Jul 30
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+1:34 a.m.
+ARRIVAL
+Actual date:
+Mon, Jul 31
+
+5141
+STATUS
+Delayed due to aircraft maintenance (arrived gate 1 hour 33 minutes late)
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+12:13 p.m.
+DEPARTURE
+Actual date:
+Sun, Jul 30
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+2:29 p.m.
+ARRIVAL
+Actual date:
+Sun, Jul 30
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 1 hour 15 minutes late)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+2:49 p.m.
+DEPARTURE
+Actual date:
+Sun, Jul 30
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+3:19 p.m.
+ARRIVAL
+Actual date:
+Sun, Jul 30
+
+5109
+STATUS
+Arrived Gate 3 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:52 a.m.
+DEPARTURE
+Actual date:
+Sun, Jul 30
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:26 a.m.
+ARRIVAL
+Actual date:
+Sun, Jul 30
+
+Tue Aug  1 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 1 Hour 41 Minutes Late -- Returned to Gate in Chicago, IL, US (ORD - O
+STATUS
+Hare)
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+11:01 p.m.
+DEPARTURE
+Actual date:
+Mon, Jul 31
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+1:15 a.m.
+ARRIVAL
+Actual date:
+Tue, Aug 1
+
+5141
+STATUS
+Arrived Gate 11 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:31 a.m.
+DEPARTURE
+Actual date:
+Mon, Jul 31
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:45 p.m.
+ARRIVAL
+Actual date:
+Mon, Jul 31
+
+5001
+STATUS
+Arrived Gate 24 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:16 p.m.
+DEPARTURE
+Actual date:
+Mon, Jul 31
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:40 p.m.
+ARRIVAL
+Actual date:
+Mon, Jul 31
+
+5109
+STATUS
+Arrived Gate 24 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:54 a.m.
+DEPARTURE
+Actual date:
+Mon, Jul 31
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:05 a.m.
+ARRIVAL
+Actual date:
+Mon, Jul 31
+
+Wed Aug  2 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 14 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:03 p.m.
+DEPARTURE
+Actual date:
+Tue, Aug 1
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:20 p.m.
+ARRIVAL
+Actual date:
+Tue, Aug 1
+
+5141
+STATUS
+Arrived Gate 43 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:50 a.m.
+DEPARTURE
+Actual date:
+Tue, Aug 1
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+1:39 p.m.
+ARRIVAL
+Actual date:
+Tue, Aug 1
+
+5001
+STATUS
+Delayed due to flight preparation (arrived gate 51 minutes late)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+2:19 p.m.
+DEPARTURE
+Actual date:
+Tue, Aug 1
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:55 p.m.
+ARRIVAL
+Actual date:
+Tue, Aug 1
+
+5109
+STATUS
+Arrived Gate 2 Minutes Late
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:51 a.m.
+DEPARTURE
+Actual date:
+Tue, Aug 1
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:31 a.m.
+ARRIVAL
+Actual date:
+Tue, Aug 1
+
+Thu Aug  3 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 1 Hour 20 Minutes Late
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+10:30 p.m.
+DEPARTURE
+Actual date:
+Wed, Aug 2
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+12:54 a.m.
+ARRIVAL
+Actual date:
+Thu, Aug 3
+
+5141
+STATUS
+Arrived Gate On Time
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:32 a.m.
+DEPARTURE
+Actual date:
+Wed, Aug 2
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Scheduled date:
+Wed, Aug 2
+
+5001
+STATUS
+Arrived Gate 15 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:27 p.m.
+DEPARTURE
+Actual date:
+Wed, Aug 2
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+1:49 p.m.
+ARRIVAL
+Actual date:
+Wed, Aug 2
+
+5109
+STATUS
+Arrived Gate 1 Minute Late
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:56 a.m.
+DEPARTURE
+Actual date:
+Wed, Aug 2
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:30 a.m.
+ARRIVAL
+Actual date:
+Wed, Aug 2
+
+Fri Aug  4 16:00:01 UTC 2017
+
+5061
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 2 hours 31 minutes late)
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+11:42 p.m.
+DEPARTURE
+Actual date:
+Thu, Aug 3
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+2:05 a.m.
+ARRIVAL
+Actual date:
+Fri, Aug 4
+
+5141
+STATUS
+Arrived Gate 4 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:29 a.m.
+DEPARTURE
+Actual date:
+Thu, Aug 3
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:52 p.m.
+ARRIVAL
+Actual date:
+Thu, Aug 3
+
+5001
+
+5109
+STATUS
+Arrived Gate 13 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+6:01 a.m.
+DEPARTURE
+Actual date:
+Thu, Aug 3
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:16 a.m.
+ARRIVAL
+Actual date:
+Thu, Aug 3
+
+Sat Aug  5 16:00:01 UTC 2017
+
+5061
+STATUS
+Arrived Gate 9 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:03 p.m.
+DEPARTURE
+Actual date:
+Fri, Aug 4
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:25 p.m.
+ARRIVAL
+Actual date:
+Fri, Aug 4
+
+5141
+STATUS
+Arrived Gate 4 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:43 a.m.
+DEPARTURE
+Actual date:
+Fri, Aug 4
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+1:00 p.m.
+ARRIVAL
+Actual date:
+Fri, Aug 4
+
+5001
+STATUS
+Arrived Gate 6 Minutes Late
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:23 p.m.
+DEPARTURE
+Actual date:
+Fri, Aug 4
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:10 p.m.
+ARRIVAL
+Actual date:
+Fri, Aug 4
+
+5109
+STATUS
+Arrived Gate 4 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:47 a.m.
+DEPARTURE
+Actual date:
+Fri, Aug 4
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:25 a.m.
+ARRIVAL
+Actual date:
+Fri, Aug 4
+
+Sun Aug  6 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 13 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:00 p.m.
+DEPARTURE
+Actual date:
+Sat, Aug 5
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:21 p.m.
+ARRIVAL
+Actual date:
+Sat, Aug 5
+
+5141
+STATUS
+Arrived Gate 1 Hour 52 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+12:15 p.m.
+DEPARTURE
+Actual date:
+Sat, Aug 5
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+2:48 p.m.
+ARRIVAL
+Actual date:
+Sat, Aug 5
+
+5001
+STATUS
+Arrived Gate 1 Hour 31 Minutes Late
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+3:12 p.m.
+DEPARTURE
+Actual date:
+Sat, Aug 5
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+3:35 p.m.
+ARRIVAL
+Actual date:
+Sat, Aug 5
+
+5109
+STATUS
+Arrived Gate 14 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:48 a.m.
+DEPARTURE
+Actual date:
+Sat, Aug 5
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:15 a.m.
+ARRIVAL
+Actual date:
+Sat, Aug 5
+
+Mon Aug  7 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 16 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+9:00 p.m.
+DEPARTURE
+Actual date:
+Sun, Aug 6
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:18 p.m.
+ARRIVAL
+Actual date:
+Sun, Aug 6
+
+5141
+STATUS
+Arrived Gate 8 Minutes Early
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:27 a.m.
+DEPARTURE
+Actual date:
+Sun, Aug 6
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+12:48 p.m.
+ARRIVAL
+Actual date:
+Sun, Aug 6
+
+5001
+STATUS
+Arrived Gate 4 Minutes Early
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:20 p.m.
+DEPARTURE
+Actual date:
+Sun, Aug 6
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:00 p.m.
+ARRIVAL
+Actual date:
+Sun, Aug 6
+
+5109
+STATUS
+Arrived Gate 2 Minutes Early
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:54 a.m.
+DEPARTURE
+Actual date:
+Sun, Aug 6
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:27 a.m.
+ARRIVAL
+Actual date:
+Sun, Aug 6
+
+Tue Aug  8 16:00:02 UTC 2017
+
+5061
+STATUS
+Arrived Gate 16 Minutes Early
+DEPARTURE
+Scheduled time:
+9:08 p.m.
+DEPARTURE
+Actual time:
+8:59 p.m.
+DEPARTURE
+Actual date:
+Mon, Aug 7
+ARRIVAL
+Scheduled time:
+11:34 p.m.
+ARRIVAL
+Actual time:
+11:18 p.m.
+ARRIVAL
+Actual date:
+Mon, Aug 7
+
+5141
+STATUS
+Arrived Gate 17 Minutes Late
+DEPARTURE
+Scheduled time:
+10:30 a.m.
+DEPARTURE
+Actual time:
+10:48 a.m.
+DEPARTURE
+Actual date:
+Mon, Aug 7
+ARRIVAL
+Scheduled time:
+12:56 p.m.
+ARRIVAL
+Actual time:
+1:13 p.m.
+ARRIVAL
+Actual date:
+Mon, Aug 7
+
+5001
+STATUS
+Delayed due to a late inbound aircraft arrival (arrived gate 12 minutes late)
+DEPARTURE
+Scheduled time:
+1:30 p.m.
+DEPARTURE
+Actual time:
+1:37 p.m.
+DEPARTURE
+Actual date:
+Mon, Aug 7
+ARRIVAL
+Scheduled time:
+2:04 p.m.
+ARRIVAL
+Actual time:
+2:16 p.m.
+ARRIVAL
+Actual date:
+Mon, Aug 7
+
+5109
+STATUS
+Arrived Gate 2 Minutes Late
+DEPARTURE
+Scheduled time:
+6:00 a.m.
+DEPARTURE
+Actual time:
+5:57 a.m.
+DEPARTURE
+Actual date:
+Mon, Aug 7
+ARRIVAL
+Scheduled time:
+6:29 a.m.
+ARRIVAL
+Actual time:
+6:31 a.m.
+ARRIVAL
+Actual date:
+Mon, Aug 7
+
