@@ -825,7 +825,7 @@ bool King::canMove( int x, int y, bool chkchk ) const
     ;
     else
     {
-        if ( abs( y - yNow ) == 2  &&  !hasMoved )         // castling
+        if ( abs( y - yNow ) == 2  &&  x == xNow  &&  !hasMoved )         // castling
         {
             if ( chkchk  &&  inCheck() )                // prevent infinite loop
                 return false;
@@ -835,6 +835,9 @@ bool King::canMove( int x, int y, bool chkchk ) const
             if ( board->getPiece( xNow, 4 + sign ) == NULL  &&  board->getPiece( xNow, 4 + 2 * sign ) == NULL  &&
                     board->getPiece( xNow, ( 7 + 7 * sign ) / 2 ) != NULL )       // check rooks
             {
+	        if ( sign == -1  &&  board->getPiece( xNow, 1 ) != NULL )   // Queen side castle
+		    return false;
+		
                 if ( board->getPiece( xNow, ( 7 + 7 * sign ) / 2 )->getType() == ROOK  &&
                         board->getPiece( xNow, ( 7 + 7 * sign ) / 2 )->getWhite() == isWhite )
                 {
