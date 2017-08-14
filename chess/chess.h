@@ -8,7 +8,9 @@
 
 #ifndef _CHESS_H_
  #define _CHESS_H_
- 
+
+#include <string.h>
+
 #ifdef NULL
  #if (NULL != 0 )
   #warning NULL set to a value other than 0

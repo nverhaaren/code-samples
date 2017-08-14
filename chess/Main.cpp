@@ -12,29 +12,6 @@ void printMoveList( const ChessMove * paMoves );
 ChessMove parseAlgMove( const char * szMove, const ChessBoard & board );
 int stdMoves( const char * szMove, const ChessBoard & board );
 
-#ifndef _STRING_H
-bool strcmp( const char * sz1, const char * sz2 )
-{
-    // If STRING_H include removed, this method must be modified
-    if ( sz1[0] == '\0'  &&  sz2[0] == '\0' )
-        return true;
-    else if ( sz1[0] == '\0'  ||  sz2[0] == '\0' )
-        return false;
-    
-    for( int i = 0; sz1[i] != '\0'  &&  sz2[i] != '\0'; i++ )
-        if ( sz1[i] != sz2[i] )
-            return false;
-    return true;
-}
-
-int strlen( const char * sz )
-{
-    int l;
-    for( l = 0; sz[l] != '\0'  &&  l < 128; l++ );
-    return l;
-}
-#endif
-
 int main( int argc, char * argv[] )
 {
     srand( time( NULL ) );          // initialize random number generator
