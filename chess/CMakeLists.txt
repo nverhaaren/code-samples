@@ -14,3 +14,35 @@ target_compile_options(chess_lib PRIVATE -Wall -Wextra -Wpedantic)
 add_executable(chess Main.cpp)
 target_link_libraries(chess PRIVATE chess_lib)
 target_compile_options(chess PRIVATE -Wall -Wextra)
+
+# Tests
+option(ENABLE_TESTS "Build tests" ON)
+option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
+
+if(ENABLE_TESTS)
+    include(FetchContent)
+    FetchContent_Declare(
+        Catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG        v3.7.1
+    )
+    FetchContent_MakeAvailable(Catch2)
+
+    enable_testing()
+
+    add_executable(chess_tests tests/chess_tests.cpp)
+    target_link_libraries(chess_tests PRIVATE chess_lib Catch2::Catch2WithMain)
+    target_compile_options(chess_tests PRIVATE -Wall -Wextra)
+
+    if(ENABLE_COVERAGE)
+        target_compile_options(chess_lib PRIVATE --coverage -O0 -g)
+        target_link_options(chess_lib PRIVATE --coverage)
+        target_compile_options(chess_tests PRIVATE --coverage -O0 -g)
+        target_link_options(chess_tests PRIVATE --coverage)
+    endif()
+
+    list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
+    include(CTest)
+    include(Catch)
+    catch_discover_tests(chess_tests)
+endif()
