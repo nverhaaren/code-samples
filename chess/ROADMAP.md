@@ -55,14 +55,13 @@ Problems in the existing code that will be addressed during modernization:
 - [x] Fix initialization-order bug in `ChessGame` (member declaration order matched init list)
 - Remaining `Main.cpp` warnings are from the incomplete `parseAlgMove` stub — tracked for Phase 5/6
 
-### Phase 2: Testing
-- Add [Catch2 v3](https://github.com/catchorg/Catch2) via CMake `FetchContent`
-- Write unit tests covering core logic:
-  - Move generation for each piece type
-  - Check / checkmate / stalemate detection
-  - En passant and castling
-  - Pawn promotion
-- Target ≥ 80% line coverage on `chess.cpp`
+### Phase 2: Testing *(current)*
+- [x] Add Catch2 v3 via CMake `FetchContent`
+- [x] Write 63 unit tests covering: move encoding, initial position, all piece types,
+  en passant, castling, check/checkmate/stalemate, game rules
+- [x] Add `make test` and `make coverage` targets
+- 100% of tests passing
+- Coverage measurement pending CI setup (Phase 3)
 
 ### Phase 3: CI
 - Add GitHub Actions workflow to build and run tests on push and pull request

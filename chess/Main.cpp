@@ -9,8 +9,9 @@
 void printDelete( char * sz );
 void printMoves( bool color, const ChessGame & game );
 void printMoveList( const ChessMove * paMoves );
-ChessMove parseAlgMove( const char * szMove, const ChessBoard & board );
-int stdMoves( const char * szMove, const ChessBoard & board );
+// TODO: complete algebraic notation parsing (Phase 6)
+// ChessMove parseAlgMove( const char * szMove, const ChessBoard & board );
+// int stdMoves( const char * szMove, const ChessBoard & board );
 
 int main( int argc, char * argv[] )
 {
@@ -206,78 +207,12 @@ void printMoveList( const ChessMove * paMoves )
     }
 }
 
-ChessMove parseAlgMove( const char * szMove, const ChessGame & game )
-{
-    char c = szMove[0];
-    
-    bool checkNoted = false;
-    bool checkmateNoted = false;
-    bool epNoted = false;
-    
-    bool turn = game.getTurn();
-    
-    int xDest = 0;
-    int yDest = 0;
-    
-    int moves = 0;
-    
-    if ( strcmp( szMove, "O-O" )  ||  strcmp( szMove, "0-0" ) )     // kingside castle
-    {
-        if ( turn == WHITE )
-        {
-            if ( game.getPiece( 0, 4 )->getType() == KING  &&  game.getPiece( 0, 4 )->canMove( 0, 6 ) )
-                return ChessMove( 0, 4, 0, 6 );
-            else
-            {
-                printf( "Illegal move.\n" );
-                return ChessMove::end;
-            }
-        } else {
-            if ( game.getPiece( 7, 4 )->getType() == KING  &&  game.getPiece( 7, 4 )->canMove( 7, 6 ) )
-                return ChessMove( 7, 4, 7, 6 );
-            else
-            {
-                printf( "Illegal move.\n" );
-                return ChessMove::end;
-            }
-        }
-    } else if ( strcmp( szMove, "O-O-O" )  ||  strcmp( szMove, "0-0-0" ) ) {            // Queenside castling
-        if ( turn == WHITE )
-        {
-            if ( game.getPiece( 0, 4 )->getType() == KING  &&  game.getPiece( 0, 4 )->canMove( 0, 2 ) )
-                return ChessMove( 0, 4, 0, 2 );
-            else
-            {
-                printf( "Illegal move.\n" );
-                return ChessMove::end;
-            }
-        } else {
-            if ( game.getPiece( 7, 4 )->getType() == KING  &&  game.getPiece( 7, 4 )->canMove( 7, 2 ) )
-                return ChessMove( 7, 4, 7, 2 );
-            else
-            {
-                printf( "Illegal move.\n" );
-                return ChessMove::end;
-            }
-        }
-    } else if ( strlen( szMove ) >= 2 ) {
-        if ( strlen( szMove ) == 2 )            // a pawn move
-        {
-            if ( szMove[0] - 'a' >= 0 )
-            {
-                if ( szMove[1] - 'a' >= 0 )         // capture by files
-                {
-                    moves;                          // TODO
-                } else {                            // forward move
-                    xDest = szMove[1] - '1';
-                    yDest = szMove[0] - 'a';
-                    
-                }
-            } else {
-                printf( "Illegal move.\n" );
-                return ChessMove::end;
-            }
-        }
-    } else
-        return ChessMove::end;
-}
+// TODO (Phase 6): implement full algebraic notation parsing.
+// The function below is incomplete and currently unused. Commented out to
+// suppress compiler warnings until the implementation is ready.
+//
+// ChessMove parseAlgMove( const char * szMove, const ChessGame & game )
+// {
+//     ... (incomplete stub — O-O/O-O-O castling partially handled,
+//          pawn moves and piece moves not implemented)
+// }
