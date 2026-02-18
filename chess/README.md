@@ -16,11 +16,23 @@ See [ROADMAP.md](ROADMAP.md) for known issues and the modernization plan.
 
 ## Building
 
-No build system is present yet (CMake is coming in Phase 1). Compile directly:
+```bash
+make            # configure and build (debug)
+RELEASE=1 make  # release build
+```
+
+Or using CMake directly:
 
 ```bash
-g++ -std=c++20 -o chess Main.cpp chess.cpp
-./chess
+cmake -S . -B build
+cmake --build build
+./build/chess
+```
+
+Tests (once added in Phase 2):
+
+```bash
+make test
 ```
 
 ## Playing

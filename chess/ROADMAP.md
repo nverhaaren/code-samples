@@ -48,10 +48,12 @@ Problems in the existing code that will be addressed during modernization:
 - Document coordinate conventions and class overview
 - Identify all known issues (above)
 
-### Phase 1: Build System & Compilation
-- Add `CMakeLists.txt` targeting C++20
-- Confirm clean compilation with a modern compiler
-- Fix any errors that prevent compilation
+### Phase 1: Build System & Compilation *(current)*
+- [x] Add `CMakeLists.txt` targeting C++20 (separates `chess_lib` from CLI)
+- [x] Add convenience `Makefile` wrapping CMake
+- [x] Confirm clean compilation with modern compiler (GCC 15, C++20)
+- [x] Fix initialization-order bug in `ChessGame` (member declaration order matched init list)
+- Remaining `Main.cpp` warnings are from the incomplete `parseAlgMove` stub — tracked for Phase 5/6
 
 ### Phase 2: Testing
 - Add [Catch2 v3](https://github.com/catchorg/Catch2) via CMake `FetchContent`

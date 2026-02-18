@@ -242,8 +242,8 @@ class ChessGame
     ChessBoard * getPieceBoard();
  private:
     bool rulesOn;
-    ChessBoard board;
     bool whiteTurn;
+    ChessBoard board;
 };
 
 #endif //def _CHESS_H
