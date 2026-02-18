@@ -48,10 +48,12 @@ Problems in the existing code that will be addressed during modernization:
 - Document coordinate conventions and class overview
 - Identify all known issues (above)
 
-### Phase 1: Build System & Compilation
-- Add `CMakeLists.txt` targeting C++20
-- Confirm clean compilation with a modern compiler
-- Fix any errors that prevent compilation
+### Phase 1: Build System & Compilation *(current)*
+- [x] Add `CMakeLists.txt` targeting C++20 (separates `chess_lib` from CLI)
+- [x] Add convenience `Makefile` wrapping CMake
+- [x] Confirm clean compilation with modern compiler (GCC 15, C++20)
+- [x] Fix initialization-order bug in `ChessGame` (member declaration order matched init list)
+- Remaining `Main.cpp` warnings are from the incomplete `parseAlgMove` stub — tracked for Phase 5/6
 
 ### Phase 2: Testing
 - Add [Catch2 v3](https://github.com/catchorg/Catch2) via CMake `FetchContent`
@@ -92,14 +94,19 @@ Problems in the existing code that will be addressed during modernization:
 ### Phase 7: LLM Tool API
 - FEN serialization and deserialization
 - Structured board state output (JSON or equivalent)
-- Clean public C++ API:
-  - `get_board_fen() -> std::string`
-  - `get_legal_moves() -> std::vector<ChessMove>`
-  - `make_move(from, to) -> Result`
-  - `send_message(text) -> void`
+- Clean public C++ API (camelCase, consistent with existing codebase):
+  - `getBoardFen() -> std::string`
+  - `getLegalMoves() -> std::vector<ChessMove>`
+  - `makeMove(from, to) -> Result`
+  - `sendMessage(text) -> void`
 - Design suitable for subprocess/FFI use or direct embedding
 
-### Phase 8: LLM Player Mode
+### Phase 8: Fix remaining known issues
+- Address known issues not requiring substantial rework (PURPOSE.md step 7)
+- Resolve any test failures uncovered during Phase 2
+- Research spike: traditional minimax/alpha-beta AI opponent (scope TBD)
+
+### Phase 9: LLM Player Mode
 - Integration with Anthropic API (Claude as the LLM player)
 - Human vs. LLM game loop
 - LLM receives board state + legal moves; responds with a move and optional message
