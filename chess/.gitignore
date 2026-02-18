@@ -1,0 +1,19 @@
+# Build output directories (cmake out-of-source builds)
+build/
+build-*/
+
+# Coverage output
+coverage.info
+coverage_filtered.info
+coverage-report/
+
+# Compiled binaries if built in-source (not recommended)
+chess
+chess_tests
+
+# IDE / editor artifacts
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
