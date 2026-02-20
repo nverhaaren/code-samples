@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <vector>
 
 ///////////
 // CONSTANTS
@@ -92,10 +93,9 @@ class ChessPiece  // ADT
     virtual bool canMove(int x, int y, bool chkchk = true) const = 0;
 
     /**
-     * Returns a heap-allocated, ChessMove::end-terminated array of all legal
-     * moves for this piece. The caller is responsible for delete[]-ing it.
+     * Returns all legal moves for this piece as a vector.
      */
-    virtual ChessMove* getMoves() const = 0;
+    virtual std::vector<ChessMove> getMoves() const = 0;
     virtual bool move(int x, int y);
     virtual PieceType getType() const = 0;
 
@@ -126,7 +126,7 @@ class Pawn : public ChessPiece {
     Pawn(bool isW, bool isKS, ChessBoard* b, int i);
     ~Pawn() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool getEnPassant() const;
     void setEnPassant(bool b);
@@ -143,7 +143,7 @@ class Rook : public ChessPiece {
     Rook(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Rook() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool move(int x, int y) override;
     void markMoved();
@@ -158,7 +158,7 @@ class Knight : public ChessPiece {
     Knight(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Knight() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
     const static int xOffsets[8];
     const static int yOffsets[8];
@@ -169,7 +169,7 @@ class Bishop : public ChessPiece {
     Bishop(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Bishop() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
 };
 
@@ -178,7 +178,7 @@ class King : public ChessPiece {
     King(bool isW, ChessBoard* b);
     ~King() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool move(int x, int y) override;
     bool inCheck() const;
@@ -195,7 +195,7 @@ class Queen : public ChessPiece {
     Queen(bool isW, ChessBoard* b, int i = 0, bool isKS = false);
     ~Queen() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
 };
 
@@ -268,10 +268,6 @@ class ChessMove {
     const static int maxLength;
 
     static void swap(ChessMove& cm1, ChessMove& cm2);
-    static void sort(ChessMove* acm, int size);
-    static void concat(ChessMove* acm1, const ChessMove* acm2);
-    static int length(const ChessMove* acm);
-    static void copy(ChessMove* acm1, const ChessMove* acm2);
 
     const char* toString() const;
 
@@ -285,8 +281,9 @@ class ChessMove {
  * Top-level game controller. Enforces turn order, manages en passant
  * expiry after each move, and detects checkmate/stalemate.
  *
- * Pawn promotion is intentionally handled outside this class (in Main.cpp)
- * because it requires player input to select the promoted piece type.
+ * Pawn promotion is handled inside this class via makeMove(): when a
+ * ChessMove carries a non-PAWN promotion field, the pawn is automatically
+ * replaced with the requested piece type.
  */
 class ChessGame {
    public:
@@ -299,7 +296,7 @@ class ChessGame {
     bool checkmate(bool white) const;
     bool stalemate(bool turn) const;
 
-    ChessMove* getMoves(bool white) const;
+    std::vector<ChessMove> getMoves(bool white) const;
 
     bool makeMove(const ChessMove& cm);
 
@@ -315,6 +312,9 @@ class ChessGame {
     bool rulesOn;
     bool whiteTurn;
     ChessBoard board;
+    int whiteProms = 0;
+    int blackProms = 0;
+    ChessPiece* makePiece(PieceType type, bool white, int y, ChessBoard* b);
 };
 
 #endif  // def _CHESS_H
