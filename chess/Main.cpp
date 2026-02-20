@@ -10,7 +10,7 @@
 
 void printDelete(char* sz);
 void printMoves(bool color, const ChessGame& game);
-void printMoveList(const ChessMove* paMoves);
+void printMoveList(const ChessMove* moves);
 // TODO: complete algebraic notation parsing (Phase 6)
 // ChessMove parseAlgMove( const char * szMove, const ChessBoard & board );
 // int stdMoves( const char * szMove, const ChessBoard & board );
@@ -19,7 +19,7 @@ int main(int argc, char* argv[]) {
     srand(time(nullptr));  // initialize random number generator
     bool print = true;
     ChessGame game = ChessGame();
-    std::string szInput;
+    std::string input;
 
     int blackProms = 0;  // promotions
     int whiteProms = 0;
@@ -52,9 +52,9 @@ int main(int argc, char* argv[]) {
                 print = false;
             }
         }
-        if (!std::getline(std::cin, szInput)) break;
+        if (!std::getline(std::cin, input)) break;
 
-        if (szInput == "end") {
+        if (input == "end") {
             if (game.getTurn())
                 printf("\nWhite resigns.\n\n");
             else
@@ -63,33 +63,32 @@ int main(int argc, char* argv[]) {
             return 0;
         }
 
-        if (szInput == "moves") {
+        if (input == "moves") {
             printMoves(game.getTurn(), game);
             printf("\n");
-        } else if (szInput.substr(0, 6) == "moves ") {
-            int x = szInput[7] - '1';
-            int y = szInput[6] - 'a';
+        } else if (input.substr(0, 6) == "moves ") {
+            int x = input[7] - '1';
+            int y = input[6] - 'a';
             if (game.getPiece(x, y) != nullptr) {
-                ChessMove* paMoves = game.getPiece(x, y)->getMoves();
-                printMoveList(paMoves);
+                ChessMove* moves = game.getPiece(x, y)->getMoves();
+                printMoveList(moves);
                 printf("\n");
-                delete[] paMoves;
+                delete[] moves;
             }
-        } else if (szInput == "rand") {
-            ChessMove* paMoves = game.getMoves(game.getTurn());
-            int l = ChessMove::length(paMoves);
+        } else if (input == "rand") {
+            ChessMove* moves = game.getMoves(game.getTurn());
+            int l = ChessMove::length(moves);
             int move;
             if (l != 0) {
                 move = rand() % l;
-                game.makeMove(paMoves[move]);
+                game.makeMove(moves[move]);
                 print = true;
-                if ((paMoves[move].getEndX() == 0 ||
-                     paMoves[move].getEndX() == 7) &&  // pawn promotion
-                    game.getPiece(paMoves[move].getEndX(), paMoves[move].getEndY())->getType() ==
+                if ((moves[move].getEndX() == 0 || moves[move].getEndX() == 7) &&  // pawn promotion
+                    game.getPiece(moves[move].getEndX(), moves[move].getEndY())->getType() ==
                         PAWN) {
                     ChessPiece* piece = nullptr;
-                    bool KingSide = false;
-                    if (paMoves[move].getEndY() > 3) KingSide = true;
+                    bool kingSide = false;
+                    if (moves[move].getEndY() > 3) kingSide = true;
 
                     int index = 0;
                     if (game.getTurn()) {
@@ -100,23 +99,23 @@ int main(int argc, char* argv[]) {
                         whiteProms++;
                     }
 
-                    piece = new Queen(!game.getTurn(), game.getPieceBoard(), index, KingSide);
+                    piece = new Queen(!game.getTurn(), game.getPieceBoard(), index, kingSide);
                     game.setRules(false);
-                    game.setPiece(paMoves[move].getEndX(), paMoves[move].getEndY(), piece);
+                    game.setPiece(moves[move].getEndX(), moves[move].getEndY(), piece);
                     game.setRules(true);
                 }
             }
-            delete[] paMoves;
+            delete[] moves;
         } else {
-            ChessMove move = ChessMove(szInput.c_str());
+            ChessMove move = ChessMove(input.c_str());
             if (game.makeMove(move)) {
                 print = true;
                 if ((move.getEndX() == 0 || move.getEndX() == 7) &&
                     game.getPiece(move.getEndX(), move.getEndY())->getType() == PAWN) {
                     char pieceType = '\0';
                     ChessPiece* piece = nullptr;
-                    bool KingSide = false;
-                    if (move.getEndY() > 3) KingSide = true;
+                    bool kingSide = false;
+                    if (move.getEndY() > 3) kingSide = true;
 
                     int index = 0;
                     if (game.getTurn()) {
@@ -134,26 +133,26 @@ int main(int argc, char* argv[]) {
                         case 'R':
                         case 'r': {
                             piece =
-                                new Rook(!game.getTurn(), KingSide, game.getPieceBoard(), index);
+                                new Rook(!game.getTurn(), kingSide, game.getPieceBoard(), index);
                             break;
                         }
                         case 'N':
                         case 'n': {
                             piece =
-                                new Knight(!game.getTurn(), KingSide, game.getPieceBoard(), index);
+                                new Knight(!game.getTurn(), kingSide, game.getPieceBoard(), index);
                             break;
                         }
                         case 'B':
                         case 'b': {
                             piece =
-                                new Bishop(!game.getTurn(), KingSide, game.getPieceBoard(), index);
+                                new Bishop(!game.getTurn(), kingSide, game.getPieceBoard(), index);
                             break;
                         }
                         case 'Q':
                         case 'q':
                         default: {
                             piece =
-                                new Queen(!game.getTurn(), game.getPieceBoard(), index, KingSide);
+                                new Queen(!game.getTurn(), game.getPieceBoard(), index, kingSide);
                             break;
                         }
                     }
@@ -179,10 +178,10 @@ void printMoves(bool color, const ChessGame& game) {
     delete[] moves;
 }
 
-void printMoveList(const ChessMove* paMoves) {
-    int l = ChessMove::length(paMoves);
+void printMoveList(const ChessMove* moves) {
+    int l = ChessMove::length(moves);
     for (int i = 0; i < l; i++) {
-        printf("%s\n", paMoves[i].toString());
+        printf("%s\n", moves[i].toString());
     }
 }
 

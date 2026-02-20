@@ -49,7 +49,7 @@ enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN };
  * Pieces do not cache their board position; getPosX/getPosY scan the
  * full 8x8 grid on every call (O(64)).
  *
- * Piece ID string (szID): [color W/B][type P/R/N/B/K/Q][side K/Q][index digit]
+ * Piece ID string (id): [color W/B][type P/R/N/B/K/Q][side K/Q][index digit]
  */
 class ChessPiece  // ADT
 {
@@ -101,23 +101,23 @@ class ChessPiece  // ADT
     virtual double getValue();
     virtual int getRootValue();
 
-    const static char szDigits[10 + 1];
+    const static char digits[10 + 1];
 
     friend class ChessBoard;
 
    protected:
     const bool isWhite;
     const bool isKingSide;
-    char szID[4 + 1];
+    char id[4 + 1];
     ChessBoard* board;
     const int index;
 
     // Virtual functions cannot be friended directly. These non-virtual
     // forwarding methods give piece subclasses access to ChessBoard's private
     // movePiece, getMoveablePiece, and setPiece methods.
-    ChessPiece* f_movePiece(ChessBoard& cb, ChessMove move) const;
-    ChessPiece* f_getMoveablePiece(ChessBoard& cb, int x, int y) const;
-    ChessPiece* f_setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
+    ChessPiece* movePiece(ChessBoard& cb, ChessMove move) const;
+    ChessPiece* getMutablePiece(ChessBoard& cb, int x, int y) const;
+    ChessPiece* setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
 };
 
 class Pawn : public ChessPiece {
@@ -222,17 +222,16 @@ class ChessBoard {
     friend class ChessGame;
 
    private:
-    ChessPiece* aapGrid[8][8];
+    ChessPiece* grid[8][8];
     ChessPiece* movePiece(ChessMove move);
     ChessPiece* getMoveablePiece(int x, int y);
-    friend ChessPiece* ChessPiece::f_movePiece(ChessBoard& cb, ChessMove move)
+    friend ChessPiece* ChessPiece::movePiece(ChessBoard& cb, ChessMove move)
         const;  // virtual functions cannot be friends; these functions
-    friend ChessPiece* ChessPiece::f_getMoveablePiece(
+    friend ChessPiece* ChessPiece::getMutablePiece(
         ChessBoard& cb, int x, int y) const;  // should allow ChessPiece to get what it needs
-    friend ChessPiece* ChessPiece::f_setPiece(ChessBoard& cb, int x, int y,
-                                              ChessPiece* piece) const;
+    friend ChessPiece* ChessPiece::setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
 
-    std::string szForm;
+    std::string repr;
 };
 
 /**
@@ -250,7 +249,7 @@ class ChessMove {
    public:
     ChessMove();
     ChessMove(int sX, int sY, int eX, int eY);
-    ChessMove(const char* const pszMove);
+    ChessMove(const char* const str);
     ChessMove(const ChessMove& rcm);
     ~ChessMove();
     ChessMove& operator=(const ChessMove& rhs);
@@ -261,8 +260,8 @@ class ChessMove {
     static const ChessMove end;
     bool isEnd() const;
 
-    const static char szlcLetters[8 + 1];
-    const static int MAXCMLENGTH;
+    const static char fileLetters[8 + 1];
+    const static int maxLength;
 
     static void swap(ChessMove& cm1, ChessMove& cm2);
     static void sort(ChessMove* acm, int size);
@@ -274,7 +273,7 @@ class ChessMove {
 
    private:
     short int data;
-    char szForm[6];
+    char repr[6];
     void init(int sX, int sY, int eX, int eY);
 };
 

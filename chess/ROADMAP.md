@@ -79,8 +79,28 @@ Problems in the existing code that will be addressed during modernization:
 - [x] Remove local `abs()` definition; use `std::abs` from `<cstdlib>`
 - [x] Add `.clang-format` config (Google-based, 4-space indent) and format all files
 - [x] Add `.clang-tidy` config and clang-tidy step to CI
+- [x] Remove Hungarian-notation prefixes (`sz`, `aap`, `f_`) from all identifiers
+- [x] Rename coordinate locals to single-char names (`cx`/`cy` for current position,
+  `ox`/`oy` for origin); rename other locals to descriptive names (`diagDiff`, `diagSum`,
+  `capturedPawn`, `input`, `kingSide`)
 
 ### Phase 6: Architectural Improvements
+
+#### ChessMove redesign
+- `ChessMove` currently packs four 3-bit fields into a `short int`; replace with a plain
+  `struct { int8_t startX, startY, endX, endY; }` or similar — cleaner and easier to extend.
+- Add a pawn promotion field to `ChessMove` so the promoted piece type travels with the move.
+  Consider two approaches:
+  1. **In-move**: `ChessMove` gains an optional `PieceType promotion` field; callers that need
+     promotion set it, others leave it at a sentinel (e.g. `PAWN` = no promotion).
+  2. **UI-layer detection**: Keep `ChessMove` simple; `ChessGame` (or `Main.cpp`) detects
+     when a pawn reaches the back rank after `makeMove()` and prompts for piece selection.
+  Approach 2 is simpler now but defers the problem; approach 1 enables a cleaner API for Phase 7.
+- After ChessMove changes, walk through the codebase for potential undefined behaviour (UB):
+  signed overflow in the old bit-packing arithmetic, out-of-bounds array access, invalid casts,
+  etc. Document findings and fix any real issues.
+
+#### Other improvements
 - Replace raw owning pointers with `std::unique_ptr<ChessPiece>`
 - Store piece position on the piece (avoid O(64) scan); keep board as secondary index
 - Replace raw move arrays with `std::vector<ChessMove>`

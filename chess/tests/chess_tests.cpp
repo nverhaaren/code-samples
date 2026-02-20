@@ -4,6 +4,7 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <string>
+
 #include "chess.h"
 
 // ============================================================================
@@ -23,13 +24,10 @@ struct CustomBoard {
     CustomBoard() : b(game.getPieceBoard()) {
         game.setRules(false);
         for (int x = 0; x < 8; x++)
-            for (int y = 0; y < 8; y++)
-                game.setPiece(x, y, NULL);
+            for (int y = 0; y < 8; y++) game.setPiece(x, y, NULL);
     }
 
-    void place(int x, int y, ChessPiece* piece) {
-        game.setPiece(x, y, piece);
-    }
+    void place(int x, int y, ChessPiece* piece) { game.setPiece(x, y, piece); }
 
     // Call after placing all pieces to enable normal rules.
     void activate() { game.setRules(true); }
@@ -44,24 +42,21 @@ TEST_CASE("ChessMove: default constructor is end sentinel", "[ChessMove]") {
     REQUIRE(cm.isEnd());
 }
 
-TEST_CASE("ChessMove::end is end sentinel", "[ChessMove]") {
-    REQUIRE(ChessMove::end.isEnd());
-}
+TEST_CASE("ChessMove::end is end sentinel", "[ChessMove]") { REQUIRE(ChessMove::end.isEnd()); }
 
 TEST_CASE("ChessMove: coordinate encoding roundtrips for all squares", "[ChessMove]") {
     for (int sx = 0; sx < 8; sx++)
         for (int sy = 0; sy < 8; sy++)
             for (int ex = 0; ex < 8; ex++)
                 for (int ey = 0; ey < 8; ey++) {
-                    if (sx == 0 && sy == 0 && ex == 0 && ey == 0) continue; // isEnd()
+                    if (sx == 0 && sy == 0 && ex == 0 && ey == 0) continue;  // isEnd()
                     ChessMove cm(sx, sy, ex, ey);
                     REQUIRE(cm.getStartX() == sx);
                     REQUIRE(cm.getStartY() == sy);
                     REQUIRE(cm.getEndX() == ex);
                     REQUIRE(cm.getEndY() == ey);
                     // Non-null moves should not be end
-                    if (!(sx == ex && sy == ey))
-                        REQUIRE(!cm.isEnd());
+                    if (!(sx == ex && sy == ey)) REQUIRE(!cm.isEnd());
                 }
 }
 
@@ -97,7 +92,7 @@ TEST_CASE("ChessMove: toString format is 'a1-b2'", "[ChessMove]") {
 }
 
 TEST_CASE("ChessMove: toString for various squares", "[ChessMove]") {
-    ChessMove cm(7, 7, 0, 0); // h8-a1
+    ChessMove cm(7, 7, 0, 0);  // h8-a1
     REQUIRE(std::string(cm.toString()) == "h8-a1");
 }
 
@@ -216,8 +211,7 @@ TEST_CASE("ChessGame: pawns on ranks 1 and 6 in initial position", "[ChessGame]"
 TEST_CASE("ChessGame: middle rows empty in initial position", "[ChessGame]") {
     ChessGame game;
     for (int x = 2; x <= 5; x++)
-        for (int y = 0; y < 8; y++)
-            REQUIRE(game.getPiece(x, y) == NULL);
+        for (int y = 0; y < 8; y++) REQUIRE(game.getPiece(x, y) == NULL);
 }
 
 // ============================================================================
@@ -226,18 +220,18 @@ TEST_CASE("ChessGame: middle rows empty in initial position", "[ChessGame]") {
 
 TEST_CASE("Pawn: white pawn can advance one or two squares from starting row", "[Pawn]") {
     ChessGame game;
-    const ChessPiece* pawn = game.getPiece(1, 4); // e2
+    const ChessPiece* pawn = game.getPiece(1, 4);  // e2
     REQUIRE(pawn->getType() == PAWN);
-    REQUIRE(pawn->canMove(2, 4)); // e3 — one step
-    REQUIRE(pawn->canMove(3, 4)); // e4 — two steps
-    REQUIRE(!pawn->canMove(4, 4)); // three steps — illegal
+    REQUIRE(pawn->canMove(2, 4));   // e3 — one step
+    REQUIRE(pawn->canMove(3, 4));   // e4 — two steps
+    REQUIRE(!pawn->canMove(4, 4));  // three steps — illegal
 }
 
 TEST_CASE("Pawn: black pawn can advance one or two squares from starting row", "[Pawn]") {
     ChessGame game;
-    const ChessPiece* pawn = game.getPiece(6, 4); // e7
-    REQUIRE(pawn->canMove(5, 4)); // e6
-    REQUIRE(pawn->canMove(4, 4)); // e5
+    const ChessPiece* pawn = game.getPiece(6, 4);  // e7
+    REQUIRE(pawn->canMove(5, 4));                  // e6
+    REQUIRE(pawn->canMove(4, 4));                  // e5
     REQUIRE(!pawn->canMove(3, 4));
 }
 
@@ -250,8 +244,8 @@ TEST_CASE("Pawn: cannot advance through a blocking piece", "[Pawn]") {
     cb.activate();
 
     const ChessPiece* pawn = cb.game.getPiece(1, 4);
-    REQUIRE(!pawn->canMove(2, 4)); // blocked
-    REQUIRE(!pawn->canMove(3, 4)); // cannot jump over blocker
+    REQUIRE(!pawn->canMove(2, 4));  // blocked
+    REQUIRE(!pawn->canMove(3, 4));  // cannot jump over blocker
 }
 
 TEST_CASE("Pawn: double advance blocked if intermediate square occupied", "[Pawn]") {
@@ -280,13 +274,13 @@ TEST_CASE("Pawn: diagonal capture of enemy piece", "[Pawn]") {
     const ChessPiece* pawn = cb.game.getPiece(2, 4);
     REQUIRE(pawn->canMove(3, 5));
     REQUIRE(pawn->canMove(3, 3));
-    REQUIRE(!pawn->canMove(3, 6)); // too far
+    REQUIRE(!pawn->canMove(3, 6));  // too far
 }
 
 TEST_CASE("Pawn: cannot capture on empty diagonal", "[Pawn]") {
     ChessGame game;
     const ChessPiece* pawn = game.getPiece(1, 4);
-    REQUIRE(!pawn->canMove(2, 5)); // no piece to capture
+    REQUIRE(!pawn->canMove(2, 5));  // no piece to capture
     REQUIRE(!pawn->canMove(2, 3));
 }
 
@@ -315,29 +309,29 @@ TEST_CASE("Pawn: getMoves returns at least one move from start", "[Pawn]") {
 
 TEST_CASE("Pawn: en passant capture", "[Pawn]") {
     ChessGame game;
-    game.makeMove(ChessMove(1, 4, 3, 4)); // e2-e4 white
-    game.makeMove(ChessMove(6, 0, 5, 0)); // a7-a6 black (filler)
-    game.makeMove(ChessMove(3, 4, 4, 4)); // e4-e5 white
-    game.makeMove(ChessMove(6, 5, 4, 5)); // f7-f5 black double advance
+    game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4 white
+    game.makeMove(ChessMove(6, 0, 5, 0));  // a7-a6 black (filler)
+    game.makeMove(ChessMove(3, 4, 4, 4));  // e4-e5 white
+    game.makeMove(ChessMove(6, 5, 4, 5));  // f7-f5 black double advance
 
     const ChessPiece* pawn = game.getPiece(4, 4);
     REQUIRE(pawn != NULL);
-    REQUIRE(pawn->canMove(5, 5)); // en passant
+    REQUIRE(pawn->canMove(5, 5));  // en passant
 
     REQUIRE(game.makeMove(ChessMove(4, 4, 5, 5)));
     REQUIRE(game.getPiece(5, 5) != NULL);
     REQUIRE(game.getPiece(5, 5)->getType() == PAWN);
-    REQUIRE(game.getPiece(4, 5) == NULL); // captured pawn removed
+    REQUIRE(game.getPiece(4, 5) == NULL);  // captured pawn removed
 }
 
 TEST_CASE("Pawn: en passant opportunity expires after opponent's move", "[Pawn]") {
     ChessGame game;
-    game.makeMove(ChessMove(1, 4, 3, 4)); // e2-e4
-    game.makeMove(ChessMove(6, 0, 5, 0)); // a7-a6
-    game.makeMove(ChessMove(3, 4, 4, 4)); // e4-e5
-    game.makeMove(ChessMove(6, 5, 4, 5)); // f7-f5 (en passant opportunity)
-    game.makeMove(ChessMove(1, 0, 2, 0)); // a2-a3 white passes
-    game.makeMove(ChessMove(5, 0, 4, 0)); // a6-a5 black passes
+    game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
+    game.makeMove(ChessMove(6, 0, 5, 0));  // a7-a6
+    game.makeMove(ChessMove(3, 4, 4, 4));  // e4-e5
+    game.makeMove(ChessMove(6, 5, 4, 5));  // f7-f5 (en passant opportunity)
+    game.makeMove(ChessMove(1, 0, 2, 0));  // a2-a3 white passes
+    game.makeMove(ChessMove(5, 0, 4, 0));  // a6-a5 black passes
 
     // En passant is no longer available
     const ChessPiece* pawn = game.getPiece(4, 4);
@@ -361,8 +355,8 @@ TEST_CASE("Rook: moves along rank and file", "[Rook]") {
     REQUIRE(rook->canMove(3, 7));
     REQUIRE(rook->canMove(0, 3));
     REQUIRE(rook->canMove(6, 3));
-    REQUIRE(!rook->canMove(4, 4)); // diagonal
-    REQUIRE(!rook->canMove(3, 3)); // null move
+    REQUIRE(!rook->canMove(4, 4));  // diagonal
+    REQUIRE(!rook->canMove(3, 3));  // null move
 }
 
 TEST_CASE("Rook: blocked by friendly piece", "[Rook]") {
@@ -375,8 +369,8 @@ TEST_CASE("Rook: blocked by friendly piece", "[Rook]") {
 
     const ChessPiece* rook = cb.game.getPiece(3, 3);
     REQUIRE(rook->canMove(3, 4));
-    REQUIRE(!rook->canMove(3, 5)); // friendly
-    REQUIRE(!rook->canMove(3, 6)); // past friendly
+    REQUIRE(!rook->canMove(3, 5));  // friendly
+    REQUIRE(!rook->canMove(3, 6));  // past friendly
 }
 
 TEST_CASE("Rook: can capture enemy, cannot jump over it", "[Rook]") {
@@ -461,7 +455,7 @@ TEST_CASE("Knight: getMoves from corner returns 2 moves", "[Knight]") {
     cb.activate();
 
     ChessMove* moves = cb.game.getPiece(0, 0)->getMoves();
-    REQUIRE(ChessMove::length(moves) == 2); // (1,2) and (2,1)
+    REQUIRE(ChessMove::length(moves) == 2);  // (1,2) and (2,1)
     delete[] moves;
 }
 
@@ -521,7 +515,7 @@ TEST_CASE("Bishop: can capture enemy piece", "[Bishop]") {
 
     const ChessPiece* bishop = cb.game.getPiece(4, 4);
     REQUIRE(bishop->canMove(6, 6));
-    REQUIRE(!bishop->canMove(7, 7)); // past enemy
+    REQUIRE(!bishop->canMove(7, 7));  // past enemy
 }
 
 // ============================================================================
@@ -547,15 +541,15 @@ TEST_CASE("King: can step to any adjacent square", "[King]") {
 TEST_CASE("King: cannot step into check", "[King]") {
     CustomBoard cb;
     cb.place(4, 4, new King(WHITE, cb.b));
-    cb.place(3, 0, new Rook(BLACK, false, cb.b)); // controls entire rank 3
+    cb.place(3, 0, new Rook(BLACK, false, cb.b));  // controls entire rank 3
     cb.place(7, 7, new King(BLACK, cb.b));
     cb.activate();
 
     const ChessPiece* king = cb.game.getPiece(4, 4);
-    REQUIRE(!king->canMove(3, 4)); // rank 3 is controlled by rook
+    REQUIRE(!king->canMove(3, 4));  // rank 3 is controlled by rook
     REQUIRE(!king->canMove(3, 3));
     REQUIRE(!king->canMove(3, 5));
-    REQUIRE(king->canMove(5, 4)); // safe
+    REQUIRE(king->canMove(5, 4));  // safe
 }
 
 TEST_CASE("King: inCheck when attacked", "[King]") {
@@ -614,10 +608,10 @@ TEST_CASE("King: cannot castle after king has moved", "[King]") {
     cb.place(7, 0, new Rook(BLACK, false, cb.b));
     cb.activate();
 
-    cb.game.makeMove(ChessMove(0, 4, 0, 3)); // king moves
-    cb.game.makeMove(ChessMove(7, 0, 6, 0)); // black filler
-    cb.game.makeMove(ChessMove(0, 3, 0, 4)); // king returns
-    cb.game.makeMove(ChessMove(6, 0, 5, 0)); // black filler
+    cb.game.makeMove(ChessMove(0, 4, 0, 3));  // king moves
+    cb.game.makeMove(ChessMove(7, 0, 6, 0));  // black filler
+    cb.game.makeMove(ChessMove(0, 3, 0, 4));  // king returns
+    cb.game.makeMove(ChessMove(6, 0, 5, 0));  // black filler
 
     REQUIRE(!cb.game.getPiece(0, 4)->canMove(0, 6));
 }
@@ -626,7 +620,7 @@ TEST_CASE("King: cannot castle through attacked square", "[King]") {
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
-    cb.place(5, 5, new Rook(BLACK, false, cb.b)); // attacks (0,5) on f-file
+    cb.place(5, 5, new Rook(BLACK, false, cb.b));  // attacks (0,5) on f-file
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.activate();
 
@@ -641,9 +635,9 @@ TEST_CASE("King: cannot castle if rook has moved", "[King]") {
     cb.place(7, 0, new Rook(BLACK, false, cb.b));
     cb.activate();
 
-    cb.game.makeMove(ChessMove(0, 7, 0, 6)); // rook moves
+    cb.game.makeMove(ChessMove(0, 7, 0, 6));  // rook moves
     cb.game.makeMove(ChessMove(7, 0, 6, 0));
-    cb.game.makeMove(ChessMove(0, 6, 0, 7)); // rook returns
+    cb.game.makeMove(ChessMove(0, 6, 0, 7));  // rook returns
     cb.game.makeMove(ChessMove(6, 0, 5, 0));
 
     REQUIRE(!cb.game.getPiece(0, 4)->canMove(0, 6));
@@ -673,7 +667,7 @@ TEST_CASE("Queen: combines rook and bishop movement", "[Queen]") {
     REQUIRE(queen->canMove(3, 5));
     // Knight-move — illegal
     REQUIRE(!queen->canMove(5, 6));
-    REQUIRE(!queen->canMove(4, 4)); // null move
+    REQUIRE(!queen->canMove(4, 4));  // null move
 }
 
 // ============================================================================
@@ -683,15 +677,15 @@ TEST_CASE("Queen: combines rook and bishop movement", "[Queen]") {
 TEST_CASE("Check: move that exposes king is illegal", "[Check]") {
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
-    cb.place(0, 5, new Rook(WHITE, true, cb.b)); // pinned to king's rank
-    cb.place(0, 7, new Rook(BLACK, false, cb.b)); // attacks along rank 0
+    cb.place(0, 5, new Rook(WHITE, true, cb.b));   // pinned to king's rank
+    cb.place(0, 7, new Rook(BLACK, false, cb.b));  // attacks along rank 0
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.activate();
 
     // White rook at (0,5) is pinned — moving off rank 0 exposes king
     const ChessPiece* rook = cb.game.getPiece(0, 5);
-    REQUIRE(!rook->canMove(1, 5)); // reveals attack on king
-    REQUIRE(rook->canMove(0, 6));  // stays on rank 0, king safe
+    REQUIRE(!rook->canMove(1, 5));  // reveals attack on king
+    REQUIRE(rook->canMove(0, 6));   // stays on rank 0, king safe
 }
 
 TEST_CASE("Check: checkCheck returns true when king is in check", "[Check]") {
@@ -714,10 +708,10 @@ TEST_CASE("Check: checkCheck returns true when king is in check", "[Check]") {
 TEST_CASE("Checkmate: fool's mate", "[ChessGame]") {
     ChessGame game;
     // 1. f3 e5 2. g4 Qh4#
-    REQUIRE(game.makeMove(ChessMove(1, 5, 2, 5))); // f3
-    REQUIRE(game.makeMove(ChessMove(6, 4, 4, 4))); // e5
-    REQUIRE(game.makeMove(ChessMove(1, 6, 3, 6))); // g4
-    REQUIRE(game.makeMove(ChessMove(7, 3, 3, 7))); // Qh4 — checkmate
+    REQUIRE(game.makeMove(ChessMove(1, 5, 2, 5)));  // f3
+    REQUIRE(game.makeMove(ChessMove(6, 4, 4, 4)));  // e5
+    REQUIRE(game.makeMove(ChessMove(1, 6, 3, 6)));  // g4
+    REQUIRE(game.makeMove(ChessMove(7, 3, 3, 7)));  // Qh4 — checkmate
 
     REQUIRE(game.checkmate(WHITE));
     REQUIRE(!game.stalemate(WHITE));
@@ -760,13 +754,13 @@ TEST_CASE("ChessGame: turn alternates after valid moves", "[ChessGame]") {
 
 TEST_CASE("ChessGame: cannot move opponent's piece", "[ChessGame]") {
     ChessGame game;
-    REQUIRE(!game.makeMove(ChessMove(6, 4, 5, 4))); // black on white's turn
+    REQUIRE(!game.makeMove(ChessMove(6, 4, 5, 4)));  // black on white's turn
     REQUIRE(game.getTurn() == WHITE);
 }
 
 TEST_CASE("ChessGame: illegal move does not change turn", "[ChessGame]") {
     ChessGame game;
-    REQUIRE(!game.makeMove(ChessMove(1, 4, 5, 4))); // pawn cannot jump 4 rows
+    REQUIRE(!game.makeMove(ChessMove(1, 4, 5, 4)));  // pawn cannot jump 4 rows
     REQUIRE(game.getTurn() == WHITE);
 }
 
