@@ -213,7 +213,7 @@ int ChessPiece::getIndex() const { return index; }
 bool ChessPiece::getWhite() const { return isWhite; }
 bool ChessPiece::getKingSide() const { return isKingSide; }
 
-int ChessPiece::getPosX() const             // calculate positions on the fly
+int ChessPiece::getPosX() const             // O(64) scan; position is not stored on the piece
 {
     for( int i = 0; i < 8; i++ )
     {
@@ -324,6 +324,8 @@ bool Pawn::canMove( int x, int y, bool chkchk ) const
     
     if ( y == yNow  &&  board->getPiece( x, y ) == NULL )         // forward move
     {
+        // Double advance: white unmoved pawn can jump from row 1 to row 3
+        // (skipping row 2); black from row 6 to row 4 (skipping row 5).
         if ( hasMoved == false  &&  isWhite == true  &&  x == 3  &&  board->getPiece( 2, y ) == NULL )
             ;                                                       // Would be return true; need to check for check
         else if ( hasMoved == false  &&  isWhite == false  &&  x == 4  &&  board->getPiece( 5, y ) == NULL )
@@ -335,6 +337,9 @@ bool Pawn::canMove( int x, int y, bool chkchk ) const
         else
             return false;
     } else if ( ( y == yNow + 1  ||  y == yNow - 1 )  &&  board->getPiece( x, y ) == NULL ) {     // en passant
+        // En passant: white pawn must be on row 4 (opponent's double-advance
+        // landing row); black pawn on row 3. The captured pawn sits on the
+        // same row as the capturing pawn, one column over.
         if ( isWhite == true  &&  xNow == 4  &&  board->getPiece( xNow, y ) != NULL  &&
                 board->getPiece( xNow, y )->getWhite() == false  &&  board->getPiece( xNow, y )->getType() == PAWN )
         {
@@ -365,7 +370,11 @@ bool Pawn::canMove( int x, int y, bool chkchk ) const
     
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Temporarily execute the move to test for self-check, then undo it.
+        // f_movePiece returns whatever piece was displaced at the destination
+        // (the capture candidate). After checking, we move our piece back and
+        // restore the displaced piece via f_setPiece.
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(board->checkCheck( isWhite ));
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -521,7 +530,8 @@ bool Rook::canMove( int x, int y, bool chkchk ) const
     
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(board->checkCheck( isWhite ));
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -623,7 +633,8 @@ bool Knight::canMove( int x, int y, bool chkchk ) const
         
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(board->checkCheck( isWhite ));
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -727,7 +738,8 @@ bool Bishop::canMove( int x, int y, bool chkchk ) const
         
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(board->checkCheck( isWhite ));
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -825,37 +837,42 @@ bool King::canMove( int x, int y, bool chkchk ) const
     {
         if ( abs( y - yNow ) == 2  &&  x == xNow  &&  !hasMoved )         // castling
         {
-            if ( chkchk  &&  inCheck() )                // prevent infinite loop
+            if ( chkchk  &&  inCheck() )                // can't castle out of check
                 return false;
-            
+
+            // sign: +1 = kingside (y increases), -1 = queenside (y decreases).
+            // King always starts at column 4 (hard-coded assumption).
+            // Rook column: (7 + 7*sign)/2 -> kingside=7, queenside=0.
             int sign = ( y - yNow ) / 2;
-            
+
             if ( board->getPiece( xNow, 4 + sign ) == NULL  &&  board->getPiece( xNow, 4 + 2 * sign ) == NULL  &&
                     board->getPiece( xNow, ( 7 + 7 * sign ) / 2 ) != NULL )       // check rooks
             {
-	        if ( sign == -1  &&  board->getPiece( xNow, 1 ) != NULL )   // Queen side castle
+	        if ( sign == -1  &&  board->getPiece( xNow, 1 ) != NULL )   // Queen side: b-file must also be empty
 		    return false;
-		
+
                 if ( board->getPiece( xNow, ( 7 + 7 * sign ) / 2 )->getType() == ROOK  &&
                         board->getPiece( xNow, ( 7 + 7 * sign ) / 2 )->getWhite() == isWhite )
                 {
                     const Rook * piece = dynamic_cast<const Rook *>(board->getPiece( xNow, ( 7 + 7 * sign ) / 2 ));
                     if ( !piece->getMoved() )
                     {
+                        // Step the king through each intermediate square and verify
+                        // it is not in check at any point (castling through check is illegal).
                         f_movePiece( *board, ChessMove( xNow, 4, xNow, 4 + sign ) );
                         if ( chkchk  &&  inCheck() )
                         {
                             f_movePiece( *board, ChessMove( xNow, 4 + sign, xNow, 4 ) );
                             return false;
                         }
-                        
+
                         f_movePiece( *board, ChessMove( xNow, 4 + sign, xNow, 4 + sign * 2 ) );
                         if ( chkchk  &&  inCheck() )
                         {
                             f_movePiece( *board, ChessMove( xNow, 4 + sign * 2, xNow, 4 ) );
                             return false;
                         }
-                        
+
                         f_movePiece( *board, ChessMove( xNow, 4 + sign * 2, xNow, 4 ) );
                     } else
                         return false;
@@ -869,7 +886,10 @@ bool King::canMove( int x, int y, bool chkchk ) const
     
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Use inCheck() (not checkCheck()) to avoid infinite recursion:
+        // checkCheck() finds the king and calls inCheck(), which calls canMove()
+        // with chkchk=false, so the recursion terminates.
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(inCheck());
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -931,11 +951,15 @@ bool King::inCheck() const
 {
     int xNow = getPosX();
     int yNow = getPosY();
-    
+
     for( int i = 0; i < 8; i++ )
     {
         for( int j = 0; j < 8; j++ )
         {
+            // canMove(..., false): skip the self-check test to avoid recursion.
+            // We only care whether the opponent's piece *geometrically* reaches
+            // the king's square, not whether doing so would leave its own king
+            // in check.
             if ( board->getPiece( i, j ) != NULL  &&  board->getPiece( i, j )->getWhite() != isWhite  &&
                     board->getPiece( i, j )->canMove( xNow, yNow, false ) )
                 return true;
@@ -1057,7 +1081,8 @@ bool Queen::canMove( int x, int y, bool chkchk ) const
     
     if ( chkchk )
     {
-        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );     // these pass by reference
+        // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
+        ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(board->checkCheck( isWhite ));
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
         f_setPiece( *board, x, y, temp );
@@ -1217,6 +1242,9 @@ ChessBoard::~ChessBoard()               // do not keep pointers to pieces in thi
 
 const char * ChessBoard::toString()
 {
+    // Layout: 8 ranks x 4 display rows/rank + 1 border row = 33 rows.
+    // Each row: 8 squares x 5 chars/square + 1 border col = 41 chars + newline = 42.
+    // Total: 42 * 33 + 1 (null terminator) = 1387 bytes.
     if ( szForm == NULL )
         szForm = new char[1387];        // 1387 = 42 * 33 + 1
     if ( szForm == NULL )
@@ -1362,11 +1390,11 @@ bool ChessBoard::checkCheck( bool isW ) const
                 else if ( piece )
                     return false;
                 else
-                    return true;        // will never happen if constructors work right. The king is fake...? Error, essentially.
+                    return true;        // dynamic_cast failed: king pointer is wrong type; treat as error (in check)
             }
         }
     }
-    return true;        // then game is over; no moves should be made
+    return true;        // no king found: treat as in check so no further moves are made
 }
 
 ///////////
@@ -1488,7 +1516,11 @@ bool ChessGame::makeMove( const ChessMove & cm )
         if ( b )
         {
             whiteTurn = !whiteTurn;
-            for( int i = 0; i < 8; i++ )                // remove en passants that no longer apply
+            // Clear en passant flags for the side whose turn it now is.
+            // After the flip, whiteTurn is the color that did NOT just move —
+            // their en passant window (set when they double-advanced last turn)
+            // has now expired because the opponent completed a move.
+            for( int i = 0; i < 8; i++ )
             {
                 for( int j = 0; j < 8; j++ )
                 {

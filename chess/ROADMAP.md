@@ -67,8 +67,8 @@ Problems in the existing code that will be addressed during modernization:
 - Add GitHub Actions workflow to build and run tests on push and pull request
 
 ### Phase 4: Documentation
-- Docstrings on all non-trivial methods
-- Inline comments on non-obvious logic (castling check path, en passant expiry, etc.)
+- [x] Docstrings on all non-trivial methods
+- [x] Inline comments on non-obvious logic (castling check path, en passant expiry, chkchk mutation pattern, coordinate convention, magic numbers in toString)
 
 ### Phase 5: Code Freshening *(no behavior changes)*
 - `NULL` → `nullptr` throughout
