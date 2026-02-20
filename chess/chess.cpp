@@ -886,9 +886,10 @@ bool King::canMove( int x, int y, bool chkchk ) const
     
     if ( chkchk )
     {
-        // Use inCheck() (not checkCheck()) to avoid infinite recursion:
-        // checkCheck() finds the king and calls inCheck(), which calls canMove()
-        // with chkchk=false, so the recursion terminates.
+        // Call inCheck() directly rather than checkCheck() to avoid an extra
+        // board scan. checkCheck() would search the board for this king and then
+        // call inCheck() — but since we are already executing as the king, we
+        // can call inCheck() directly. Both are equivalent; inCheck() is faster.
         ChessPiece * temp = f_movePiece( *board, ChessMove( xNow, yNow, x, y ) );
         bool ret = !(inCheck());
         f_movePiece( *board, ChessMove( x, y, xNow, yNow ) );
@@ -956,10 +957,11 @@ bool King::inCheck() const
     {
         for( int j = 0; j < 8; j++ )
         {
-            // canMove(..., false): skip the self-check test to avoid recursion.
-            // We only care whether the opponent's piece *geometrically* reaches
-            // the king's square, not whether doing so would leave its own king
-            // in check.
+            // canMove(..., chkchk=false): passing false breaks the recursion cycle.
+            // The full chain is: canMove(true) -> checkCheck -> inCheck -> canMove(false).
+            // At this final step we only need to know if the enemy piece geometrically
+            // reaches the king's square; asking whether *that* move would expose the
+            // enemy's own king (chkchk=true) would restart the cycle and recurse forever.
             if ( board->getPiece( i, j ) != NULL  &&  board->getPiece( i, j )->getWhite() != isWhite  &&
                     board->getPiece( i, j )->canMove( xNow, yNow, false ) )
                 return true;
@@ -1394,7 +1396,13 @@ bool ChessBoard::checkCheck( bool isW ) const
             }
         }
     }
-    return true;        // no king found: treat as in check so no further moves are made
+    // No king of the requested color found on the board. This should not happen
+    // during normal play (a king is always present), but can occur when the board
+    // is configured manually via ChessGame::setPiece() with rules disabled — for
+    // example, during pawn promotion or in test fixtures that clear the board
+    // without placing a king. Returning true (in check) is the safest sentinel:
+    // it causes getMoves() to return an empty list, preventing any moves.
+    return true;
 }
 
 ///////////

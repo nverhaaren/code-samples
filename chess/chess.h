@@ -75,10 +75,26 @@ class ChessPiece    // ADT
     /**
      * Returns true if this piece can legally move to (x, y).
      *
-     * When chkchk is true (the default), temporarily mutates the board to
-     * verify the move does not leave the moving side's king in check, then
-     * restores the board to its prior state. Pass chkchk=false only from
-     * inside check-detection (e.g. King::inCheck) to prevent infinite recursion.
+     * The chkchk parameter controls self-check detection. The three methods
+     * involved — canMove, ChessBoard::checkCheck, and King::inCheck — form a
+     * mutually recursive cycle that chkchk is used to break:
+     *
+     *   canMove(chkchk=true)
+     *     Temporarily executes the move on the board, then calls
+     *     checkCheck (or King::inCheck directly for the King) to test
+     *     whether the moving side's king is now in check. Restores the
+     *     board afterward regardless of outcome.
+     *
+     *   ChessBoard::checkCheck(isW)
+     *     Finds the king of color isW on the board and calls King::inCheck().
+     *
+     *   King::inCheck()
+     *     Scans all enemy pieces and calls canMove(king_x, king_y, chkchk=false)
+     *     on each. chkchk=false is essential here: if it were true, each enemy
+     *     piece would call checkCheck, which calls inCheck, which calls canMove
+     *     again — infinite recursion. With chkchk=false we only check whether
+     *     the enemy piece geometrically reaches the king, not whether doing so
+     *     would expose the enemy's own king.
      */
     virtual bool canMove( int x, int y, bool chkchk = true ) const = 0;
 
@@ -203,7 +219,13 @@ class ChessBoard
 
     /**
      * Returns true if the king of the given color is in check.
-     * Also returns true as an error sentinel if no king of that color is found.
+     *
+     * If no king of the given color is found on the board, returns true as a
+     * safe error sentinel. This halts the game (getMoves returns empty, no
+     * moves can be made) rather than allowing moves in an invalid state.
+     * A missing king can arise when the board is configured manually via
+     * ChessGame::setPiece() with rules disabled — for example during pawn
+     * promotion or in test setups — without placing a king.
      */
     bool checkCheck( bool isW ) const;
 
