@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install -y cmake g++ lcov
+        run: sudo apt-get install -y cmake g++ lcov clang-tidy
 
       - name: Cache Catch2
         uses: actions/cache@v4
@@ -32,6 +32,9 @@ jobs:
 
       - name: Test
         run: cd chess/build && ctest --output-on-failure
+
+      - name: clang-tidy
+        run: clang-tidy chess/chess.cpp chess/Main.cpp -p chess/build --warnings-as-errors='*'
 
   coverage:
     runs-on: ubuntu-latest
