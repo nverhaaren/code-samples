@@ -39,6 +39,9 @@ if(ENABLE_TESTS)
         target_link_options(chess_lib PRIVATE --coverage)
         target_compile_options(chess_tests PRIVATE --coverage -O0 -g)
         target_link_options(chess_tests PRIVATE --coverage)
+        # chess links against chess_lib which is compiled with --coverage, so
+        # it also needs --coverage on the link step to pull in libgcov.
+        target_link_options(chess PRIVATE --coverage)
     endif()
 
     list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
