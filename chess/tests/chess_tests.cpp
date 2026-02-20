@@ -3,6 +3,7 @@
 // Coverage: make coverage
 
 #include <catch2/catch_test_macros.hpp>
+#include <memory>
 #include <string>
 
 #include "chess.h"
@@ -24,10 +25,12 @@ struct CustomBoard {
     CustomBoard() : b(game.getPieceBoard()) {
         game.setRules(false);
         for (int x = 0; x < 8; x++)
-            for (int y = 0; y < 8; y++) game.setPiece(x, y, NULL);
+            for (int y = 0; y < 8; y++) game.setPiece(x, y, nullptr);
     }
 
-    void place(int x, int y, ChessPiece* piece) { game.setPiece(x, y, piece); }
+    void place(int x, int y, ChessPiece* piece) {
+        game.setPiece(x, y, std::unique_ptr<ChessPiece>(piece));
+    }
 
     // Call after placing all pieces to enable normal rules.
     void activate() { game.setRules(true); }
@@ -49,14 +52,12 @@ TEST_CASE("ChessMove: coordinate encoding roundtrips for all squares", "[ChessMo
         for (int sy = 0; sy < 8; sy++)
             for (int ex = 0; ex < 8; ex++)
                 for (int ey = 0; ey < 8; ey++) {
-                    if (sx == 0 && sy == 0 && ex == 0 && ey == 0) continue;  // isEnd()
                     ChessMove cm(sx, sy, ex, ey);
                     REQUIRE(cm.getStartX() == sx);
                     REQUIRE(cm.getStartY() == sy);
                     REQUIRE(cm.getEndX() == ex);
                     REQUIRE(cm.getEndY() == ey);
-                    // Non-null moves should not be end
-                    if (!(sx == ex && sy == ey)) REQUIRE(!cm.isEnd());
+                    REQUIRE(!cm.isEnd());
                 }
 }
 
@@ -110,55 +111,6 @@ TEST_CASE("ChessMove: string constructor parses 'a1b2' (no separator)", "[ChessM
     REQUIRE(cm.getStartY() == 0);
     REQUIRE(cm.getEndX() == 1);
     REQUIRE(cm.getEndY() == 1);
-}
-
-TEST_CASE("ChessMove::length returns number of non-end moves", "[ChessMove]") {
-    REQUIRE(ChessMove::length(NULL) == 0);
-
-    ChessMove arr[4];
-    arr[0] = ChessMove::end;
-    REQUIRE(ChessMove::length(arr) == 0);
-
-    arr[0] = ChessMove(0, 1, 2, 3);
-    arr[1] = ChessMove(1, 0, 3, 2);
-    arr[2] = ChessMove::end;
-    REQUIRE(ChessMove::length(arr) == 2);
-}
-
-TEST_CASE("ChessMove::sort moves ends to back", "[ChessMove]") {
-    ChessMove arr[5];
-    arr[0] = ChessMove::end;
-    arr[1] = ChessMove(0, 1, 2, 3);
-    arr[2] = ChessMove::end;
-    arr[3] = ChessMove(4, 5, 6, 7);
-    arr[4] = ChessMove::end;
-
-    ChessMove::sort(arr, 5);
-
-    REQUIRE(!arr[0].isEnd());
-    REQUIRE(!arr[1].isEnd());
-    REQUIRE(arr[2].isEnd());
-}
-
-TEST_CASE("ChessMove::copy and concat", "[ChessMove]") {
-    ChessMove src[3];
-    src[0] = ChessMove(0, 1, 2, 3);
-    src[1] = ChessMove(4, 5, 6, 7);
-    src[2] = ChessMove::end;
-
-    ChessMove dst[6];
-    dst[0] = ChessMove::end;
-
-    ChessMove::copy(dst, src);
-    REQUIRE(ChessMove::length(dst) == 2);
-    REQUIRE(dst[0].getStartX() == 0);
-
-    ChessMove extra[2];
-    extra[0] = ChessMove(1, 1, 2, 2);
-    extra[1] = ChessMove::end;
-
-    ChessMove::concat(dst, extra);
-    REQUIRE(ChessMove::length(dst) == 3);
 }
 
 // ============================================================================
@@ -302,9 +254,8 @@ TEST_CASE("Pawn: makeMove advances pawn and clears source square", "[Pawn]") {
 
 TEST_CASE("Pawn: getMoves returns at least one move from start", "[Pawn]") {
     ChessGame game;
-    ChessMove* moves = game.getPiece(1, 4)->getMoves();
-    REQUIRE(ChessMove::length(moves) > 0);
-    delete[] moves;
+    auto moves = game.getPiece(1, 4)->getMoves();
+    REQUIRE(!moves.empty());
 }
 
 TEST_CASE("Pawn: en passant capture", "[Pawn]") {
@@ -393,14 +344,12 @@ TEST_CASE("Rook: getMoves covers all reachable squares from open center", "[Rook
     cb.place(7, 7, new King(BLACK, cb.b));
     cb.activate();
 
-    ChessMove* moves = cb.game.getPiece(3, 3)->getMoves();
+    auto moves = cb.game.getPiece(3, 3)->getMoves();
     // From (3,3) open board: 7 along rank + 7 along file - 2 occupied (King)
     // In practice: along x=3 (7 squares) + along y=3 (7 squares) = 14, minus
     // squares blocked by kings at (0,0) and (7,7) — those aren't on rank 3 or file 3
     // so 14 moves expected
-    int len = ChessMove::length(moves);
-    REQUIRE(len == 14);
-    delete[] moves;
+    REQUIRE((int)moves.size() == 14);
 }
 
 // ============================================================================
@@ -454,9 +403,8 @@ TEST_CASE("Knight: getMoves from corner returns 2 moves", "[Knight]") {
     cb.place(7, 7, new King(BLACK, cb.b));
     cb.activate();
 
-    ChessMove* moves = cb.game.getPiece(0, 0)->getMoves();
-    REQUIRE(ChessMove::length(moves) == 2);  // (1,2) and (2,1)
-    delete[] moves;
+    auto moves = cb.game.getPiece(0, 0)->getMoves();
+    REQUIRE((int)moves.size() == 2);  // (1,2) and (2,1)
 }
 
 // ============================================================================
@@ -764,12 +712,10 @@ TEST_CASE("ChessGame: illegal move does not change turn", "[ChessGame]") {
     REQUIRE(game.getTurn() == WHITE);
 }
 
-TEST_CASE("ChessGame: getMoves returns non-null list at start", "[ChessGame]") {
+TEST_CASE("ChessGame: getMoves returns non-empty list at start", "[ChessGame]") {
     ChessGame game;
-    ChessMove* moves = game.getMoves(WHITE);
-    REQUIRE(moves != NULL);
-    REQUIRE(ChessMove::length(moves) > 0);
-    delete[] moves;
+    auto moves = game.getMoves(WHITE);
+    REQUIRE(!moves.empty());
 }
 
 TEST_CASE("ChessGame: getPieceBoard returns valid board pointer", "[ChessGame]") {
@@ -784,4 +730,56 @@ TEST_CASE("ChessGame: rules can be toggled", "[ChessGame]") {
     REQUIRE(game.getRules() == false);
     game.setRules(true);
     REQUIRE(game.getRules() == true);
+}
+
+// ============================================================================
+// Pawn promotion
+// ============================================================================
+
+TEST_CASE("Pawn: getMoves emits 4 promotion moves at back rank", "[Pawn]") {
+    CustomBoard cb;
+    cb.place(6, 3, new Pawn(WHITE, false, cb.b, 1));  // white pawn at d7 (row 6, col 3)
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    auto moves = cb.game.getPiece(6, 3)->getMoves();
+    // 4 promotion types for the forward move
+    int promCount = 0;
+    for (const auto& m : moves)
+        if (m.getPromotion() != PAWN) promCount++;
+    REQUIRE(promCount == 4);
+}
+
+TEST_CASE("Pawn: promotion move results in correct piece type on board", "[Pawn]") {
+    CustomBoard cb;
+    cb.place(6, 3, new Pawn(WHITE, false, cb.b, 1));  // d7
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    // Make a queen-promotion move
+    REQUIRE(cb.game.makeMove(ChessMove(6, 3, 7, 3, QUEEN)));
+    REQUIRE(cb.game.getPiece(7, 3) != nullptr);
+    REQUIRE(cb.game.getPiece(7, 3)->getType() == QUEEN);
+    REQUIRE(cb.game.getPiece(6, 3) == nullptr);
+}
+
+TEST_CASE("Pawn: promotion to rook works", "[Pawn]") {
+    CustomBoard cb;
+    cb.place(6, 3, new Pawn(WHITE, false, cb.b, 1));
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    REQUIRE(cb.game.makeMove(ChessMove(6, 3, 7, 3, ROOK)));
+    REQUIRE(cb.game.getPiece(7, 3)->getType() == ROOK);
+}
+
+TEST_CASE("ChessMove: getPromotion returns PAWN for normal move", "[ChessMove]") {
+    ChessMove cm(1, 2, 3, 4);
+    REQUIRE(cm.getPromotion() == PAWN);
+}
+
+TEST_CASE("ChessMove: getPromotion returns promotion type for promotion move", "[ChessMove]") {
+    ChessMove cm(6, 3, 7, 3, QUEEN);
+    REQUIRE(cm.getPromotion() == QUEEN);
+    REQUIRE(!cm.isEnd());
 }

@@ -2,6 +2,7 @@
 
 #include "chess.h"
 
+#include <cassert>
 #include <cstdlib>
 
 using std::abs;
@@ -12,57 +13,86 @@ const ChessMove ChessMove::end = ChessMove();
 const char ChessMove::fileLetters[8 + 1] = "abcdefgh";
 const int ChessMove::maxLength = 1024;  // 669 should be sufficient for all moves of both sides, FYI
 
-ChessMove::ChessMove() : data(0) {
-    repr[3] = '\0';
+// Default ctor — end sentinel (sx = -1)
+ChessMove::ChessMove() : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
     repr[0] = 'E';
     repr[1] = 'N';
     repr[2] = 'D';
-    repr[4] = '\0';
-    repr[5] = '\0';
+    repr[3] = '\0';
+    repr[4] = repr[5] = repr[6] = repr[7] = '\0';
 }
 
-ChessMove::ChessMove(int sX, int sY, int eX, int eY) : data(0) { init(sX, sY, eX, eY); }
-
-ChessMove::ChessMove(const char* const str) : data(0) {
-    int sY = (int)(str[0] - 'a');
-    int sX = (int)(str[1] - '1');
-
-    int eX, eY;
-
-    if (str[2] == ' ' || str[2] == '-') {
-        eY = (int)(str[3] - 'a');
-        eX = (int)(str[4] - '1');
+// 4-arg ctor (no promotion)
+ChessMove::ChessMove(int sX, int sY, int eX, int eY)
+    : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
+    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 || eX < 0 || eX > 7 || eY < 0 || eY > 7) {
+        repr[0] = 'E';
+        repr[1] = 'N';
+        repr[2] = 'D';
+        repr[3] = '\0';
+        repr[4] = repr[5] = repr[6] = repr[7] = '\0';
     } else {
-        eY = (int)(str[2] - 'a');
-        eX = (int)(str[3] - '1');
+        sx = (int8_t)sX;
+        sy = (int8_t)sY;
+        ex = (int8_t)eX;
+        ey = (int8_t)eY;
+        repr[0] = fileLetters[sy];
+        repr[1] = ChessPiece::digits[sx + 1];
+        repr[2] = '-';
+        repr[3] = fileLetters[ey];
+        repr[4] = ChessPiece::digits[ex + 1];
+        repr[5] = '\0';
+        repr[6] = repr[7] = '\0';
     }
-    init(sX, sY, eX, eY);
 }
 
-ChessMove::ChessMove(const ChessMove& rcm) : data(rcm.data) {
-    for (int i = 0; i < 6; i++) {
-        repr[i] = rcm.repr[i];
+// 5-arg ctor (with promotion) — delegates to 4-arg
+ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
+    : ChessMove(sX, sY, eX, eY) {
+    if (!isEnd()) {
+        promotion = promo;
+        if (promo != PAWN) {
+            // Append promotion letter: p/r/n/b/k/q indexed by PieceType enum
+            const char letters[] = {'p', 'r', 'n', 'b', 'k', 'q'};
+            repr[5] = letters[promo];
+            repr[6] = '\0';
+        }
     }
+}
+
+// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format
+ChessMove::ChessMove(const char* const str)
+    : ChessMove((int)(str[1] - '1'),
+                (int)(str[0] - 'a'),
+                (str[2] == ' ' || str[2] == '-') ? (int)(str[4] - '1') : (int)(str[3] - '1'),
+                (str[2] == ' ' || str[2] == '-') ? (int)(str[3] - 'a') : (int)(str[2] - 'a')) {}
+
+// Copy ctor
+ChessMove::ChessMove(const ChessMove& rcm)
+    : sx(rcm.sx), sy(rcm.sy), ex(rcm.ex), ey(rcm.ey), promotion(rcm.promotion) {
+    for (int i = 0; i < 8; i++) repr[i] = rcm.repr[i];
 }
 
 ChessMove::~ChessMove() {}
 
 ChessMove& ChessMove::operator=(const ChessMove& rhs) {
     if (this == &rhs) return *this;
-
-    data = rhs.data;
-    for (int i = 0; i < 6; i++) {
-        repr[i] = rhs.repr[i];
-    }
+    sx = rhs.sx;
+    sy = rhs.sy;
+    ex = rhs.ex;
+    ey = rhs.ey;
+    promotion = rhs.promotion;
+    for (int i = 0; i < 8; i++) repr[i] = rhs.repr[i];
     return *this;
 }
 
-int ChessMove::getStartX() const { return data & 0x7; }
-int ChessMove::getStartY() const { return (data & 0x38) / 0x8; }
-int ChessMove::getEndX() const { return (data & 0x1c0) / 0x40; }
-int ChessMove::getEndY() const { return (data & 0xe00) / 0x200; }
+int ChessMove::getStartX() const { return sx; }
+int ChessMove::getStartY() const { return sy; }
+int ChessMove::getEndX() const { return ex; }
+int ChessMove::getEndY() const { return ey; }
+PieceType ChessMove::getPromotion() const { return promotion; }
 
-bool ChessMove::isEnd() const { return (data == 0); }
+bool ChessMove::isEnd() const { return sx < 0; }
 
 void ChessMove::swap(ChessMove& cm1, ChessMove& cm2) {
     ChessMove temp = cm1;
@@ -70,73 +100,8 @@ void ChessMove::swap(ChessMove& cm1, ChessMove& cm2) {
     cm2 = temp;
 }
 
-void ChessMove::sort(ChessMove* acm, int size) {
-    for (int j, i = 0; i < size - 1; i++)  // sort the ::ends to the end ( ::end like \0 in string )
-    {
-        if (acm[i].isEnd()) {
-            for (j = i + 1; j < size; j++) {
-                if (!acm[j].isEnd()) {
-                    ChessMove::swap(acm[i], acm[j]);
-                    break;
-                }
-            }
-            if (j == size)  // nothing to swap with?
-                break;
-        }
-    }
-}
-
-int ChessMove::length(ChessMove const* cm) {
-    if (cm == nullptr) return 0;
-    int l;
-    for (l = 0; !(cm[l].isEnd()) && l < maxLength; l++);
-    return l;
-}
-
-void ChessMove::copy(ChessMove* cm1, const ChessMove* cm2) {
-    int l = length(cm2);
-    for (int i = 0; i <= l; i++) {
-        cm1[i] = cm2[i];
-    }
-}
-
-void ChessMove::concat(ChessMove* cm1, const ChessMove* cm2) {
-    int l = length(cm1);
-    if (cm1[l].isEnd()) copy(cm1 + l, cm2);
-}
 
 const char* ChessMove::toString() const { return repr; }
-
-void ChessMove::init(int sX, int sY, int eX, int eY) {
-    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 || eX < 0 || eX > 7 || eY < 0 || eY > 7)
-        ;
-    else {
-        short int startX = (short int)sX;
-        short int startY = (short int)sY;
-        short int endX = (short int)eX;
-        short int endY = (short int)eY;
-        data += startX;
-        data += startY * 8;
-        data += endX * 8 * 8;
-        data += endY * 8 * 8 * 8;
-    }
-
-    if (!isEnd()) {
-        repr[5] = '\0';
-        repr[2] = '-';
-        repr[0] = fileLetters[getStartY()];
-        repr[1] = ChessPiece::digits[getStartX() + 1];
-        repr[3] = fileLetters[getEndY()];
-        repr[4] = ChessPiece::digits[getEndX() + 1];
-    } else {
-        repr[3] = '\0';
-        repr[0] = 'E';
-        repr[1] = 'N';
-        repr[2] = 'D';
-        repr[4] = '\0';
-        repr[5] = '\0';
-    }
-}
 
 ////////////
 // CHESSPIECE
@@ -167,24 +132,8 @@ int ChessPiece::getIndex() const { return index; }
 bool ChessPiece::getWhite() const { return isWhite; }
 bool ChessPiece::getKingSide() const { return isKingSide; }
 
-int ChessPiece::getPosX() const  // O(64) scan; position is not stored on the piece
-{
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (board->getPiece(i, j) == this) return i;
-        }
-    }
-    return -1;
-}
-
-int ChessPiece::getPosY() const {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (board->getPiece(i, j) == this) return j;
-        }
-    }
-    return -1;
-}
+int ChessPiece::getPosX() const { return posX; }  // O(1); cached by ChessBoard
+int ChessPiece::getPosY() const { return posY; }
 
 const char* ChessPiece::getID() const { return id; }
 
@@ -193,15 +142,15 @@ bool ChessPiece::move(int x, int y) {
         board !=
             nullptr)  // not sure what happens when *(nullptr) used as reference; can't be good.
     {
-        delete getMutablePiece(*board, x, y);  // check pointers !
-        movePiece(*board,
-                  ChessMove(getPosX(), getPosY(), x, y));  // and this will overwrite the pointer
+        // movePiece returns the displaced piece (if any) as a unique_ptr;
+        // it is automatically deleted when the return value is dropped.
+        (void)movePiece(*board, ChessMove(getPosX(), getPosY(), x, y));
         return true;
     } else
         return false;
 }
 
-ChessPiece* ChessPiece::movePiece(ChessBoard& cb, ChessMove move) const {
+std::unique_ptr<ChessPiece> ChessPiece::movePiece(ChessBoard& cb, ChessMove move) const {
     return cb.movePiece(move);
 }
 
@@ -209,14 +158,9 @@ ChessPiece* ChessPiece::getMutablePiece(ChessBoard& cb, int x, int y) const {
     return cb.getMoveablePiece(x, y);
 }
 
-ChessPiece* ChessPiece::setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const {
-    if (x < 0 || x > 7 || y < 0 || y > 7)
-        return nullptr;
-    else {
-        ChessPiece* temp = cb.grid[x][y];
-        cb.grid[x][y] = piece;
-        return temp;  // function caller's responsibility to prevent memory holes.
-    }
+void ChessPiece::setPiece(ChessBoard& cb, int x, int y, std::unique_ptr<ChessPiece> piece) const {
+    if (x < 0 || x > 7 || y < 0 || y > 7) return;
+    cb.place(x, y, std::move(piece));
 }
 
 int ChessPiece::getRootValue() {
@@ -313,50 +257,38 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         // movePiece returns whatever piece was displaced at the destination
         // (the capture candidate). After checking, we move our piece back and
         // restore the displaced piece via setPiece.
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        // FIXME: en passant temp-undo doesn't remove the captured pawn, so
+        // check detection is wrong for a horizontally-pinned en passant capture.
+        // Tracked for a later PR.
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* Pawn::getMoves() const {
+std::vector<ChessMove> Pawn::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    int sign = 1;
-    if (!isWhite) sign -= 2;
+    int sign = isWhite ? 1 : -1;
+    std::vector<ChessMove> ret;
 
-    ChessMove* ret = new ChessMove[4 + 1];
-    if (!ret) {
-        return nullptr;
+    if (x + sign == 0 || x + sign == 7) {
+        // Pawn reaches back rank — emit one move per promotion type per direction
+        for (PieceType p : {QUEEN, ROOK, KNIGHT, BISHOP}) {
+            if (canMove(x + sign, y)) ret.emplace_back(x, y, x + sign, y, p);
+            if (canMove(x + sign, y + 1)) ret.emplace_back(x, y, x + sign, y + 1, p);
+            if (canMove(x + sign, y - 1)) ret.emplace_back(x, y, x + sign, y - 1, p);
+        }
+    } else {
+        if (canMove(x + sign, y)) ret.emplace_back(x, y, x + sign, y);
+        if (canMove(x + 2 * sign, y)) ret.emplace_back(x, y, x + 2 * sign, y);
+        if (canMove(x + sign, y + 1)) ret.emplace_back(x, y, x + sign, y + 1);
+        if (canMove(x + sign, y - 1)) ret.emplace_back(x, y, x + sign, y - 1);
     }
-
-    ret[4] = ChessMove::end;
-
-    if (canMove(x + sign, y))
-        ret[0] = ChessMove(x, y, x + sign, y);
-    else
-        ret[0] = ChessMove::end;
-
-    if (canMove(x + 2 * sign, y))
-        ret[1] = ChessMove(x, y, x + 2 * sign, y);
-    else
-        ret[1] = ChessMove::end;
-
-    if (canMove(x + sign, y + 1))
-        ret[2] = ChessMove(x, y, x + sign, y + 1);
-    else
-        ret[2] = ChessMove::end;
-
-    if (canMove(x + sign, y - 1))
-        ret[3] = ChessMove(x, y, x + sign, y - 1);
-    else
-        ret[3] = ChessMove::end;
-
-    ChessMove::sort(ret, 5);  // sort the ::ends to the end
     return ret;
 }
 
@@ -375,12 +307,9 @@ bool Pawn::move(int x, int y) {
         hasMoved = true;
 
         if (isWhite == true && x == ox + 1 && abs(y - oy) == 1 && destEmpty) {
-            ChessPiece* capturedPawn = getMutablePiece(*board, ox, y);
-            delete capturedPawn;
+            // En passant: remove the captured pawn. unique_ptr in setPiece handles deletion.
             setPiece(*board, ox, y, nullptr);
         } else if (isWhite == false && x == ox - 1 && abs(y - oy) == 1 && destEmpty) {
-            ChessPiece* capturedPawn = getMutablePiece(*board, ox, y);
-            delete capturedPawn;
             setPiece(*board, ox, y, nullptr);
         }
 
@@ -444,44 +373,27 @@ bool Rook::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* Rook::getMoves() const {
+std::vector<ChessMove> Rook::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    ChessMove* ret = new ChessMove[14 + 1];
-    if (!ret) return nullptr;
+    std::vector<ChessMove> ret;
 
-    for (int i = 0; i < 15; i++)  // all blank to start
-    {
-        ret[i] = ChessMove::end;
-    }
+    for (int i = 0; i < 8; i++)  // moves in the same row
+        if (y != i && canMove(x, i)) ret.emplace_back(x, y, x, i);
 
-    for (int i = 0, j = 0; i < 8; i++)  // add move in the same row
-    {
-        if (y != i) {
-            if (canMove(x, i)) ret[j] = ChessMove(x, y, x, i);
-            j++;
-        }
-    }
+    for (int i = 0; i < 8; i++)  // moves in the same column
+        if (x != i && canMove(i, y)) ret.emplace_back(x, y, i, y);
 
-    for (int i = 0, j = 7; i < 8; i++)  // add moves in the same column
-    {
-        if (x != i) {
-            if (canMove(i, y)) ret[j] = ChessMove(x, y, i, y);
-            j++;
-        }
-    }
-
-    ChessMove::sort(ret, 15);
     return ret;
 }
 
@@ -533,32 +445,24 @@ bool Knight::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* Knight::getMoves() const {
+std::vector<ChessMove> Knight::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    ChessMove* ret = new ChessMove[8 + 1];
-    if (!ret) return nullptr;
-
-    for (int i = 0; i < 9; i++) {
-        ret[i] = ChessMove::end;
-    }
-
-    for (int i = 0; i < 8; i++) {
+    std::vector<ChessMove> ret;
+    for (int i = 0; i < 8; i++)
         if (canMove(x + xOffsets[i], y + yOffsets[i]))
-            ret[i] = ChessMove(x, y, x + xOffsets[i], y + yOffsets[i]);
-    }
+            ret.emplace_back(x, y, x + xOffsets[i], y + yOffsets[i]);
 
-    ChessMove::sort(ret, 9);
     return ret;
 }
 
@@ -615,56 +519,33 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* Bishop::getMoves() const {
+std::vector<ChessMove> Bishop::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    ChessMove* ret = new ChessMove[13 + 1];
-    if (!ret) return nullptr;
+    std::vector<ChessMove> ret;
 
-    for (int i = 0; i < 14; i++) {
-        ret[i] = ChessMove::end;
-    }
+    for (int j = 0; (x + j < 8 && y + j < 8); j++)
+        if (canMove(x + j, y + j)) ret.emplace_back(x, y, x + j, y + j);
 
-    int i = 0;
-    for (int j = 0; (x + j < 8 && y + j < 8); j++) {
-        if (canMove(x + j, y + j)) {
-            ret[i] = ChessMove(x, y, x + j, y + j);
-            i++;
-        }
-    }
+    for (int j = 0; (x - j >= 0 && y - j >= 0); j++)
+        if (canMove(x - j, y - j)) ret.emplace_back(x, y, x - j, y - j);
 
-    for (int j = 0; (x - j >= 0 && y - j >= 0); j++) {
-        if (canMove(x - j, y - j)) {
-            ret[i] = ChessMove(x, y, x - j, y - j);
-            i++;
-        }
-    }
+    for (int j = 0; (x + j < 8 && y - j >= 0); j++)
+        if (canMove(x + j, y - j)) ret.emplace_back(x, y, x + j, y - j);
 
-    for (int j = 0; (x + j < 8 && y - j >= 0); j++) {
-        if (canMove(x + j, y - j)) {
-            ret[i] = ChessMove(x, y, x + j, y - j);
-            i++;
-        }
-    }
+    for (int j = 0; (x - j >= 0 && y + j < 8); j++)
+        if (canMove(x - j, y + j)) ret.emplace_back(x, y, x - j, y + j);
 
-    for (int j = 0; (x - j >= 0 && y + j < 8); j++) {
-        if (canMove(x - j, y + j)) {
-            ret[i] = ChessMove(x, y, x - j, y + j);
-            i++;
-        }
-    }
-
-    ChessMove::sort(ret, 14);  // shouldn't be necessary; if so returns quickly.
     return ret;
 }
 
@@ -721,19 +602,19 @@ bool King::canMove(int x, int y, bool chkchk) const {
                     if (!piece->getMoved()) {
                         // Step the king through each intermediate square and verify
                         // it is not in check at any point (castling through check is illegal).
-                        movePiece(*board, ChessMove(cx, 4, cx, 4 + sign));
+                        (void)movePiece(*board, ChessMove(cx, 4, cx, 4 + sign));
                         if (chkchk && inCheck()) {
-                            movePiece(*board, ChessMove(cx, 4 + sign, cx, 4));
+                            (void)movePiece(*board, ChessMove(cx, 4 + sign, cx, 4));
                             return false;
                         }
 
-                        movePiece(*board, ChessMove(cx, 4 + sign, cx, 4 + sign * 2));
+                        (void)movePiece(*board, ChessMove(cx, 4 + sign, cx, 4 + sign * 2));
                         if (chkchk && inCheck()) {
-                            movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
+                            (void)movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
                             return false;
                         }
 
-                        movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
+                        (void)movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
                     } else
                         return false;
                 } else
@@ -749,32 +630,24 @@ bool King::canMove(int x, int y, bool chkchk) const {
         // board scan. checkCheck() would search the board for this king and then
         // call inCheck() — but since we are already executing as the king, we
         // can call inCheck() directly. Both are equivalent; inCheck() is faster.
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(inCheck());
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* King::getMoves() const {
+std::vector<ChessMove> King::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    ChessMove* ret = new ChessMove[10 + 1];
-    if (!ret) return nullptr;
-
-    for (int i = 0; i < 11; i++) {
-        ret[i] = ChessMove::end;
-    }
-
-    for (int i = 0; i < 10; i++) {
+    std::vector<ChessMove> ret;
+    for (int i = 0; i < 10; i++)
         if (canMove(x + xOffsets[i], y + yOffsets[i]))
-            ret[i] = ChessMove(x, y, x + xOffsets[i], y + yOffsets[i]);
-    }
+            ret.emplace_back(x, y, x + xOffsets[i], y + yOffsets[i]);
 
-    ChessMove::sort(ret, 11);
     return ret;
 }
 
@@ -786,13 +659,15 @@ bool King::move(int x, int y) {
     if (b) {
         hasMoved = true;
         if (y == 6 && oy == 4) {
-            movePiece(*board, ChessMove(ox, 7, ox, 5));
+            (void)movePiece(*board, ChessMove(ox, 7, ox, 5));
             Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 5));
+            assert(piece);
             piece->markMoved();
         }
         if (y == 2 && oy == 4) {
-            movePiece(*board, ChessMove(ox, 0, ox, 3));
+            (void)movePiece(*board, ChessMove(ox, 0, ox, 3));
             Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 3));
+            assert(piece);
             piece->markMoved();
         }
     }
@@ -898,73 +773,39 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
-        movePiece(*board, ChessMove(x, y, cx, cy));
-        setPiece(*board, x, y, temp);
+        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
         return true;
 }
 
-ChessMove* Queen::getMoves() const {
+std::vector<ChessMove> Queen::getMoves() const {
     int x = getPosX();
     int y = getPosY();
 
-    ChessMove* ret = new ChessMove[27 + 1];
-    if (!ret) return nullptr;
+    std::vector<ChessMove> ret;
 
-    for (int i = 0; i < 28; i++)  // all blank to start
-    {
-        ret[i] = ChessMove::end;
-    }
+    for (int i = 0; i < 8; i++)  // same row
+        if (y != i && canMove(x, i)) ret.emplace_back(x, y, x, i);
 
-    for (int i = 0, j = 0; i < 8; i++)  // add move in the same row
-    {
-        if (y != i) {
-            if (canMove(x, i)) ret[j] = ChessMove(x, y, x, i);
-            j++;
-        }
-    }
+    for (int i = 0; i < 8; i++)  // same column
+        if (x != i && canMove(i, y)) ret.emplace_back(x, y, i, y);
 
-    for (int i = 0, j = 7; i < 8; i++)  // add moves in the same column
-    {
-        if (x != i) {
-            if (canMove(i, y)) ret[j] = ChessMove(x, y, i, y);
-            j++;
-        }
-    }
+    for (int j = 0; (x + j < 8 && y + j < 8); j++)
+        if (canMove(x + j, y + j)) ret.emplace_back(x, y, x + j, y + j);
 
-    int i = 14;
-    for (int j = 0; (x + j < 8 && y + j < 8); j++) {
-        if (canMove(x + j, y + j)) {
-            ret[i] = ChessMove(x, y, x + j, y + j);
-            i++;
-        }
-    }
+    for (int j = 0; (x - j >= 0 && y - j >= 0); j++)
+        if (canMove(x - j, y - j)) ret.emplace_back(x, y, x - j, y - j);
 
-    for (int j = 0; (x - j >= 0 && y - j >= 0); j++) {
-        if (canMove(x - j, y - j)) {
-            ret[i] = ChessMove(x, y, x - j, y - j);
-            i++;
-        }
-    }
+    for (int j = 0; (x + j < 8 && y - j >= 0); j++)
+        if (canMove(x + j, y - j)) ret.emplace_back(x, y, x + j, y - j);
 
-    for (int j = 0; (x + j < 8 && y - j >= 0); j++) {
-        if (canMove(x + j, y - j)) {
-            ret[i] = ChessMove(x, y, x + j, y - j);
-            i++;
-        }
-    }
+    for (int j = 0; (x - j >= 0 && y + j < 8); j++)
+        if (canMove(x - j, y + j)) ret.emplace_back(x, y, x - j, y + j);
 
-    for (int j = 0; (x - j >= 0 && y + j < 8); j++) {
-        if (canMove(x - j, y + j)) {
-            ret[i] = ChessMove(x, y, x - j, y + j);
-            i++;
-        }
-    }
-
-    ChessMove::sort(ret, 28);
     return ret;
 }
 
@@ -974,63 +815,45 @@ PieceType Queen::getType() const { return QUEEN; }
 // CHESSBOARD
 
 ChessBoard::ChessBoard() {
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            grid[i][j] = nullptr;
-        }
-    }
+    // Set up the pieces using place() which initialises posX/posY on each piece.
+    place(0, 0, std::make_unique<Rook>(WHITE, false, this, 0));
+    place(0, 1, std::make_unique<Knight>(WHITE, false, this, 0));
+    place(0, 2, std::make_unique<Bishop>(WHITE, false, this, 0));
+    place(0, 3, std::make_unique<Queen>(WHITE, this, 0));
+    place(0, 4, std::make_unique<King>(WHITE, this));
+    place(0, 5, std::make_unique<Bishop>(WHITE, true, this, 0));
+    place(0, 6, std::make_unique<Knight>(WHITE, true, this, 0));
+    place(0, 7, std::make_unique<Rook>(WHITE, true, this, 0));
 
-    // Set up the pieces
+    place(1, 0, std::make_unique<Pawn>(WHITE, false, this, 4));
+    place(1, 1, std::make_unique<Pawn>(WHITE, false, this, 3));
+    place(1, 2, std::make_unique<Pawn>(WHITE, false, this, 2));
+    place(1, 3, std::make_unique<Pawn>(WHITE, false, this, 1));
+    place(1, 4, std::make_unique<Pawn>(WHITE, true, this, 1));
+    place(1, 5, std::make_unique<Pawn>(WHITE, true, this, 2));
+    place(1, 6, std::make_unique<Pawn>(WHITE, true, this, 3));
+    place(1, 7, std::make_unique<Pawn>(WHITE, true, this, 4));
 
-    grid[0][0] = new Rook(WHITE, false, this, 0);
-    grid[0][1] = new Knight(WHITE, false, this, 0);
-    grid[0][2] = new Bishop(WHITE, false, this, 0);
-    grid[0][3] = new Queen(WHITE, this, 0);
-    grid[0][4] = new King(WHITE, this);
-    grid[0][5] = new Bishop(WHITE, true, this, 0);
-    grid[0][6] = new Knight(WHITE, true, this, 0);
-    grid[0][7] = new Rook(WHITE, true, this, 0);
+    place(6, 0, std::make_unique<Pawn>(BLACK, false, this, 4));
+    place(6, 1, std::make_unique<Pawn>(BLACK, false, this, 3));
+    place(6, 2, std::make_unique<Pawn>(BLACK, false, this, 2));
+    place(6, 3, std::make_unique<Pawn>(BLACK, false, this, 1));
+    place(6, 4, std::make_unique<Pawn>(BLACK, true, this, 1));
+    place(6, 5, std::make_unique<Pawn>(BLACK, true, this, 2));
+    place(6, 6, std::make_unique<Pawn>(BLACK, true, this, 3));
+    place(6, 7, std::make_unique<Pawn>(BLACK, true, this, 4));
 
-    grid[1][0] = new Pawn(WHITE, false, this, 4);
-    grid[1][1] = new Pawn(WHITE, false, this, 3);
-    grid[1][2] = new Pawn(WHITE, false, this, 2);
-    grid[1][3] = new Pawn(WHITE, false, this, 1);
-    grid[1][4] = new Pawn(WHITE, true, this, 1);
-    grid[1][5] = new Pawn(WHITE, true, this, 2);
-    grid[1][6] = new Pawn(WHITE, true, this, 3);
-    grid[1][7] = new Pawn(WHITE, true, this, 4);
-
-    grid[6][0] = new Pawn(BLACK, false, this, 4);
-    grid[6][1] = new Pawn(BLACK, false, this, 3);
-    grid[6][2] = new Pawn(BLACK, false, this, 2);
-    grid[6][3] = new Pawn(BLACK, false, this, 1);
-    grid[6][4] = new Pawn(BLACK, true, this, 1);
-    grid[6][5] = new Pawn(BLACK, true, this, 2);
-    grid[6][6] = new Pawn(BLACK, true, this, 3);
-    grid[6][7] = new Pawn(BLACK, true, this, 4);
-
-    grid[7][0] = new Rook(BLACK, false, this, 0);
-    grid[7][1] = new Knight(BLACK, false, this, 0);
-    grid[7][2] = new Bishop(BLACK, false, this, 0);
-    grid[7][3] = new Queen(BLACK, this, 0);
-    grid[7][4] = new King(BLACK, this);
-    grid[7][5] = new Bishop(BLACK, true, this, 0);
-    grid[7][6] = new Knight(BLACK, true, this, 0);
-    grid[7][7] = new Rook(BLACK, true, this, 0);
+    place(7, 0, std::make_unique<Rook>(BLACK, false, this, 0));
+    place(7, 1, std::make_unique<Knight>(BLACK, false, this, 0));
+    place(7, 2, std::make_unique<Bishop>(BLACK, false, this, 0));
+    place(7, 3, std::make_unique<Queen>(BLACK, this, 0));
+    place(7, 4, std::make_unique<King>(BLACK, this));
+    place(7, 5, std::make_unique<Bishop>(BLACK, true, this, 0));
+    place(7, 6, std::make_unique<Knight>(BLACK, true, this, 0));
+    place(7, 7, std::make_unique<Rook>(BLACK, true, this, 0));
 }
 
-ChessBoard::~ChessBoard()  // do not keep pointers to pieces in this grid after the board is
-                           // destroyed
-{
-    for (int i = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (grid[i][j] != nullptr) {
-                delete grid[i][j];
-                grid[i][j] = nullptr;
-            }
-        }
-    }
-}
+ChessBoard::~ChessBoard() {}  // unique_ptrs in grid[] clean up automatically
 
 const char* ChessBoard::toString() {
     // Layout: 8 ranks x 4 display rows/rank + 1 border row = 33 rows.
@@ -1125,25 +948,38 @@ const char* ChessBoard::toString() {
 
 ChessPiece* ChessBoard::getMoveablePiece(int x, int y) {
     if (x >= 0 && x <= 7 && y >= 0 && y <= 7)
-        return grid[x][y];
+        return grid[x][y].get();
     else
         return nullptr;
 }
 
-ChessPiece* ChessBoard::movePiece(ChessMove move) {
+void ChessBoard::place(int x, int y, std::unique_ptr<ChessPiece> p) {
+    if (p) {
+        p->posX = x;
+        p->posY = y;
+    }
+    grid[x][y] = std::move(p);
+}
+
+std::unique_ptr<ChessPiece> ChessBoard::movePiece(ChessMove move) {
     if (!move.isEnd() && grid[move.getStartX()][move.getStartY()] != nullptr) {
-        ChessPiece* temp = grid[move.getEndX()][move.getEndY()];
+        auto displaced = std::move(grid[move.getEndX()][move.getEndY()]);
         grid[move.getEndX()][move.getEndY()] =
-            grid[move.getStartX()][move.getStartY()];        // replaces destination
-        grid[move.getStartX()][move.getStartY()] = nullptr;  // leaves behind nothing
-        return temp;
+            std::move(grid[move.getStartX()][move.getStartY()]);
+        grid[move.getStartX()][move.getStartY()] = nullptr;
+        // Update position cache for the piece that just moved
+        if (grid[move.getEndX()][move.getEndY()]) {
+            grid[move.getEndX()][move.getEndY()]->posX = move.getEndX();
+            grid[move.getEndX()][move.getEndY()]->posY = move.getEndY();
+        }
+        return displaced;
     } else
         return nullptr;
 }
 
 const ChessPiece* ChessBoard::getPiece(int x, int y) const {
     if (x >= 0 && x <= 7 && y >= 0 && y <= 7)
-        return grid[x][y];
+        return grid[x][y].get();
     else
         return nullptr;
 }
@@ -1185,78 +1021,45 @@ ChessGame::~ChessGame() {}
 
 bool ChessGame::checkmate(bool white) const {
     if (!board.checkCheck(white)) return false;
-
-    ChessMove* moves = getMoves(white);
-    if (moves && moves->isEnd()) {
-        delete[] moves;
-        return true;
-    } else {
-        delete[] moves;
-        return false;
-    }
+    return getMoves(white).empty();
 }
 
 bool ChessGame::stalemate(bool turn) const {
     if (board.checkCheck(turn)) return false;
-
-    ChessMove* moves = getMoves(turn);
-    if (moves && moves->isEnd()) {
-        delete[] moves;
-        return true;
-    } else {
-        delete[] moves;
-        return false;
-    }
+    return getMoves(turn).empty();
 }
 
-ChessMove* ChessGame::getMoves(bool white) const {
-    int num = 0;
+std::vector<ChessMove> ChessGame::getMoves(bool white) const {
+    std::vector<ChessMove> all;
     for (int i = 0; i < 8; i++) {
         for (int j = 0; j < 8; j++) {
-            if (board.getPiece(i, j) != nullptr && board.getPiece(i, j)->getWhite() == white) num++;
-        }
-    }
-
-    if (num == 0) return nullptr;
-
-    ChessMove** moveSets = new ChessMove*[num];
-    for (int i = 0, k = 0; i < 8; i++) {
-        for (int j = 0; j < 8; j++) {
-            if (board.getPiece(i, j) != nullptr && board.getPiece(i, j)->getWhite() == white) {
-                moveSets[k] = board.getPiece(i, j)->getMoves();
-                k++;
+            const ChessPiece* p = board.getPiece(i, j);
+            if (p && p->getWhite() == white) {
+                auto m = p->getMoves();
+                all.insert(all.end(), m.begin(), m.end());
             }
         }
     }
+    return all;
+}
 
-    int numMoves = 0;
-    for (int i = 0; i < num; i++) {
-        numMoves += ChessMove::length(moveSets[i]);
+std::unique_ptr<ChessPiece> ChessGame::makePiece(PieceType type, bool white, int y,
+                                                   ChessBoard* b) {
+    bool ks = (y > 3);
+    int idx = white ? whiteProms : blackProms;
+    switch (type) {
+        case QUEEN:
+            return std::make_unique<Queen>(white, b, idx, ks);
+        case ROOK:
+            return std::make_unique<Rook>(white, ks, b, idx);
+        case KNIGHT:
+            return std::make_unique<Knight>(white, ks, b, idx);
+        case BISHOP:
+            return std::make_unique<Bishop>(white, ks, b, idx);
+        default:
+            assert(false);
+            return nullptr;
     }
-
-    if (numMoves == 0) {
-        ChessMove* ret = new ChessMove[1];
-        ret[0] = ChessMove::end;
-        return ret;
-    }
-
-    ChessMove* ret = new ChessMove[numMoves + 1];
-    ret[numMoves] = ChessMove::end;
-
-    ChessMove::copy(ret, moveSets[0]);
-
-    for (int i = 1; i < num; i++) {
-        ChessMove::concat(ret, moveSets[i]);
-    }
-
-    for (int i = 0; i < num; i++) {
-        delete[] moveSets[i];
-        moveSets[i] = nullptr;
-    }
-    delete[] moveSets;
-    moveSets = nullptr;
-
-    return ret;
 }
 
 bool ChessGame::getTurn() const { return whiteTurn; }
@@ -1267,6 +1070,17 @@ bool ChessGame::makeMove(const ChessMove& cm) {
         if (piece == nullptr || piece->getWhite() != whiteTurn) return false;
         bool b = piece->move(cm.getEndX(), cm.getEndY());
         if (b) {
+            bool movedColor = whiteTurn;  // capture before flip
+            // Handle pawn promotion: replace pawn with requested piece type.
+            if (cm.getPromotion() != PAWN) {
+                int endX = cm.getEndX(), endY = cm.getEndY();
+                rulesOn = false;
+                setPiece(endX, endY,
+                         makePiece(cm.getPromotion(), movedColor, endY, &board));
+                rulesOn = true;
+                if (movedColor) whiteProms++;
+                else blackProms++;
+            }
             whiteTurn = !whiteTurn;
             // Clear en passant flags for the side whose turn it now is.
             // After the flip, whiteTurn is the color that did NOT just move —
@@ -1276,9 +1090,9 @@ bool ChessGame::makeMove(const ChessMove& cm) {
                 for (int j = 0; j < 8; j++) {
                     if (board.getPiece(i, j) != nullptr &&
                         board.getPiece(i, j)->getWhite() == whiteTurn) {
-                        ChessPiece* piece = board.getMoveablePiece(i, j);
-                        if (piece->getType() == PAWN) {
-                            Pawn* pawn = dynamic_cast<Pawn*>(piece);
+                        ChessPiece* p = board.getMoveablePiece(i, j);
+                        if (p->getType() == PAWN) {
+                            Pawn* pawn = dynamic_cast<Pawn*>(p);
                             pawn->setEnPassant(false);
                         }
                     }
@@ -1287,9 +1101,7 @@ bool ChessGame::makeMove(const ChessMove& cm) {
         }
         return b;
     } else {
-        ChessPiece* piece = board.movePiece(cm);
-        delete piece;
-        piece = nullptr;
+        (void)board.movePiece(cm);  // displaced piece auto-deleted by unique_ptr
         return true;
     }
 }
@@ -1298,13 +1110,10 @@ const char* ChessGame::getBoard() { return board.toString(); }
 
 const ChessPiece* ChessGame::getPiece(int x, int y) const { return board.getPiece(x, y); }
 
-void ChessGame::setPiece(int x, int y, ChessPiece* piece) {
+void ChessGame::setPiece(int x, int y, std::unique_ptr<ChessPiece> piece) {
     if (rulesOn) return;
-
     if (x < 0 || x > 7 || y < 0 || y > 7) return;
-
-    delete board.grid[x][y];
-    board.grid[x][y] = piece;
+    board.place(x, y, std::move(piece));
 }
 
 ChessBoard* ChessGame::getPieceBoard() { return &board; }

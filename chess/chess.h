@@ -10,8 +10,11 @@
 #ifndef _CHESS_H_
 #define _CHESS_H_
 
+#include <cstdint>
 #include <cstring>
+#include <memory>
 #include <string>
+#include <vector>
 
 ///////////
 // CONSTANTS
@@ -46,8 +49,9 @@ enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN };
 /**
  * Abstract base class for all chess pieces.
  *
- * Pieces do not cache their board position; getPosX/getPosY scan the
- * full 8x8 grid on every call (O(64)).
+ * Each piece caches its board position in posX/posY; getPosX/getPosY
+ * return these in O(1). The cache is kept up to date by ChessBoard::movePiece
+ * and ChessBoard::place.
  *
  * Piece ID string (id): [color W/B][type P/R/N/B/K/Q][side K/Q][index digit]
  */
@@ -59,7 +63,7 @@ class ChessPiece  // ADT
     bool getWhite() const;
     bool getKingSide() const;
     int getIndex() const;
-    // Position is not cached; each call scans the full 8x8 board (O(64)).
+    // Position is cached in posX/posY; O(1).
     int getPosX() const;
     int getPosY() const;
     const char* getID() const;
@@ -91,10 +95,9 @@ class ChessPiece  // ADT
     virtual bool canMove(int x, int y, bool chkchk = true) const = 0;
 
     /**
-     * Returns a heap-allocated, ChessMove::end-terminated array of all legal
-     * moves for this piece. The caller is responsible for delete[]-ing it.
+     * Returns all legal moves for this piece as a vector.
      */
-    virtual ChessMove* getMoves() const = 0;
+    virtual std::vector<ChessMove> getMoves() const = 0;
     virtual bool move(int x, int y);
     virtual PieceType getType() const = 0;
 
@@ -111,13 +114,15 @@ class ChessPiece  // ADT
     char id[4 + 1];
     ChessBoard* board;
     const int index;
+    int posX = -1;  // cached position; updated by ChessBoard::movePiece and place
+    int posY = -1;
 
     // Virtual functions cannot be friended directly. These non-virtual
     // forwarding methods give piece subclasses access to ChessBoard's private
     // movePiece, getMoveablePiece, and setPiece methods.
-    ChessPiece* movePiece(ChessBoard& cb, ChessMove move) const;
+    std::unique_ptr<ChessPiece> movePiece(ChessBoard& cb, ChessMove move) const;
     ChessPiece* getMutablePiece(ChessBoard& cb, int x, int y) const;
-    ChessPiece* setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
+    void setPiece(ChessBoard& cb, int x, int y, std::unique_ptr<ChessPiece> piece) const;
 };
 
 class Pawn : public ChessPiece {
@@ -125,7 +130,7 @@ class Pawn : public ChessPiece {
     Pawn(bool isW, bool isKS, ChessBoard* b, int i);
     ~Pawn() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool getEnPassant() const;
     void setEnPassant(bool b);
@@ -142,7 +147,7 @@ class Rook : public ChessPiece {
     Rook(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Rook() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool move(int x, int y) override;
     void markMoved();
@@ -157,7 +162,7 @@ class Knight : public ChessPiece {
     Knight(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Knight() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
     const static int xOffsets[8];
     const static int yOffsets[8];
@@ -168,7 +173,7 @@ class Bishop : public ChessPiece {
     Bishop(bool isW, bool isKS, ChessBoard* b, int i = 0);
     ~Bishop() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
 };
 
@@ -177,7 +182,7 @@ class King : public ChessPiece {
     King(bool isW, ChessBoard* b);
     ~King() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
     bool move(int x, int y) override;
     bool inCheck() const;
@@ -194,7 +199,7 @@ class Queen : public ChessPiece {
     Queen(bool isW, ChessBoard* b, int i = 0, bool isKS = false);
     ~Queen() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
-    ChessMove* getMoves() const override;
+    std::vector<ChessMove> getMoves() const override;
     PieceType getType() const override;
 };
 
@@ -222,33 +227,37 @@ class ChessBoard {
     friend class ChessGame;
 
    private:
-    ChessPiece* grid[8][8];
-    ChessPiece* movePiece(ChessMove move);
+    std::unique_ptr<ChessPiece> grid[8][8];
+    std::unique_ptr<ChessPiece> movePiece(ChessMove move);
     ChessPiece* getMoveablePiece(int x, int y);
-    friend ChessPiece* ChessPiece::movePiece(ChessBoard& cb, ChessMove move)
+    void place(int x, int y, std::unique_ptr<ChessPiece> p);
+    friend std::unique_ptr<ChessPiece> ChessPiece::movePiece(ChessBoard& cb, ChessMove move)
         const;  // virtual functions cannot be friends; these functions
     friend ChessPiece* ChessPiece::getMutablePiece(
         ChessBoard& cb, int x, int y) const;  // should allow ChessPiece to get what it needs
-    friend ChessPiece* ChessPiece::setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
+    friend void ChessPiece::setPiece(ChessBoard& cb, int x, int y,
+                                     std::unique_ptr<ChessPiece> piece) const;
 
     std::string repr;
 };
 
 /**
- * Encodes a chess move as a packed short int: four 3-bit fields for
- * startX, startY, endX, endY (12 bits total).
+ * Encodes a chess move as four plain int8_t fields: sx, sy (start column/row),
+ * ex, ey (end column/row), plus a PieceType promotion field.
  *
- * The default-constructed move (data==0) serves as a list sentinel
+ * The default-constructed move (sx == -1) serves as a list sentinel
  * (ChessMove::end), analogous to '\0' in a C string. Move arrays
  * returned by getMoves() are heap-allocated and terminated by this
  * sentinel; callers must delete[] them.
  *
  * String constructor accepts "a1-b2" or "a1b2" format.
+ * The 5-arg constructor encodes a promotion move (promotion != PAWN).
  */
 class ChessMove {
    public:
     ChessMove();
     ChessMove(int sX, int sY, int eX, int eY);
+    ChessMove(int sX, int sY, int eX, int eY, PieceType promo);
     ChessMove(const char* const str);
     ChessMove(const ChessMove& rcm);
     ~ChessMove();
@@ -257,6 +266,7 @@ class ChessMove {
     int getStartY() const;
     int getEndX() const;
     int getEndY() const;
+    PieceType getPromotion() const;
     static const ChessMove end;
     bool isEnd() const;
 
@@ -264,25 +274,22 @@ class ChessMove {
     const static int maxLength;
 
     static void swap(ChessMove& cm1, ChessMove& cm2);
-    static void sort(ChessMove* acm, int size);
-    static void concat(ChessMove* acm1, const ChessMove* acm2);
-    static int length(const ChessMove* acm);
-    static void copy(ChessMove* acm1, const ChessMove* acm2);
 
     const char* toString() const;
 
    private:
-    short int data;
-    char repr[6];
-    void init(int sX, int sY, int eX, int eY);
+    int8_t sx, sy, ex, ey;
+    PieceType promotion;
+    mutable char repr[8];
 };
 
 /**
  * Top-level game controller. Enforces turn order, manages en passant
  * expiry after each move, and detects checkmate/stalemate.
  *
- * Pawn promotion is intentionally handled outside this class (in Main.cpp)
- * because it requires player input to select the promoted piece type.
+ * Pawn promotion is handled inside this class via makeMove(): when a
+ * ChessMove carries a non-PAWN promotion field, the pawn is automatically
+ * replaced with the requested piece type.
  */
 class ChessGame {
    public:
@@ -295,13 +302,13 @@ class ChessGame {
     bool checkmate(bool white) const;
     bool stalemate(bool turn) const;
 
-    ChessMove* getMoves(bool white) const;
+    std::vector<ChessMove> getMoves(bool white) const;
 
     bool makeMove(const ChessMove& cm);
 
     const char* getBoard();
     const ChessPiece* getPiece(int x, int y) const;
-    void setPiece(int x, int y, ChessPiece* piece);
+    void setPiece(int x, int y, std::unique_ptr<ChessPiece> piece);
 
     bool getTurn() const;
 
@@ -311,6 +318,9 @@ class ChessGame {
     bool rulesOn;
     bool whiteTurn;
     ChessBoard board;
+    int whiteProms = 0;
+    int blackProms = 0;
+    std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y, ChessBoard* b);
 };
 
 #endif  // def _CHESS_H
