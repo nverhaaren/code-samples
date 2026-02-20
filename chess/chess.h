@@ -12,6 +12,7 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -48,8 +49,9 @@ enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN };
 /**
  * Abstract base class for all chess pieces.
  *
- * Pieces do not cache their board position; getPosX/getPosY scan the
- * full 8x8 grid on every call (O(64)).
+ * Each piece caches its board position in posX/posY; getPosX/getPosY
+ * return these in O(1). The cache is kept up to date by ChessBoard::movePiece
+ * and ChessBoard::place.
  *
  * Piece ID string (id): [color W/B][type P/R/N/B/K/Q][side K/Q][index digit]
  */
@@ -61,7 +63,7 @@ class ChessPiece  // ADT
     bool getWhite() const;
     bool getKingSide() const;
     int getIndex() const;
-    // Position is not cached; each call scans the full 8x8 board (O(64)).
+    // Position is cached in posX/posY; O(1).
     int getPosX() const;
     int getPosY() const;
     const char* getID() const;
@@ -112,13 +114,15 @@ class ChessPiece  // ADT
     char id[4 + 1];
     ChessBoard* board;
     const int index;
+    int posX = -1;  // cached position; updated by ChessBoard::movePiece and place
+    int posY = -1;
 
     // Virtual functions cannot be friended directly. These non-virtual
     // forwarding methods give piece subclasses access to ChessBoard's private
     // movePiece, getMoveablePiece, and setPiece methods.
-    ChessPiece* movePiece(ChessBoard& cb, ChessMove move) const;
+    std::unique_ptr<ChessPiece> movePiece(ChessBoard& cb, ChessMove move) const;
     ChessPiece* getMutablePiece(ChessBoard& cb, int x, int y) const;
-    ChessPiece* setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
+    void setPiece(ChessBoard& cb, int x, int y, std::unique_ptr<ChessPiece> piece) const;
 };
 
 class Pawn : public ChessPiece {
@@ -223,14 +227,16 @@ class ChessBoard {
     friend class ChessGame;
 
    private:
-    ChessPiece* grid[8][8];
-    ChessPiece* movePiece(ChessMove move);
+    std::unique_ptr<ChessPiece> grid[8][8];
+    std::unique_ptr<ChessPiece> movePiece(ChessMove move);
     ChessPiece* getMoveablePiece(int x, int y);
-    friend ChessPiece* ChessPiece::movePiece(ChessBoard& cb, ChessMove move)
+    void place(int x, int y, std::unique_ptr<ChessPiece> p);
+    friend std::unique_ptr<ChessPiece> ChessPiece::movePiece(ChessBoard& cb, ChessMove move)
         const;  // virtual functions cannot be friends; these functions
     friend ChessPiece* ChessPiece::getMutablePiece(
         ChessBoard& cb, int x, int y) const;  // should allow ChessPiece to get what it needs
-    friend ChessPiece* ChessPiece::setPiece(ChessBoard& cb, int x, int y, ChessPiece* piece) const;
+    friend void ChessPiece::setPiece(ChessBoard& cb, int x, int y,
+                                     std::unique_ptr<ChessPiece> piece) const;
 
     std::string repr;
 };
@@ -302,7 +308,7 @@ class ChessGame {
 
     const char* getBoard();
     const ChessPiece* getPiece(int x, int y) const;
-    void setPiece(int x, int y, ChessPiece* piece);
+    void setPiece(int x, int y, std::unique_ptr<ChessPiece> piece);
 
     bool getTurn() const;
 
@@ -314,7 +320,7 @@ class ChessGame {
     ChessBoard board;
     int whiteProms = 0;
     int blackProms = 0;
-    ChessPiece* makePiece(PieceType type, bool white, int y, ChessBoard* b);
+    std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y, ChessBoard* b);
 };
 
 #endif  // def _CHESS_H

@@ -3,6 +3,7 @@
 // Coverage: make coverage
 
 #include <catch2/catch_test_macros.hpp>
+#include <memory>
 #include <string>
 
 #include "chess.h"
@@ -24,10 +25,12 @@ struct CustomBoard {
     CustomBoard() : b(game.getPieceBoard()) {
         game.setRules(false);
         for (int x = 0; x < 8; x++)
-            for (int y = 0; y < 8; y++) game.setPiece(x, y, NULL);
+            for (int y = 0; y < 8; y++) game.setPiece(x, y, nullptr);
     }
 
-    void place(int x, int y, ChessPiece* piece) { game.setPiece(x, y, piece); }
+    void place(int x, int y, ChessPiece* piece) {
+        game.setPiece(x, y, std::unique_ptr<ChessPiece>(piece));
+    }
 
     // Call after placing all pieces to enable normal rules.
     void activate() { game.setRules(true); }
