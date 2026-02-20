@@ -10,6 +10,7 @@
 #ifndef _CHESS_H_
 #define _CHESS_H_
 
+#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -235,20 +236,22 @@ class ChessBoard {
 };
 
 /**
- * Encodes a chess move as a packed short int: four 3-bit fields for
- * startX, startY, endX, endY (12 bits total).
+ * Encodes a chess move as four plain int8_t fields: sx, sy (start column/row),
+ * ex, ey (end column/row), plus a PieceType promotion field.
  *
- * The default-constructed move (data==0) serves as a list sentinel
+ * The default-constructed move (sx == -1) serves as a list sentinel
  * (ChessMove::end), analogous to '\0' in a C string. Move arrays
  * returned by getMoves() are heap-allocated and terminated by this
  * sentinel; callers must delete[] them.
  *
  * String constructor accepts "a1-b2" or "a1b2" format.
+ * The 5-arg constructor encodes a promotion move (promotion != PAWN).
  */
 class ChessMove {
    public:
     ChessMove();
     ChessMove(int sX, int sY, int eX, int eY);
+    ChessMove(int sX, int sY, int eX, int eY, PieceType promo);
     ChessMove(const char* const str);
     ChessMove(const ChessMove& rcm);
     ~ChessMove();
@@ -257,6 +260,7 @@ class ChessMove {
     int getStartY() const;
     int getEndX() const;
     int getEndY() const;
+    PieceType getPromotion() const;
     static const ChessMove end;
     bool isEnd() const;
 
@@ -272,9 +276,9 @@ class ChessMove {
     const char* toString() const;
 
    private:
-    short int data;
-    char repr[6];
-    void init(int sX, int sY, int eX, int eY);
+    int8_t sx, sy, ex, ey;
+    PieceType promotion;
+    mutable char repr[8];
 };
 
 /**

@@ -49,14 +49,12 @@ TEST_CASE("ChessMove: coordinate encoding roundtrips for all squares", "[ChessMo
         for (int sy = 0; sy < 8; sy++)
             for (int ex = 0; ex < 8; ex++)
                 for (int ey = 0; ey < 8; ey++) {
-                    if (sx == 0 && sy == 0 && ex == 0 && ey == 0) continue;  // isEnd()
                     ChessMove cm(sx, sy, ex, ey);
                     REQUIRE(cm.getStartX() == sx);
                     REQUIRE(cm.getStartY() == sy);
                     REQUIRE(cm.getEndX() == ex);
                     REQUIRE(cm.getEndY() == ey);
-                    // Non-null moves should not be end
-                    if (!(sx == ex && sy == ey)) REQUIRE(!cm.isEnd());
+                    REQUIRE(!cm.isEnd());
                 }
 }
 
