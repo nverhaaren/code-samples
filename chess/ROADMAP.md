@@ -71,14 +71,14 @@ Problems in the existing code that will be addressed during modernization:
 - [x] Inline comments on non-obvious logic (castling check path, en passant expiry, chkchk mutation pattern, coordinate convention, magic numbers in toString)
 
 ### Phase 5: Code Freshening *(no behavior changes)*
-- `NULL` → `nullptr` throughout
-- C-style headers → C++ equivalents (`<cstdio>`, `<cstring>`, etc.)
-- `char` arrays → `std::string` where straightforward
-- Add `override` to all virtual overrides
-- Remove `system("PAUSE")`; replace with portable alternatives
-- Remove local `abs()` definition; use `<cstdlib>` or `<cmath>`
-- Add `clang-format` config and format all files
-- Add `clang-tidy` to CI
+- [x] `NULL` → `nullptr` throughout
+- [x] C-style headers → C++ equivalents (`<cstdio>`, `<cstring>`, `<ctime>`, `<iostream>`, `<string>`)
+- [x] `char` arrays → `std::string` where straightforward (`ChessBoard::szForm`, `Main.cpp` input)
+- [x] Add `override` to all virtual overrides (including destructors)
+- [x] Remove `system("PAUSE")`
+- [x] Remove local `abs()` definition; use `std::abs` from `<cstdlib>`
+- [x] Add `.clang-format` config (Google-based, 4-space indent) and format all files
+- [x] Add `.clang-tidy` config and clang-tidy step to CI
 
 ### Phase 6: Architectural Improvements
 - Replace raw owning pointers with `std::unique_ptr<ChessPiece>`

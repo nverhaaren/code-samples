@@ -5,6 +5,9 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Export compile_commands.json for clang-tidy
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # chess_lib: the engine logic, usable without the CLI
 add_library(chess_lib STATIC chess.cpp)
 target_include_directories(chess_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
