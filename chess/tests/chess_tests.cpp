@@ -49,14 +49,12 @@ TEST_CASE("ChessMove: coordinate encoding roundtrips for all squares", "[ChessMo
         for (int sy = 0; sy < 8; sy++)
             for (int ex = 0; ex < 8; ex++)
                 for (int ey = 0; ey < 8; ey++) {
-                    if (sx == 0 && sy == 0 && ex == 0 && ey == 0) continue;  // isEnd()
                     ChessMove cm(sx, sy, ex, ey);
                     REQUIRE(cm.getStartX() == sx);
                     REQUIRE(cm.getStartY() == sy);
                     REQUIRE(cm.getEndX() == ex);
                     REQUIRE(cm.getEndY() == ey);
-                    // Non-null moves should not be end
-                    if (!(sx == ex && sy == ey)) REQUIRE(!cm.isEnd());
+                    REQUIRE(!cm.isEnd());
                 }
 }
 
@@ -159,6 +157,40 @@ TEST_CASE("ChessMove::copy and concat", "[ChessMove]") {
 
     ChessMove::concat(dst, extra);
     REQUIRE(ChessMove::length(dst) == 3);
+}
+
+TEST_CASE("ChessMove: getPromotion returns PAWN for non-promotion move", "[ChessMove]") {
+    ChessMove cm(1, 2, 3, 4);
+    REQUIRE(cm.getPromotion() == PAWN);
+    REQUIRE(!cm.isEnd());
+}
+
+TEST_CASE("ChessMove: 5-arg constructor coordinate roundtrip and getPromotion", "[ChessMove]") {
+    ChessMove cm(6, 3, 7, 3, QUEEN);
+    REQUIRE(cm.getStartX() == 6);
+    REQUIRE(cm.getStartY() == 3);
+    REQUIRE(cm.getEndX() == 7);
+    REQUIRE(cm.getEndY() == 3);
+    REQUIRE(cm.getPromotion() == QUEEN);
+    REQUIRE(!cm.isEnd());
+}
+
+TEST_CASE("ChessMove: toString includes promotion letter for promotion move", "[ChessMove]") {
+    ChessMove q(6, 3, 7, 3, QUEEN);
+    REQUIRE(std::string(q.toString()) == "d7-d8q");
+
+    ChessMove r(6, 3, 7, 3, ROOK);
+    REQUIRE(std::string(r.toString()) == "d7-d8r");
+
+    ChessMove n(6, 3, 7, 3, KNIGHT);
+    REQUIRE(std::string(n.toString()) == "d7-d8n");
+
+    ChessMove b(6, 3, 7, 3, BISHOP);
+    REQUIRE(std::string(b.toString()) == "d7-d8b");
+
+    // Non-promotion move has no suffix
+    ChessMove plain(1, 2, 3, 4);
+    REQUIRE(std::string(plain.toString()) == "c2-e4");
 }
 
 // ============================================================================
