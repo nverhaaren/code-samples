@@ -2,6 +2,7 @@
 
 #include "chess.h"
 
+#include <cassert>
 #include <cstdlib>
 
 using std::abs;
@@ -12,57 +13,85 @@ const ChessMove ChessMove::end = ChessMove();
 const char ChessMove::fileLetters[8 + 1] = "abcdefgh";
 const int ChessMove::maxLength = 1024;  // 669 should be sufficient for all moves of both sides, FYI
 
-ChessMove::ChessMove() : data(0) {
-    repr[3] = '\0';
+// Default ctor — end sentinel (sx = -1)
+ChessMove::ChessMove() : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
     repr[0] = 'E';
     repr[1] = 'N';
     repr[2] = 'D';
-    repr[4] = '\0';
+    repr[3] = '\0';
+    repr[4] = repr[5] = repr[6] = repr[7] = '\0';
+}
+
+// 4-arg ctor (no promotion)
+ChessMove::ChessMove(int sX, int sY, int eX, int eY)
+    : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
+    assert(sX >= 0 && sX <= 7 && sY >= 0 && sY <= 7 && eX >= 0 && eX <= 7 && eY >= 0 &&
+           eY <= 7);
+    sx = (int8_t)sX;
+    sy = (int8_t)sY;
+    ex = (int8_t)eX;
+    ey = (int8_t)eY;
+    repr[0] = fileLetters[sy];
+    repr[1] = ChessPiece::digits[sx + 1];
+    repr[2] = '-';
+    repr[3] = fileLetters[ey];
+    repr[4] = ChessPiece::digits[ex + 1];
     repr[5] = '\0';
+    repr[6] = repr[7] = '\0';
 }
 
-ChessMove::ChessMove(int sX, int sY, int eX, int eY) : data(0) { init(sX, sY, eX, eY); }
-
-ChessMove::ChessMove(const char* const str) : data(0) {
-    int sY = (int)(str[0] - 'a');
-    int sX = (int)(str[1] - '1');
-
-    int eX, eY;
-
-    if (str[2] == ' ' || str[2] == '-') {
-        eY = (int)(str[3] - 'a');
-        eX = (int)(str[4] - '1');
-    } else {
-        eY = (int)(str[2] - 'a');
-        eX = (int)(str[3] - '1');
+// 5-arg ctor (with promotion) — delegates to 4-arg
+ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
+    : ChessMove(sX, sY, eX, eY) {
+    if (!isEnd()) {
+        promotion = promo;
+        if (promo != PAWN) {
+            // Indexed by PieceType: {PAWN=p, ROOK=r, KNIGHT=n, BISHOP=b, KING=k, QUEEN=q}.
+            // Must stay in sync with the PieceType enum order in chess.h.
+            static_assert(PAWN == 0 && ROOK == 1 && KNIGHT == 2 && BISHOP == 3 && QUEEN == 5,
+                          "letters[] indexing assumes specific PieceType enum values");
+            const char letters[] = {'p', 'r', 'n', 'b', 'k', 'q'};
+            repr[5] = letters[promo];
+            repr[6] = '\0';
+        }
     }
-    init(sX, sY, eX, eY);
 }
 
-ChessMove::ChessMove(const ChessMove& rcm) : data(rcm.data) {
-    for (int i = 0; i < 6; i++) {
-        repr[i] = rcm.repr[i];
-    }
+// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format.
+// Argument mapping: sX=rank(str[1]-'1'), sY=file(str[0]-'a'),
+//   separator at str[2] (' ' or '-') shifts end-square indices by 1.
+ChessMove::ChessMove(const char* const str)
+    : ChessMove((int)(str[1] - '1'),
+                (int)(str[0] - 'a'),
+                (str[2] == ' ' || str[2] == '-') ? (int)(str[4] - '1') : (int)(str[3] - '1'),
+                (str[2] == ' ' || str[2] == '-') ? (int)(str[3] - 'a') : (int)(str[2] - 'a')) {}
+
+// Copy ctor
+ChessMove::ChessMove(const ChessMove& rcm)
+    : sx(rcm.sx), sy(rcm.sy), ex(rcm.ex), ey(rcm.ey), promotion(rcm.promotion) {
+    for (int i = 0; i < 8; i++) repr[i] = rcm.repr[i];
 }
 
 ChessMove::~ChessMove() {}
 
 ChessMove& ChessMove::operator=(const ChessMove& rhs) {
     if (this == &rhs) return *this;
-
-    data = rhs.data;
-    for (int i = 0; i < 6; i++) {
-        repr[i] = rhs.repr[i];
-    }
+    sx = rhs.sx;
+    sy = rhs.sy;
+    ex = rhs.ex;
+    ey = rhs.ey;
+    promotion = rhs.promotion;
+    for (int i = 0; i < 8; i++) repr[i] = rhs.repr[i];
     return *this;
 }
 
-int ChessMove::getStartX() const { return data & 0x7; }
-int ChessMove::getStartY() const { return (data & 0x38) / 0x8; }
-int ChessMove::getEndX() const { return (data & 0x1c0) / 0x40; }
-int ChessMove::getEndY() const { return (data & 0xe00) / 0x200; }
+int ChessMove::getStartX() const { return sx; }
+int ChessMove::getStartY() const { return sy; }
+int ChessMove::getEndX() const { return ex; }
+int ChessMove::getEndY() const { return ey; }
+PieceType ChessMove::getPromotion() const { return promotion; }
 
-bool ChessMove::isEnd() const { return (data == 0); }
+bool ChessMove::isEnd() const { return sx < 0; }
 
 void ChessMove::swap(ChessMove& cm1, ChessMove& cm2) {
     ChessMove temp = cm1;
@@ -106,37 +135,6 @@ void ChessMove::concat(ChessMove* cm1, const ChessMove* cm2) {
 }
 
 const char* ChessMove::toString() const { return repr; }
-
-void ChessMove::init(int sX, int sY, int eX, int eY) {
-    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 || eX < 0 || eX > 7 || eY < 0 || eY > 7)
-        ;
-    else {
-        short int startX = (short int)sX;
-        short int startY = (short int)sY;
-        short int endX = (short int)eX;
-        short int endY = (short int)eY;
-        data += startX;
-        data += startY * 8;
-        data += endX * 8 * 8;
-        data += endY * 8 * 8 * 8;
-    }
-
-    if (!isEnd()) {
-        repr[5] = '\0';
-        repr[2] = '-';
-        repr[0] = fileLetters[getStartY()];
-        repr[1] = ChessPiece::digits[getStartX() + 1];
-        repr[3] = fileLetters[getEndY()];
-        repr[4] = ChessPiece::digits[getEndX() + 1];
-    } else {
-        repr[3] = '\0';
-        repr[0] = 'E';
-        repr[1] = 'N';
-        repr[2] = 'D';
-        repr[4] = '\0';
-        repr[5] = '\0';
-    }
-}
 
 ////////////
 // CHESSPIECE
@@ -313,6 +311,9 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         // movePiece returns whatever piece was displaced at the destination
         // (the capture candidate). After checking, we move our piece back and
         // restore the displaced piece via setPiece.
+        // FIXME: en passant temp-undo doesn't remove the captured pawn, so
+        // check detection is wrong for a horizontally-pinned en passant capture.
+        // Tracked for a later PR.
         ChessPiece* temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         movePiece(*board, ChessMove(x, y, cx, cy));
@@ -788,11 +789,13 @@ bool King::move(int x, int y) {
         if (y == 6 && oy == 4) {
             movePiece(*board, ChessMove(ox, 7, ox, 5));
             Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 5));
+            assert(piece);
             piece->markMoved();
         }
         if (y == 2 && oy == 4) {
             movePiece(*board, ChessMove(ox, 0, ox, 3));
             Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 3));
+            assert(piece);
             piece->markMoved();
         }
     }
