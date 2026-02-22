@@ -278,7 +278,7 @@ class ChessMove {
    private:
     int8_t sx, sy, ex, ey;
     PieceType promotion;
-    mutable char repr[8];
+    char repr[8];
 };
 
 /**

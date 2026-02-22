@@ -25,25 +25,19 @@ ChessMove::ChessMove() : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
 // 4-arg ctor (no promotion)
 ChessMove::ChessMove(int sX, int sY, int eX, int eY)
     : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
-    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 || eX < 0 || eX > 7 || eY < 0 || eY > 7) {
-        repr[0] = 'E';
-        repr[1] = 'N';
-        repr[2] = 'D';
-        repr[3] = '\0';
-        repr[4] = repr[5] = repr[6] = repr[7] = '\0';
-    } else {
-        sx = (int8_t)sX;
-        sy = (int8_t)sY;
-        ex = (int8_t)eX;
-        ey = (int8_t)eY;
-        repr[0] = fileLetters[sy];
-        repr[1] = ChessPiece::digits[sx + 1];
-        repr[2] = '-';
-        repr[3] = fileLetters[ey];
-        repr[4] = ChessPiece::digits[ex + 1];
-        repr[5] = '\0';
-        repr[6] = repr[7] = '\0';
-    }
+    assert(sX >= 0 && sX <= 7 && sY >= 0 && sY <= 7 && eX >= 0 && eX <= 7 && eY >= 0 &&
+           eY <= 7);
+    sx = (int8_t)sX;
+    sy = (int8_t)sY;
+    ex = (int8_t)eX;
+    ey = (int8_t)eY;
+    repr[0] = fileLetters[sy];
+    repr[1] = ChessPiece::digits[sx + 1];
+    repr[2] = '-';
+    repr[3] = fileLetters[ey];
+    repr[4] = ChessPiece::digits[ex + 1];
+    repr[5] = '\0';
+    repr[6] = repr[7] = '\0';
 }
 
 // 5-arg ctor (with promotion) — delegates to 4-arg
@@ -52,7 +46,10 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
     if (!isEnd()) {
         promotion = promo;
         if (promo != PAWN) {
-            // Append promotion letter: p/r/n/b/k/q indexed by PieceType enum
+            // Indexed by PieceType: {PAWN=p, ROOK=r, KNIGHT=n, BISHOP=b, KING=k, QUEEN=q}.
+            // Must stay in sync with the PieceType enum order in chess.h.
+            static_assert(PAWN == 0 && ROOK == 1 && KNIGHT == 2 && BISHOP == 3 && QUEEN == 5,
+                          "letters[] indexing assumes specific PieceType enum values");
             const char letters[] = {'p', 'r', 'n', 'b', 'k', 'q'};
             repr[5] = letters[promo];
             repr[6] = '\0';
@@ -60,7 +57,9 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
     }
 }
 
-// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format
+// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format.
+// Argument mapping: sX=rank(str[1]-'1'), sY=file(str[0]-'a'),
+//   separator at str[2] (' ' or '-') shifts end-square indices by 1.
 ChessMove::ChessMove(const char* const str)
     : ChessMove((int)(str[1] - '1'),
                 (int)(str[0] - 'a'),

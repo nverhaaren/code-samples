@@ -159,6 +159,40 @@ TEST_CASE("ChessMove::copy and concat", "[ChessMove]") {
     REQUIRE(ChessMove::length(dst) == 3);
 }
 
+TEST_CASE("ChessMove: getPromotion returns PAWN for non-promotion move", "[ChessMove]") {
+    ChessMove cm(1, 2, 3, 4);
+    REQUIRE(cm.getPromotion() == PAWN);
+    REQUIRE(!cm.isEnd());
+}
+
+TEST_CASE("ChessMove: 5-arg constructor coordinate roundtrip and getPromotion", "[ChessMove]") {
+    ChessMove cm(6, 3, 7, 3, QUEEN);
+    REQUIRE(cm.getStartX() == 6);
+    REQUIRE(cm.getStartY() == 3);
+    REQUIRE(cm.getEndX() == 7);
+    REQUIRE(cm.getEndY() == 3);
+    REQUIRE(cm.getPromotion() == QUEEN);
+    REQUIRE(!cm.isEnd());
+}
+
+TEST_CASE("ChessMove: toString includes promotion letter for promotion move", "[ChessMove]") {
+    ChessMove q(6, 3, 7, 3, QUEEN);
+    REQUIRE(std::string(q.toString()) == "d7-d8q");
+
+    ChessMove r(6, 3, 7, 3, ROOK);
+    REQUIRE(std::string(r.toString()) == "d7-d8r");
+
+    ChessMove n(6, 3, 7, 3, KNIGHT);
+    REQUIRE(std::string(n.toString()) == "d7-d8n");
+
+    ChessMove b(6, 3, 7, 3, BISHOP);
+    REQUIRE(std::string(b.toString()) == "d7-d8b");
+
+    // Non-promotion move has no suffix
+    ChessMove plain(1, 2, 3, 4);
+    REQUIRE(std::string(plain.toString()) == "c2-e4");
+}
+
 // ============================================================================
 // ChessBoard / ChessGame: initial position
 // ============================================================================
