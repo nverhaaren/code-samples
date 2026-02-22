@@ -1099,11 +1099,12 @@ bool ChessGame::makeMove(const ChessMove& cm) {
         if (b) {
             bool movedColor = whiteTurn;  // capture before flip
             // Handle pawn promotion: replace pawn with requested piece type.
+            // Write directly to board.grid (ChessGame is a friend of ChessBoard)
+            // rather than routing through setPiece() to avoid the rulesOn guard.
             if (cm.getPromotion() != PAWN) {
                 int endX = cm.getEndX(), endY = cm.getEndY();
-                rulesOn = false;
-                setPiece(endX, endY, makePiece(cm.getPromotion(), movedColor, endY, &board));
-                rulesOn = true;
+                delete board.grid[endX][endY];
+                board.grid[endX][endY] = makePiece(cm.getPromotion(), movedColor, endY, &board);
                 if (movedColor) whiteProms++;
                 else blackProms++;
             }
