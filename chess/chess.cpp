@@ -1071,21 +1071,21 @@ std::vector<ChessMove> ChessGame::getMoves(bool white) const {
     return all;
 }
 
-ChessPiece* ChessGame::makePiece(PieceType type, bool white, int y, ChessBoard* b) {
+ChessPiece* ChessGame::makePiece(PieceType type, bool white, int y) {
     bool ks = (y > 3);
     int idx = white ? whiteProms : blackProms;
     switch (type) {
         case QUEEN:
-            return new Queen(white, b, idx, ks);
+            return new Queen(white, &board, idx, ks);
         case ROOK:
-            return new Rook(white, ks, b, idx);
+            return new Rook(white, ks, &board, idx);
         case KNIGHT:
-            return new Knight(white, ks, b, idx);
+            return new Knight(white, ks, &board, idx);
         case BISHOP:
-            return new Bishop(white, ks, b, idx);
+            return new Bishop(white, ks, &board, idx);
         default:
-            assert(false);
-            return nullptr;
+            fprintf(stderr, "makePiece: invalid promotion type %d\n", static_cast<int>(type));
+            std::abort();
     }
 }
 
@@ -1104,7 +1104,7 @@ bool ChessGame::makeMove(const ChessMove& cm) {
             if (cm.getPromotion() != PAWN) {
                 int endX = cm.getEndX(), endY = cm.getEndY();
                 delete board.grid[endX][endY];
-                board.grid[endX][endY] = makePiece(cm.getPromotion(), movedColor, endY, &board);
+                board.grid[endX][endY] = makePiece(cm.getPromotion(), movedColor, endY);
                 if (movedColor) whiteProms++;
                 else blackProms++;
             }

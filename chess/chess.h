@@ -314,7 +314,7 @@ class ChessGame {
     ChessBoard board;
     int whiteProms = 0;
     int blackProms = 0;
-    ChessPiece* makePiece(PieceType type, bool white, int y, ChessBoard* b);
+    ChessPiece* makePiece(PieceType type, bool white, int y);
 };
 
 #endif  // def _CHESS_H

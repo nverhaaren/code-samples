@@ -81,6 +81,26 @@ int main(int argc, char* argv[]) {
             }
         } else {
             ChessMove move = ChessMove(input.c_str());
+            // Temporary: if a pawn is moving to the back rank, ask for the
+            // promotion piece. Will be superseded by the algebraic notation
+            // parser in Phase 6.
+            const ChessPiece* piece = game.getPiece(move.getStartX(), move.getStartY());
+            if (piece != nullptr && piece->getType() == PAWN) {
+                int endRank = move.getEndX();
+                bool isPromoRank = (piece->getWhite() == WHITE) ? endRank == 7 : endRank == 0;
+                if (isPromoRank) {
+                    printf("Promote to? (q=queen, r=rook, b=bishop, n=knight): ");
+                    std::string promo;
+                    if (std::getline(std::cin, promo)) {
+                        PieceType pt = QUEEN;  // default to queen
+                        if (promo == "r") pt = ROOK;
+                        else if (promo == "b") pt = BISHOP;
+                        else if (promo == "n") pt = KNIGHT;
+                        move = ChessMove(move.getStartX(), move.getStartY(), endRank,
+                                         move.getEndY(), pt);
+                    }
+                }
+            }
             if (game.makeMove(move)) {
                 print = true;
             }

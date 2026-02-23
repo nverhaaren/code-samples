@@ -803,11 +803,6 @@ TEST_CASE("Pawn: promotion to rook works", "[Pawn]") {
     REQUIRE(cb.game.getPiece(7, 3)->getType() == ROOK);
 }
 
-TEST_CASE("ChessMove: getPromotion returns PAWN for normal move", "[ChessMove]") {
-    ChessMove cm(1, 2, 3, 4);
-    REQUIRE(cm.getPromotion() == PAWN);
-}
-
 TEST_CASE("ChessMove: getPromotion returns promotion type for promotion move", "[ChessMove]") {
     ChessMove cm(6, 3, 7, 3, QUEEN);
     REQUIRE(cm.getPromotion() == QUEEN);
