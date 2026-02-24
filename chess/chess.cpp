@@ -262,6 +262,9 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -375,6 +378,9 @@ bool Rook::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -447,6 +453,9 @@ bool Knight::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -521,6 +530,9 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -632,6 +644,9 @@ bool King::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(inCheck());
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -775,6 +790,9 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
         auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
         bool ret = !(board->checkCheck(isWhite));
         (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        // temp->posX/posY is stale while temp is off the board, but
+        // checkCheck only reads pieces via the grid so this is safe.
+        // place() (called by setPiece) restores the cache here.
         setPiece(*board, x, y, std::move(temp));
         return ret;
     } else
@@ -953,6 +971,7 @@ ChessPiece* ChessBoard::getMoveablePiece(int x, int y) {
 }
 
 void ChessBoard::place(int x, int y, std::unique_ptr<ChessPiece> p) {
+    assert(x >= 0 && x <= 7 && y >= 0 && y <= 7);
     if (p) {
         p->posX = x;
         p->posY = y;
@@ -966,11 +985,12 @@ std::unique_ptr<ChessPiece> ChessBoard::movePiece(ChessMove move) {
         grid[move.getEndX()][move.getEndY()] =
             std::move(grid[move.getStartX()][move.getStartY()]);
         grid[move.getStartX()][move.getStartY()] = nullptr;
-        // Update position cache for the piece that just moved
-        if (grid[move.getEndX()][move.getEndY()]) {
-            grid[move.getEndX()][move.getEndY()]->posX = move.getEndX();
-            grid[move.getEndX()][move.getEndY()]->posY = move.getEndY();
-        }
+        // Update position cache for the piece that just moved.
+        // The piece is always non-null here: the outer guard confirmed
+        // the source was non-null, and it is what we just moved to dest.
+        assert(grid[move.getEndX()][move.getEndY()] != nullptr);
+        grid[move.getEndX()][move.getEndY()]->posX = move.getEndX();
+        grid[move.getEndX()][move.getEndY()]->posY = move.getEndY();
         return displaced;
     } else
         return nullptr;
