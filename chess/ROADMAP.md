@@ -86,29 +86,28 @@ Problems in the existing code that will be addressed during modernization:
 
 ### Phase 6: Architectural Improvements
 
-#### ChessMove redesign
-- `ChessMove` currently packs four 3-bit fields into a `short int`; replace with a plain
-  `struct { int8_t startX, startY, endX, endY; }` or similar — cleaner and easier to extend.
-- Add a pawn promotion field to `ChessMove` so the promoted piece type travels with the move.
-  Consider two approaches:
-  1. **In-move**: `ChessMove` gains an optional `PieceType promotion` field; callers that need
-     promotion set it, others leave it at a sentinel (e.g. `PAWN` = no promotion).
-  2. **UI-layer detection**: Keep `ChessMove` simple; `ChessGame` (or `Main.cpp`) detects
-     when a pawn reaches the back rank after `makeMove()` and prompts for piece selection.
-  Approach 2 is simpler now but defers the problem; approach 1 enables a cleaner API for Phase 7.
-- After ChessMove changes, walk through the codebase for potential undefined behaviour (UB):
-  signed overflow in the old bit-packing arithmetic, out-of-bounds array access, invalid casts,
-  etc. Document findings and fix any real issues.
+#### ChessMove redesign *(done — PR #10, merged 2026-02-20)*
+- [x] `ChessMove` plain `int8_t` fields replacing packed `short int`
+- [x] Promotion field (`PieceType`) on `ChessMove` (approach 1: in-move)
+- [x] UB audit after ChessMove changes (assert on King::move() castling dynamic_cast)
 
-#### Other improvements
-- Replace raw owning pointers with `std::unique_ptr<ChessPiece>`
-- Store piece position on the piece (avoid O(64) scan); keep board as secondary index
-- Replace raw move arrays with `std::vector<ChessMove>`
-- Encapsulate pawn promotion within `ChessGame` (remove from `Main.cpp`)
-- Complete algebraic notation parsing
-- Add move history (`std::vector<ChessMove>` in `ChessGame`)
-- Evaluate bitboard representation for move generation (research spike)
-- Add 50-move rule and threefold repetition draw detection
+#### Vector moves + promotion encapsulation *(done — PR #11, merged 2026-03-11)*
+- [x] Replace raw move arrays with `std::vector<ChessMove>`
+- [x] Encapsulate pawn promotion within `ChessGame` (remove from `Main.cpp`)
+
+#### unique_ptr + position caching *(done — PR #12, merged 2026-03-11)*
+- [x] Replace raw owning pointers with `std::unique_ptr<ChessPiece>`
+- [x] Store piece position on the piece (avoid O(64) scan); keep board as secondary index
+
+#### Raw pointer cleanup *(done — PR #13, merged 2026-03-11)*
+- [x] Replace `ChessBoard*` back-references with `ChessBoard&` references
+
+#### Remaining improvements (in order)
+1. Add move history (`std::vector<ChessMove>` in `ChessGame`) — PR 6e
+2. FEN serialization/deserialization (pull forward from Phase 7) — enables threefold repetition
+3. 50-move rule and threefold repetition draw detection — uses move history + FEN
+4. Complete algebraic notation parsing — CLI improvement, independent
+5. Evaluate bitboard representation for move generation (research spike, optional)
 
 ### Phase 7: LLM Tool API
 - FEN serialization and deserialization

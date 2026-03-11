@@ -1079,12 +1079,15 @@ std::unique_ptr<ChessPiece> ChessGame::makePiece(PieceType type, bool white, int
 
 bool ChessGame::getTurn() const { return whiteTurn; }
 
+const std::vector<ChessMove>& ChessGame::getHistory() const { return history; }
+
 bool ChessGame::makeMove(const ChessMove& cm) {
     if (rulesOn) {
         ChessPiece* piece = board.getMoveablePiece(cm.getStartX(), cm.getStartY());
         if (piece == nullptr || piece->getWhite() != whiteTurn) return false;
         bool b = piece->move(cm.getEndX(), cm.getEndY());
         if (b) {
+            history.push_back(cm);
             bool movedColor = whiteTurn;  // capture before flip
             // Handle pawn promotion: replace pawn with requested piece type.
             // Write directly to board.grid (ChessGame is a friend of ChessBoard)

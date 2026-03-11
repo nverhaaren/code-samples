@@ -829,3 +829,67 @@ TEST_CASE("ChessMove: getPromotion returns promotion type for promotion move", "
     REQUIRE(cm.getPromotion() == QUEEN);
     REQUIRE(!cm.isEnd());
 }
+
+// ============================================================================
+// Move History
+// ============================================================================
+
+TEST_CASE("ChessGame: history is empty at start", "[ChessGame][History]") {
+    ChessGame game;
+    REQUIRE(game.getHistory().empty());
+}
+
+TEST_CASE("ChessGame: history records a move after makeMove", "[ChessGame][History]") {
+    ChessGame game;
+    ChessMove e2e4(1, 4, 3, 4);  // e2-e4
+    REQUIRE(game.makeMove(e2e4));
+    REQUIRE(game.getHistory().size() == 1);
+    const ChessMove& recorded = game.getHistory()[0];
+    REQUIRE(recorded.getStartX() == 1);
+    REQUIRE(recorded.getStartY() == 4);
+    REQUIRE(recorded.getEndX() == 3);
+    REQUIRE(recorded.getEndY() == 4);
+}
+
+TEST_CASE("ChessGame: history records multiple moves in order", "[ChessGame][History]") {
+    ChessGame game;
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e2-e4
+    REQUIRE(game.makeMove(ChessMove(6, 4, 4, 4)));  // e7-e5
+    REQUIRE(game.makeMove(ChessMove(0, 5, 3, 2)));  // Bf1-c4
+    REQUIRE(game.getHistory().size() == 3);
+    // First move is e2-e4
+    REQUIRE(game.getHistory()[0].getStartX() == 1);
+    REQUIRE(game.getHistory()[0].getEndX() == 3);
+    // Second move is e7-e5
+    REQUIRE(game.getHistory()[1].getStartX() == 6);
+    REQUIRE(game.getHistory()[1].getEndX() == 4);
+    // Third move is Bf1-c4
+    REQUIRE(game.getHistory()[2].getStartX() == 0);
+    REQUIRE(game.getHistory()[2].getStartY() == 5);
+}
+
+TEST_CASE("ChessGame: failed move is not recorded in history", "[ChessGame][History]") {
+    ChessGame game;
+    // Try to move black piece on white's turn — should fail
+    REQUIRE_FALSE(game.makeMove(ChessMove(6, 4, 4, 4)));
+    REQUIRE(game.getHistory().empty());
+}
+
+TEST_CASE("ChessGame: history records promotion moves with promotion type",
+          "[ChessGame][History]") {
+    CustomBoard cb;
+    cb.place(6, 3, new Pawn(WHITE, false, cb.b, 1));  // white pawn at d7
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    REQUIRE(cb.game.makeMove(ChessMove(6, 3, 7, 3, QUEEN)));
+    REQUIRE(cb.game.getHistory().size() == 1);
+    REQUIRE(cb.game.getHistory()[0].getPromotion() == QUEEN);
+}
+
+TEST_CASE("ChessGame: rules-off moves are not recorded in history", "[ChessGame][History]") {
+    ChessGame game;
+    game.setRules(false);
+    game.makeMove(ChessMove(1, 4, 3, 4));
+    REQUIRE(game.getHistory().empty());
+}
