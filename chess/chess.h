@@ -58,7 +58,7 @@ enum PieceType { PAWN, ROOK, KNIGHT, BISHOP, KING, QUEEN };
 class ChessPiece  // ADT
 {
    public:
-    ChessPiece(bool isW, bool isKS, ChessBoard* b, int i = 0);
+    ChessPiece(bool isW, bool isKS, ChessBoard& b, int i = 0);
     virtual ~ChessPiece();
     bool getWhite() const;
     bool getKingSide() const;
@@ -112,7 +112,7 @@ class ChessPiece  // ADT
     const bool isWhite;
     const bool isKingSide;
     char id[4 + 1];
-    ChessBoard* board;
+    ChessBoard& board;
     const int index;
     int posX = -1;  // cached position; updated by ChessBoard::movePiece and place
     int posY = -1;
@@ -127,7 +127,7 @@ class ChessPiece  // ADT
 
 class Pawn : public ChessPiece {
    public:
-    Pawn(bool isW, bool isKS, ChessBoard* b, int i);
+    Pawn(bool isW, bool isKS, ChessBoard& b, int i);
     ~Pawn() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -144,7 +144,7 @@ class Pawn : public ChessPiece {
 
 class Rook : public ChessPiece {
    public:
-    Rook(bool isW, bool isKS, ChessBoard* b, int i = 0);
+    Rook(bool isW, bool isKS, ChessBoard& b, int i = 0);
     ~Rook() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -159,7 +159,7 @@ class Rook : public ChessPiece {
 
 class Knight : public ChessPiece {
    public:
-    Knight(bool isW, bool isKS, ChessBoard* b, int i = 0);
+    Knight(bool isW, bool isKS, ChessBoard& b, int i = 0);
     ~Knight() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -170,7 +170,7 @@ class Knight : public ChessPiece {
 
 class Bishop : public ChessPiece {
    public:
-    Bishop(bool isW, bool isKS, ChessBoard* b, int i = 0);
+    Bishop(bool isW, bool isKS, ChessBoard& b, int i = 0);
     ~Bishop() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -179,7 +179,7 @@ class Bishop : public ChessPiece {
 
 class King : public ChessPiece {
    public:
-    King(bool isW, ChessBoard* b);
+    King(bool isW, ChessBoard& b);
     ~King() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -196,7 +196,7 @@ class King : public ChessPiece {
 
 class Queen : public ChessPiece {
    public:
-    Queen(bool isW, ChessBoard* b, int i = 0, bool isKS = false);
+    Queen(bool isW, ChessBoard& b, int i = 0, bool isKS = false);
     ~Queen() override;
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
@@ -312,7 +312,7 @@ class ChessGame {
 
     bool getTurn() const;
 
-    ChessBoard* getPieceBoard();
+    ChessBoard& getPieceBoard();
 
    private:
     bool rulesOn;
