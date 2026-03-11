@@ -130,3 +130,137 @@ Problems in the existing code that will be addressed during modernization:
 - Human vs. LLM game loop
 - LLM receives board state + legal moves; responds with a move and optional message
 - Optional: LLM vs. LLM mode
+
+---
+
+## N-Version Cross-Validation
+
+### Motivation
+
+Rather than relying on a single implementation as the source of truth, we maintain two
+independent implementations of the chess engine (potentially in different languages or by
+different authors/LLMs). Instead of running both versions live in production, we use a
+test harness — including property-based / generative testing — to produce a large selection
+of inputs and compare the outputs of both implementations. Any disagreement is flagged for
+resolution.
+
+This is a variation of [N-version programming](https://en.wikipedia.org/wiki/N-version_programming)
+adapted for an LLM-assisted development workflow: the two versions serve as mutual
+validators, catching bugs that conventional tests might miss.
+
+### Tested Surface
+
+The primary tested surface is the **MCP (Model Context Protocol) server** interface.
+Both implementations expose the same MCP tool interface, and the test harness invokes
+identical requests against each, comparing responses.
+
+Secondary tested surfaces:
+- **Algebraic game replay**: feed the same sequence of algebraic moves to both engines
+  and compare board state after each move (FEN, legal moves, game status).
+- **Legal move generation**: from identical positions, both engines must produce the same
+  set of legal moves (order-independent).
+- **Game status detection**: check, checkmate, stalemate, draw conditions must agree.
+
+### Disagreement Resolution
+
+When the two implementations produce different outputs for the same input:
+
+1. **Automated triage**: Log the disagreement with full input, both outputs, and a diff.
+2. **LLM arbitration (fast path)**: Two LLM instances (one per implementation) are each
+   shown the disagreement and the relevant spec section. If both quickly converge on
+   which output is correct (or both identify a bug in their own implementation), the
+   fix is applied automatically and the test re-run.
+3. **Manager arbitration (slow path)**: If the LLMs cannot agree, or if the disagreement
+   involves an ambiguity in the spec, the issue is escalated — e.g. filed as a GitHub
+   issue for human review. The spec is then clarified to prevent future ambiguity.
+
+### Chess Engine Specification
+
+A detailed, unambiguous specification is a prerequisite for N-version testing. Without it,
+disagreements cannot be objectively resolved — there is no ground truth to appeal to.
+
+The spec must cover at minimum:
+
+#### Board & Coordinate System
+- Board representation conventions (rank/file naming, internal coordinate mapping)
+- Initial position (standard chess starting position, expressed in FEN)
+
+#### Piece Movement Rules
+- Legal moves for each piece type, including edge cases:
+  - Pawn: single push, double push from starting rank, diagonal capture, en passant
+    (when available, when it expires), promotion (to Q/R/B/N, mandatory on reaching
+    back rank)
+  - Knight: L-shaped movement, not blocked by intervening pieces
+  - Bishop: diagonal sliding, blocked by first piece in path
+  - Rook: orthogonal sliding, blocked by first piece in path
+  - Queen: combination of bishop + rook movement
+  - King: one square in any direction, castling (kingside and queenside)
+- Castling conditions: king and rook have not moved, no pieces between them, king not
+  in check, king does not pass through or land on an attacked square
+- For each rule, the spec must state the exact preconditions and postconditions so that
+  correctness is mechanically verifiable
+
+#### Check, Checkmate, Stalemate
+- Definition of check (king attacked by opponent piece)
+- A move is legal only if it does not leave the player's own king in check
+- Checkmate: player to move is in check and has no legal moves
+- Stalemate: player to move is not in check and has no legal moves
+
+#### Draw Conditions
+- Stalemate (as above)
+- 50-move rule: 50 full moves (100 half-moves) with no pawn move and no capture
+- Threefold repetition: same position (board, side to move, castling rights, en passant
+  target square) occurs three times (not necessarily consecutively)
+- Insufficient material (optional — king vs king, king+bishop vs king, king+knight vs
+  king, king+bishop vs king+bishop with same-colored bishops)
+
+#### FEN Representation
+- Full FEN string format: piece placement, active color, castling availability,
+  en passant target square, halfmove clock, fullmove number
+- Exact serialization rules (e.g. rank separator, empty-square run-length encoding)
+- Deserialization must round-trip: `parse(serialize(position)) == position`
+
+#### Algebraic Notation
+- Standard Algebraic Notation (SAN) for move input/output
+- Disambiguation rules (when two pieces of the same type can reach the same square)
+- Special notation: `O-O` (kingside castling), `O-O-O` (queenside castling),
+  `=Q` (promotion), `+` (check), `#` (checkmate), `e.p.` (en passant, optional)
+- Long algebraic notation as an alternative (unambiguous: `e2e4`, `e1g1`)
+
+#### MCP Tool Interface
+- Exact tool names, parameter schemas (JSON Schema), and response schemas
+- Error response format for illegal moves, invalid positions, etc.
+- Idempotency and state management semantics (does each call operate on a session?)
+
+#### Game Lifecycle
+- How a game is created (new game, or from a FEN position)
+- Turn order enforcement
+- How the game ends (checkmate, stalemate, draw claim, resignation)
+- What state is returned after each move (updated FEN, game status, legal moves for
+  next player)
+
+### Test Harness Design
+
+The test harness is a standalone program (likely Python) that:
+
+1. **Generates inputs** using a combination of:
+   - Predefined positions (from a curated test suite)
+   - Random legal game play-throughs (random moves from the initial position)
+   - Property-based testing (e.g. Hypothesis) to explore edge cases: positions near
+     castling, en passant, promotion, 50-move boundary, repetition
+   - Fuzzing of FEN strings and move inputs to test error handling
+2. **Sends identical requests** to both implementations (via MCP protocol or direct API)
+3. **Compares outputs** field-by-field, with order-independent comparison for move lists
+4. **Reports disagreements** with full context for triage
+
+### Implementation Plan
+
+1. **Write the spec** (can begin before the second implementation exists — the spec also
+   benefits the primary implementation by making expected behavior explicit)
+2. **Build the MCP server** for the C++ implementation (Phase 7 prerequisite)
+3. **Build or commission the second implementation** (could be in Python, Rust, or another
+   language; could be written by a different LLM)
+4. **Build the test harness** with property-based test generation
+5. **Run cross-validation** and resolve disagreements iteratively
+6. **Maintain the spec** as the authoritative reference — update it whenever an ambiguity
+   is discovered and resolved
