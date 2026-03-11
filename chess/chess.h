@@ -290,6 +290,10 @@ class ChessMove {
  * Pawn promotion is handled inside this class via makeMove(): when a
  * ChessMove carries a non-PAWN promotion field, the pawn is automatically
  * replaced with the requested piece type.
+ *
+ * Move history: every successful rules-on move is recorded in order.
+ * Retrieve via getHistory(). Rules-off moves (used during board setup)
+ * are not recorded.
  */
 class ChessGame {
    public:
@@ -312,6 +316,8 @@ class ChessGame {
 
     bool getTurn() const;
 
+    const std::vector<ChessMove>& getHistory() const;
+
     ChessBoard& getPieceBoard();
 
    private:
@@ -320,6 +326,7 @@ class ChessGame {
     ChessBoard board;
     int whiteProms = 0;
     int blackProms = 0;
+    std::vector<ChessMove> history;
     std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y);
 };
 
