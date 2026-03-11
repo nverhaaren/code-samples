@@ -106,7 +106,7 @@ const char* ChessMove::toString() const { return repr; }
 // CHESSPIECE
 const char ChessPiece::digits[11] = "0123456789";
 
-ChessPiece::ChessPiece(bool isW, bool isKS, ChessBoard* b, int i)
+ChessPiece::ChessPiece(bool isW, bool isKS, ChessBoard& b, int i)
     : isWhite(isW), isKingSide(isKS), board(b), index(i) {
     for (int j = 0; j < 4 + 1; j++) {
         id[j] = '\0';
@@ -137,13 +137,10 @@ int ChessPiece::getPosY() const { return posY; }
 const char* ChessPiece::getID() const { return id; }
 
 bool ChessPiece::move(int x, int y) {
-    if (canMove(x, y) &&
-        board !=
-            nullptr)  // not sure what happens when *(nullptr) used as reference; can't be good.
-    {
+    if (canMove(x, y)) {
         // movePiece returns the displaced piece (if any) as a unique_ptr;
         // it is automatically deleted when the return value is dropped.
-        (void)movePiece(*board, ChessMove(getPosX(), getPosY(), x, y));
+        (void)movePiece(board, ChessMove(getPosX(), getPosY(), x, y));
         return true;
     } else
         return false;
@@ -188,7 +185,7 @@ double ChessPiece::getValue() {
 //////
 // PAWN
 
-Pawn::Pawn(bool isW, bool isKS, ChessBoard* b, int i) : ChessPiece(isW, isKS, b, i) {
+Pawn::Pawn(bool isW, bool isKS, ChessBoard& b, int i) : ChessPiece(isW, isKS, b, i) {
     id[1] = 'P';
     hasMoved = false;
     enPassant = false;
@@ -203,14 +200,14 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
     int cx = getPosX();
     int cy = getPosY();
 
-    if (y == cy && board->getPiece(x, y) == nullptr)  // forward move
+    if (y == cy && board.getPiece(x, y) == nullptr)  // forward move
     {
         // Double advance: white unmoved pawn can jump from row 1 to row 3
         // (skipping row 2); black from row 6 to row 4 (skipping row 5).
-        if (hasMoved == false && isWhite == true && x == 3 && board->getPiece(2, y) == nullptr)
+        if (hasMoved == false && isWhite == true && x == 3 && board.getPiece(2, y) == nullptr)
             ;  // Would be return true; need to check for check
         else if (hasMoved == false && isWhite == false && x == 4 &&
-                 board->getPiece(5, y) == nullptr)
+                 board.getPiece(5, y) == nullptr)
             ;
         else if (isWhite == true && x == cx + 1)
             ;
@@ -218,22 +215,22 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
             ;
         else
             return false;
-    } else if ((y == cy + 1 || y == cy - 1) && board->getPiece(x, y) == nullptr) {  // en passant
+    } else if ((y == cy + 1 || y == cy - 1) && board.getPiece(x, y) == nullptr) {  // en passant
         // En passant: white pawn must be on row 4 (opponent's double-advance
         // landing row); black pawn on row 3. The captured pawn sits on the
         // same row as the capturing pawn, one column over.
-        if (isWhite == true && cx == 4 && board->getPiece(cx, y) != nullptr &&
-            board->getPiece(cx, y)->getWhite() == false &&
-            board->getPiece(cx, y)->getType() == PAWN) {
-            const Pawn* piece = dynamic_cast<const Pawn*>(board->getPiece(cx, y));
+        if (isWhite == true && cx == 4 && board.getPiece(cx, y) != nullptr &&
+            board.getPiece(cx, y)->getWhite() == false &&
+            board.getPiece(cx, y)->getType() == PAWN) {
+            const Pawn* piece = dynamic_cast<const Pawn*>(board.getPiece(cx, y));
             if (piece && piece->getEnPassant())
                 ;
             else
                 return false;
-        } else if (isWhite == false && cx == 3 && board->getPiece(cx, y) != nullptr &&
-                   board->getPiece(cx, y)->getWhite() == true &&
-                   board->getPiece(cx, y)->getType() == PAWN) {
-            const Pawn* piece = dynamic_cast<const Pawn*>(board->getPiece(cx, y));
+        } else if (isWhite == false && cx == 3 && board.getPiece(cx, y) != nullptr &&
+                   board.getPiece(cx, y)->getWhite() == true &&
+                   board.getPiece(cx, y)->getType() == PAWN) {
+            const Pawn* piece = dynamic_cast<const Pawn*>(board.getPiece(cx, y));
             if (piece && piece->getEnPassant())
                 ;
             else
@@ -241,10 +238,10 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         } else
             return false;
     } else if ((y == cy + 1 || y == cy - 1) &&
-               board->getPiece(x, y) != nullptr) {  // diagonal capture
-        if (isWhite == true && x == cx + 1 && board->getPiece(x, y)->getWhite() == false)
+               board.getPiece(x, y) != nullptr) {  // diagonal capture
+        if (isWhite == true && x == cx + 1 && board.getPiece(x, y)->getWhite() == false)
             ;
-        else if (isWhite == false && x == cx - 1 && board->getPiece(x, y)->getWhite() == true)
+        else if (isWhite == false && x == cx - 1 && board.getPiece(x, y)->getWhite() == true)
             ;
         else
             return false;
@@ -259,13 +256,13 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         // FIXME: en passant temp-undo doesn't remove the captured pawn, so
         // check detection is wrong for a horizontally-pinned en passant capture.
         // Tracked for a later PR.
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
-        bool ret = !(board->checkCheck(isWhite));
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
+        bool ret = !(board.checkCheck(isWhite));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -302,7 +299,7 @@ bool Pawn::move(int x, int y) {
     int ox = getPosX();
     int oy = getPosY();
 
-    bool destEmpty = board->getPiece(x, y) == nullptr;
+    bool destEmpty = board.getPiece(x, y) == nullptr;
 
     bool b = ChessPiece::move(x, y);
     if (b) {
@@ -310,9 +307,9 @@ bool Pawn::move(int x, int y) {
 
         if (isWhite == true && x == ox + 1 && abs(y - oy) == 1 && destEmpty) {
             // En passant: remove the captured pawn. unique_ptr in setPiece handles deletion.
-            setPiece(*board, ox, y, nullptr);
+            setPiece(board, ox, y, nullptr);
         } else if (isWhite == false && x == ox - 1 && abs(y - oy) == 1 && destEmpty) {
-            setPiece(*board, ox, y, nullptr);
+            setPiece(board, ox, y, nullptr);
         }
 
         if (abs(ox - x) == 2) enPassant = true;
@@ -327,7 +324,7 @@ PieceType Pawn::getType() const { return PAWN; }
 //////
 // ROOK
 
-Rook::Rook(bool isW, bool isKS, ChessBoard* b, int i) : ChessPiece(isW, isKS, b, i) {
+Rook::Rook(bool isW, bool isKS, ChessBoard& b, int i) : ChessPiece(isW, isKS, b, i) {
     id[1] = 'R';
     hasMoved = false;
 }
@@ -340,8 +337,8 @@ bool Rook::canMove(int x, int y, bool chkchk) const {
     int cx = getPosX();
     int cy = getPosY();
 
-    if (board->getPiece(x, y) != nullptr &&
-        board->getPiece(x, y)->getWhite() == isWhite)  // capturing same-side piece.
+    if (board.getPiece(x, y) != nullptr &&
+        board.getPiece(x, y)->getWhite() == isWhite)  // capturing same-side piece.
         return false;
 
     if (x == cx) {
@@ -351,11 +348,11 @@ bool Rook::canMove(int x, int y, bool chkchk) const {
         {
             if (y < cy) {
                 for (int i = y + 1; i < cy; i++) {
-                    if (board->getPiece(x, i) != nullptr) return false;
+                    if (board.getPiece(x, i) != nullptr) return false;
                 };
             } else {  // y > cy
                 for (int i = y - 1; i > cy; i--) {
-                    if (board->getPiece(x, i) != nullptr) return false;
+                    if (board.getPiece(x, i) != nullptr) return false;
                 };
             }
         }
@@ -364,24 +361,24 @@ bool Rook::canMove(int x, int y, bool chkchk) const {
     } else {  // check space in between again
         if (x < cx) {
             for (int i = x + 1; i < cx; i++) {
-                if (board->getPiece(i, y) != nullptr) return false;
+                if (board.getPiece(i, y) != nullptr) return false;
             };
         } else {  // x > cx
             for (int i = x - 1; i > cx; i--) {
-                if (board->getPiece(i, y) != nullptr) return false;
+                if (board.getPiece(i, y) != nullptr) return false;
             };
         }
     }
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
-        bool ret = !(board->checkCheck(isWhite));
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
+        bool ret = !(board.checkCheck(isWhite));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -420,7 +417,7 @@ void Rook::markMoved() { hasMoved = true; }
 const int Knight::xOffsets[8] = {1, 1, -1, -1, 2, 2, -2, -2};
 const int Knight::yOffsets[8] = {2, -2, 2, -2, 1, -1, 1, -1};
 
-Knight::Knight(bool isW, bool isKS, ChessBoard* b, int i) : ChessPiece(isW, isKS, b, i) {
+Knight::Knight(bool isW, bool isKS, ChessBoard& b, int i) : ChessPiece(isW, isKS, b, i) {
     id[1] = 'N';
 }
 
@@ -429,7 +426,7 @@ Knight::~Knight() {}
 bool Knight::canMove(int x, int y, bool chkchk) const {
     if (x < 0 || x > 7 || y < 0 || y > 7) return false;
 
-    if (board->getPiece(x, y) != nullptr && board->getPiece(x, y)->getWhite() == isWhite)
+    if (board.getPiece(x, y) != nullptr && board.getPiece(x, y)->getWhite() == isWhite)
         return false;
 
     int cx = getPosX();
@@ -450,13 +447,13 @@ bool Knight::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
-        bool ret = !(board->checkCheck(isWhite));
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
+        bool ret = !(board.checkCheck(isWhite));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -479,7 +476,7 @@ PieceType Knight::getType() const { return KNIGHT; }
 ////////
 // BISHOP
 
-Bishop::Bishop(bool isW, bool isKS, ChessBoard* b, int i) : ChessPiece(isW, isKS, b, i) {
+Bishop::Bishop(bool isW, bool isKS, ChessBoard& b, int i) : ChessPiece(isW, isKS, b, i) {
     id[1] = 'B';
 }
 
@@ -494,8 +491,8 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
     int diagDiff = cy - cx;
     int diagSum = cy + cx;
 
-    if (board->getPiece(x, y) != nullptr &&
-        board->getPiece(x, y)->getWhite() == isWhite)  // can't capture same side
+    if (board.getPiece(x, y) != nullptr &&
+        board.getPiece(x, y)->getWhite() == isWhite)  // can't capture same side
         return false;
 
     if (y - x == diagDiff) {
@@ -503,11 +500,11 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
             return false;
         else if (x > cx) {
             for (int i = 1; (cy + i < y && cx + i < x); i++) {
-                if (board->getPiece(cx + i, cy + i) != nullptr) return false;
+                if (board.getPiece(cx + i, cy + i) != nullptr) return false;
             };
         } else {  // x < cx
             for (int i = 1; (cy - i > y && cx - i > x); i++) {
-                if (board->getPiece(cx - i, cy - i) != nullptr) return false;
+                if (board.getPiece(cx - i, cy - i) != nullptr) return false;
             };
         }
     } else if (y + x == diagSum) {
@@ -515,11 +512,11 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
             return false;
         else if (x > cx) {
             for (int i = 1; (cy - i > y && cx + i < x); i++) {
-                if (board->getPiece(cx + i, cy - i) != nullptr) return false;
+                if (board.getPiece(cx + i, cy - i) != nullptr) return false;
             };
         } else {  // x < cx
             for (int i = 1; (cy + i < y && cx - i > x); i++) {
-                if (board->getPiece(cx - i, cy + i) != nullptr) return false;
+                if (board.getPiece(cx - i, cy + i) != nullptr) return false;
             };
         }
     } else
@@ -527,13 +524,13 @@ bool Bishop::canMove(int x, int y, bool chkchk) const {
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
-        bool ret = !(board->checkCheck(isWhite));
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
+        bool ret = !(board.checkCheck(isWhite));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -568,7 +565,7 @@ PieceType Bishop::getType() const { return BISHOP; }
 const int King::xOffsets[10] = {-1, -1, -1, 0, 0, 1, 1, 1, 0, 0};
 const int King::yOffsets[10] = {-1, 0, 1, -1, 1, -1, 0, 1, -2, 2};
 
-King::King(bool isW, ChessBoard* b) : ChessPiece(isW, true, b, 0) {
+King::King(bool isW, ChessBoard& b) : ChessPiece(isW, true, b, 0) {
     id[1] = 'K';
     hasMoved = false;
 }
@@ -578,8 +575,8 @@ King::~King() {}
 bool King::canMove(int x, int y, bool chkchk) const {
     if (x < 0 || x > 7 || y < 0 || y > 7) return false;
 
-    if (board->getPiece(x, y) != nullptr &&
-        board->getPiece(x, y)->getWhite() == isWhite)  // also disallows null move
+    if (board.getPiece(x, y) != nullptr &&
+        board.getPiece(x, y)->getWhite() == isWhite)  // also disallows null move
         return false;
 
     int cx = getPosX();
@@ -598,34 +595,34 @@ bool King::canMove(int x, int y, bool chkchk) const {
             // Rook column: (7 + 7*sign)/2 -> kingside=7, queenside=0.
             int sign = (y - cy) / 2;
 
-            if (board->getPiece(cx, 4 + sign) == nullptr &&
-                board->getPiece(cx, 4 + 2 * sign) == nullptr &&
-                board->getPiece(cx, (7 + 7 * sign) / 2) != nullptr)  // check rooks
+            if (board.getPiece(cx, 4 + sign) == nullptr &&
+                board.getPiece(cx, 4 + 2 * sign) == nullptr &&
+                board.getPiece(cx, (7 + 7 * sign) / 2) != nullptr)  // check rooks
             {
                 if (sign == -1 &&
-                    board->getPiece(cx, 1) != nullptr)  // Queen side: b-file must also be empty
+                    board.getPiece(cx, 1) != nullptr)  // Queen side: b-file must also be empty
                     return false;
 
-                if (board->getPiece(cx, (7 + 7 * sign) / 2)->getType() == ROOK &&
-                    board->getPiece(cx, (7 + 7 * sign) / 2)->getWhite() == isWhite) {
+                if (board.getPiece(cx, (7 + 7 * sign) / 2)->getType() == ROOK &&
+                    board.getPiece(cx, (7 + 7 * sign) / 2)->getWhite() == isWhite) {
                     const Rook* piece =
-                        dynamic_cast<const Rook*>(board->getPiece(cx, (7 + 7 * sign) / 2));
+                        dynamic_cast<const Rook*>(board.getPiece(cx, (7 + 7 * sign) / 2));
                     if (!piece->getMoved()) {
                         // Step the king through each intermediate square and verify
                         // it is not in check at any point (castling through check is illegal).
-                        (void)movePiece(*board, ChessMove(cx, 4, cx, 4 + sign));
+                        (void)movePiece(board, ChessMove(cx, 4, cx, 4 + sign));
                         if (chkchk && inCheck()) {
-                            (void)movePiece(*board, ChessMove(cx, 4 + sign, cx, 4));
+                            (void)movePiece(board, ChessMove(cx, 4 + sign, cx, 4));
                             return false;
                         }
 
-                        (void)movePiece(*board, ChessMove(cx, 4 + sign, cx, 4 + sign * 2));
+                        (void)movePiece(board, ChessMove(cx, 4 + sign, cx, 4 + sign * 2));
                         if (chkchk && inCheck()) {
-                            (void)movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
+                            (void)movePiece(board, ChessMove(cx, 4 + sign * 2, cx, 4));
                             return false;
                         }
 
-                        (void)movePiece(*board, ChessMove(cx, 4 + sign * 2, cx, 4));
+                        (void)movePiece(board, ChessMove(cx, 4 + sign * 2, cx, 4));
                     } else
                         return false;
                 } else
@@ -641,13 +638,13 @@ bool King::canMove(int x, int y, bool chkchk) const {
         // board scan. checkCheck() would search the board for this king and then
         // call inCheck() — but since we are already executing as the king, we
         // can call inCheck() directly. Both are equivalent; inCheck() is faster.
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
         bool ret = !(inCheck());
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -673,14 +670,14 @@ bool King::move(int x, int y) {
     if (b) {
         hasMoved = true;
         if (y == 6 && oy == 4) {
-            (void)movePiece(*board, ChessMove(ox, 7, ox, 5));
-            Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 5));
+            (void)movePiece(board, ChessMove(ox, 7, ox, 5));
+            Rook* piece = dynamic_cast<Rook*>(getMutablePiece(board, ox, 5));
             assert(piece);
             piece->markMoved();
         }
         if (y == 2 && oy == 4) {
-            (void)movePiece(*board, ChessMove(ox, 0, ox, 3));
-            Rook* piece = dynamic_cast<Rook*>(getMutablePiece(*board, ox, 3));
+            (void)movePiece(board, ChessMove(ox, 0, ox, 3));
+            Rook* piece = dynamic_cast<Rook*>(getMutablePiece(board, ox, 3));
             assert(piece);
             piece->markMoved();
         }
@@ -699,8 +696,8 @@ bool King::inCheck() const {
             // At this final step we only need to know if the enemy piece geometrically
             // reaches the king's square; asking whether *that* move would expose the
             // enemy's own king (chkchk=true) would restart the cycle and recurse forever.
-            if (board->getPiece(i, j) != nullptr && board->getPiece(i, j)->getWhite() != isWhite &&
-                board->getPiece(i, j)->canMove(cx, cy, false))
+            if (board.getPiece(i, j) != nullptr && board.getPiece(i, j)->getWhite() != isWhite &&
+                board.getPiece(i, j)->canMove(cx, cy, false))
                 return true;
         }
     }
@@ -712,7 +709,7 @@ PieceType King::getType() const { return KING; }
 ///////
 // QUEEN
 
-Queen::Queen(bool isW, ChessBoard* b, int i, bool isKS) : ChessPiece(isW, isKS, b, i) {
+Queen::Queen(bool isW, ChessBoard& b, int i, bool isKS) : ChessPiece(isW, isKS, b, i) {
     id[1] = 'Q';
 }
 
@@ -721,8 +718,8 @@ Queen::~Queen() {}
 bool Queen::canMove(int x, int y, bool chkchk) const {
     if (x < 0 || x > 7 || y < 0 || y > 7) return false;
 
-    if (board->getPiece(x, y) != nullptr &&
-        board->getPiece(x, y)->getWhite() == isWhite)  // also disallows null move
+    if (board.getPiece(x, y) != nullptr &&
+        board.getPiece(x, y)->getWhite() == isWhite)  // also disallows null move
         return false;
 
     int cx = getPosX();
@@ -738,11 +735,11 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
         {
             if (y < cy) {
                 for (int i = y + 1; i < cy; i++) {
-                    if (board->getPiece(x, i) != nullptr) return false;
+                    if (board.getPiece(x, i) != nullptr) return false;
                 };
             } else {  // y > cy
                 for (int i = y - 1; i > cy; i--) {
-                    if (board->getPiece(x, i) != nullptr) return false;
+                    if (board.getPiece(x, i) != nullptr) return false;
                 };
             }
         }
@@ -752,11 +749,11 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
                 return false;
             else if (x > cx) {
                 for (int i = 1; (cy + i < y && cx + i < x); i++) {
-                    if (board->getPiece(cx + i, cy + i) != nullptr) return false;
+                    if (board.getPiece(cx + i, cy + i) != nullptr) return false;
                 };
             } else {  // x < cx
                 for (int i = 1; (cy - i > y && cx - i > x); i++) {
-                    if (board->getPiece(cx - i, cy - i) != nullptr) return false;
+                    if (board.getPiece(cx - i, cy - i) != nullptr) return false;
                 };
             }
         } else if (y + x == diagSum) {
@@ -764,11 +761,11 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
                 return false;
             else if (x > cx) {
                 for (int i = 1; (cy - i > y && cx + i < x); i++) {
-                    if (board->getPiece(cx + i, cy - i) != nullptr) return false;
+                    if (board.getPiece(cx + i, cy - i) != nullptr) return false;
                 };
             } else {  // x < cx
                 for (int i = 1; (cy + i < y && cx - i > x); i++) {
-                    if (board->getPiece(cx - i, cy + i) != nullptr) return false;
+                    if (board.getPiece(cx - i, cy + i) != nullptr) return false;
                 };
             }
         } else
@@ -776,24 +773,24 @@ bool Queen::canMove(int x, int y, bool chkchk) const {
     } else {  // check space in between again
         if (x < cx) {
             for (int i = x + 1; i < cx; i++) {
-                if (board->getPiece(i, y) != nullptr) return false;
+                if (board.getPiece(i, y) != nullptr) return false;
             };
         } else {  // x > cx
             for (int i = x - 1; i > cx; i--) {
-                if (board->getPiece(i, y) != nullptr) return false;
+                if (board.getPiece(i, y) != nullptr) return false;
             };
         }
     }
 
     if (chkchk) {
         // Temporarily execute and undo the move to test for self-check (see Pawn::canMove).
-        auto temp = movePiece(*board, ChessMove(cx, cy, x, y));
-        bool ret = !(board->checkCheck(isWhite));
-        (void)movePiece(*board, ChessMove(x, y, cx, cy));
+        auto temp = movePiece(board, ChessMove(cx, cy, x, y));
+        bool ret = !(board.checkCheck(isWhite));
+        (void)movePiece(board, ChessMove(x, y, cx, cy));
         // temp->posX/posY is stale while temp is off the board, but
         // checkCheck only reads pieces via the grid so this is safe.
         // place() (called by setPiece) restores the cache here.
-        setPiece(*board, x, y, std::move(temp));
+        setPiece(board, x, y, std::move(temp));
         return ret;
     } else
         return true;
@@ -833,41 +830,41 @@ PieceType Queen::getType() const { return QUEEN; }
 
 ChessBoard::ChessBoard() {
     // Set up the pieces using place() which initialises posX/posY on each piece.
-    place(0, 0, std::make_unique<Rook>(WHITE, false, this, 0));
-    place(0, 1, std::make_unique<Knight>(WHITE, false, this, 0));
-    place(0, 2, std::make_unique<Bishop>(WHITE, false, this, 0));
-    place(0, 3, std::make_unique<Queen>(WHITE, this, 0));
-    place(0, 4, std::make_unique<King>(WHITE, this));
-    place(0, 5, std::make_unique<Bishop>(WHITE, true, this, 0));
-    place(0, 6, std::make_unique<Knight>(WHITE, true, this, 0));
-    place(0, 7, std::make_unique<Rook>(WHITE, true, this, 0));
+    place(0, 0, std::make_unique<Rook>(WHITE, false, *this, 0));
+    place(0, 1, std::make_unique<Knight>(WHITE, false, *this, 0));
+    place(0, 2, std::make_unique<Bishop>(WHITE, false, *this, 0));
+    place(0, 3, std::make_unique<Queen>(WHITE, *this, 0));
+    place(0, 4, std::make_unique<King>(WHITE, *this));
+    place(0, 5, std::make_unique<Bishop>(WHITE, true, *this, 0));
+    place(0, 6, std::make_unique<Knight>(WHITE, true, *this, 0));
+    place(0, 7, std::make_unique<Rook>(WHITE, true, *this, 0));
 
-    place(1, 0, std::make_unique<Pawn>(WHITE, false, this, 4));
-    place(1, 1, std::make_unique<Pawn>(WHITE, false, this, 3));
-    place(1, 2, std::make_unique<Pawn>(WHITE, false, this, 2));
-    place(1, 3, std::make_unique<Pawn>(WHITE, false, this, 1));
-    place(1, 4, std::make_unique<Pawn>(WHITE, true, this, 1));
-    place(1, 5, std::make_unique<Pawn>(WHITE, true, this, 2));
-    place(1, 6, std::make_unique<Pawn>(WHITE, true, this, 3));
-    place(1, 7, std::make_unique<Pawn>(WHITE, true, this, 4));
+    place(1, 0, std::make_unique<Pawn>(WHITE, false, *this, 4));
+    place(1, 1, std::make_unique<Pawn>(WHITE, false, *this, 3));
+    place(1, 2, std::make_unique<Pawn>(WHITE, false, *this, 2));
+    place(1, 3, std::make_unique<Pawn>(WHITE, false, *this, 1));
+    place(1, 4, std::make_unique<Pawn>(WHITE, true, *this, 1));
+    place(1, 5, std::make_unique<Pawn>(WHITE, true, *this, 2));
+    place(1, 6, std::make_unique<Pawn>(WHITE, true, *this, 3));
+    place(1, 7, std::make_unique<Pawn>(WHITE, true, *this, 4));
 
-    place(6, 0, std::make_unique<Pawn>(BLACK, false, this, 4));
-    place(6, 1, std::make_unique<Pawn>(BLACK, false, this, 3));
-    place(6, 2, std::make_unique<Pawn>(BLACK, false, this, 2));
-    place(6, 3, std::make_unique<Pawn>(BLACK, false, this, 1));
-    place(6, 4, std::make_unique<Pawn>(BLACK, true, this, 1));
-    place(6, 5, std::make_unique<Pawn>(BLACK, true, this, 2));
-    place(6, 6, std::make_unique<Pawn>(BLACK, true, this, 3));
-    place(6, 7, std::make_unique<Pawn>(BLACK, true, this, 4));
+    place(6, 0, std::make_unique<Pawn>(BLACK, false, *this, 4));
+    place(6, 1, std::make_unique<Pawn>(BLACK, false, *this, 3));
+    place(6, 2, std::make_unique<Pawn>(BLACK, false, *this, 2));
+    place(6, 3, std::make_unique<Pawn>(BLACK, false, *this, 1));
+    place(6, 4, std::make_unique<Pawn>(BLACK, true, *this, 1));
+    place(6, 5, std::make_unique<Pawn>(BLACK, true, *this, 2));
+    place(6, 6, std::make_unique<Pawn>(BLACK, true, *this, 3));
+    place(6, 7, std::make_unique<Pawn>(BLACK, true, *this, 4));
 
-    place(7, 0, std::make_unique<Rook>(BLACK, false, this, 0));
-    place(7, 1, std::make_unique<Knight>(BLACK, false, this, 0));
-    place(7, 2, std::make_unique<Bishop>(BLACK, false, this, 0));
-    place(7, 3, std::make_unique<Queen>(BLACK, this, 0));
-    place(7, 4, std::make_unique<King>(BLACK, this));
-    place(7, 5, std::make_unique<Bishop>(BLACK, true, this, 0));
-    place(7, 6, std::make_unique<Knight>(BLACK, true, this, 0));
-    place(7, 7, std::make_unique<Rook>(BLACK, true, this, 0));
+    place(7, 0, std::make_unique<Rook>(BLACK, false, *this, 0));
+    place(7, 1, std::make_unique<Knight>(BLACK, false, *this, 0));
+    place(7, 2, std::make_unique<Bishop>(BLACK, false, *this, 0));
+    place(7, 3, std::make_unique<Queen>(BLACK, *this, 0));
+    place(7, 4, std::make_unique<King>(BLACK, *this));
+    place(7, 5, std::make_unique<Bishop>(BLACK, true, *this, 0));
+    place(7, 6, std::make_unique<Knight>(BLACK, true, *this, 0));
+    place(7, 7, std::make_unique<Rook>(BLACK, true, *this, 0));
 }
 
 ChessBoard::~ChessBoard() {}  // unique_ptrs in grid[] clean up automatically
@@ -1067,13 +1064,13 @@ std::unique_ptr<ChessPiece> ChessGame::makePiece(PieceType type, bool white, int
     int idx = white ? whiteProms : blackProms;
     switch (type) {
         case QUEEN:
-            return std::make_unique<Queen>(white, &board, idx, ks);
+            return std::make_unique<Queen>(white, board, idx, ks);
         case ROOK:
-            return std::make_unique<Rook>(white, ks, &board, idx);
+            return std::make_unique<Rook>(white, ks, board, idx);
         case KNIGHT:
-            return std::make_unique<Knight>(white, ks, &board, idx);
+            return std::make_unique<Knight>(white, ks, board, idx);
         case BISHOP:
-            return std::make_unique<Bishop>(white, ks, &board, idx);
+            return std::make_unique<Bishop>(white, ks, board, idx);
         default:
             fprintf(stderr, "makePiece: invalid promotion type %d\n", static_cast<int>(type));
             std::abort();
@@ -1133,4 +1130,4 @@ void ChessGame::setPiece(int x, int y, std::unique_ptr<ChessPiece> piece) {
     board.place(x, y, std::move(piece));
 }
 
-ChessBoard* ChessGame::getPieceBoard() { return &board; }
+ChessBoard& ChessGame::getPieceBoard() { return board; }

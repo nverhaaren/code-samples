@@ -20,7 +20,7 @@
 // ============================================================================
 struct CustomBoard {
     ChessGame game;
-    ChessBoard* b;
+    ChessBoard& b;
 
     CustomBoard() : b(game.getPieceBoard()) {
         game.setRules(false);
@@ -751,9 +751,27 @@ TEST_CASE("ChessGame: getMoves returns non-empty list at start", "[ChessGame]") 
     REQUIRE(!moves.empty());
 }
 
-TEST_CASE("ChessGame: getPieceBoard returns valid board pointer", "[ChessGame]") {
+TEST_CASE("ChessGame: getPieceBoard returns reference to board", "[ChessGame]") {
     ChessGame game;
-    REQUIRE(game.getPieceBoard() != NULL);
+    ChessBoard& b = game.getPieceBoard();
+    // The reference should refer to the game's own board — verify via piece access
+    REQUIRE(b.getPiece(0, 4) != nullptr);
+    REQUIRE(b.getPiece(0, 4)->getType() == KING);
+}
+
+TEST_CASE("ChessPiece: constructed with board reference can query board", "[ChessPiece]") {
+    CustomBoard cb;
+    cb.place(3, 3, new Rook(WHITE, false, cb.b));
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+
+    const ChessPiece* rook = cb.game.getPiece(3, 3);
+    REQUIRE(rook != nullptr);
+    REQUIRE(rook->getType() == ROOK);
+    // Piece can query its board: canMove works (which calls board.getPiece internally)
+    REQUIRE(rook->canMove(3, 7));
+    REQUIRE(rook->canMove(0, 3));
 }
 
 TEST_CASE("ChessGame: rules can be toggled", "[ChessGame]") {
