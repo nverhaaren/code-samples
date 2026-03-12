@@ -320,6 +320,8 @@ class ChessGame {
 
     std::string toFen() const;
 
+    ChessMove parseSan(const std::string& san) const;
+
     ChessBoard& getPieceBoard();
 
    private:

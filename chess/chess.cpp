@@ -1251,4 +1251,123 @@ std::string ChessGame::toFen() const {
     return fen;
 }
 
+ChessMove ChessGame::parseSan(const std::string& san) const {
+    if (san.empty()) return ChessMove();
+
+    // Strip check/checkmate suffixes (+, #) for parsing.
+    std::string s = san;
+    while (!s.empty() && (s.back() == '+' || s.back() == '#')) s.pop_back();
+    if (s.empty()) return ChessMove();
+
+    // Castling.
+    if (s == "O-O" || s == "0-0") {
+        int rank = whiteTurn ? 0 : 7;
+        ChessMove cm(rank, 4, rank, 6);
+        // Verify it's legal.
+        auto moves = getMoves(whiteTurn);
+        for (const auto& m : moves) {
+            if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
+                m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
+                return m;
+        }
+        return ChessMove();
+    }
+    if (s == "O-O-O" || s == "0-0-0") {
+        int rank = whiteTurn ? 0 : 7;
+        ChessMove cm(rank, 4, rank, 2);
+        auto moves = getMoves(whiteTurn);
+        for (const auto& m : moves) {
+            if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
+                m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
+                return m;
+        }
+        return ChessMove();
+    }
+
+    // Parse promotion suffix (e.g., "=Q", "=N").
+    PieceType promo = PAWN;
+    {
+        size_t eq = s.find('=');
+        if (eq != std::string::npos && eq + 1 < s.size()) {
+            char pc = s[eq + 1];
+            switch (pc) {
+                case 'Q': case 'q': promo = QUEEN; break;
+                case 'R': case 'r': promo = ROOK; break;
+                case 'B': case 'b': promo = BISHOP; break;
+                case 'N': case 'n': promo = KNIGHT; break;
+                default: return ChessMove();
+            }
+            s = s.substr(0, eq);
+        }
+    }
+
+    // Determine piece type and strip the piece letter.
+    PieceType pieceType = PAWN;
+    if (!s.empty() && s[0] >= 'A' && s[0] <= 'Z') {
+        switch (s[0]) {
+            case 'K': pieceType = KING; break;
+            case 'Q': pieceType = QUEEN; break;
+            case 'R': pieceType = ROOK; break;
+            case 'B': pieceType = BISHOP; break;
+            case 'N': pieceType = KNIGHT; break;
+            default: return ChessMove();
+        }
+        s = s.substr(1);
+    }
+
+    // Remove 'x' capture indicator.
+    std::string cleaned;
+    for (char c : s) {
+        if (c != 'x') cleaned += c;
+    }
+    s = cleaned;
+
+    // Now s should be one of:
+    //   "e4"       — destination only (pawn or piece)
+    //   "fe4"      — file disambiguation + destination (pawn capture or piece)
+    //   "1e4"      — rank disambiguation + destination
+    //   "f1e4"     — full disambiguation (file+rank) + destination
+
+    if (s.size() < 2) return ChessMove();
+
+    // Destination is always the last two characters.
+    int endY = s[s.size() - 2] - 'a';
+    int endX = s[s.size() - 1] - '1';
+    if (endX < 0 || endX > 7 || endY < 0 || endY > 7) return ChessMove();
+
+    // Disambiguation from remaining characters.
+    int disambigFile = -1;  // 0-7 if specified
+    int disambigRank = -1;  // 0-7 if specified
+    std::string prefix = s.substr(0, s.size() - 2);
+    for (char c : prefix) {
+        if (c >= 'a' && c <= 'h') disambigFile = c - 'a';
+        else if (c >= '1' && c <= '8') disambigRank = c - '1';
+        else return ChessMove();
+    }
+
+    // Find matching legal move.
+    auto moves = getMoves(whiteTurn);
+    ChessMove match;
+    int matchCount = 0;
+    for (const auto& m : moves) {
+        if (m.getEndX() != endX || m.getEndY() != endY) continue;
+        const ChessPiece* p = board.getPiece(m.getStartX(), m.getStartY());
+        if (p == nullptr || p->getType() != pieceType) continue;
+        if (disambigFile >= 0 && m.getStartY() != disambigFile) continue;
+        if (disambigRank >= 0 && m.getStartX() != disambigRank) continue;
+        // For promotion moves, check that the promotion type matches.
+        if (promo != PAWN) {
+            if (m.getPromotion() != promo) continue;
+        } else {
+            // If no promotion specified, skip promotion moves.
+            if (m.getPromotion() != PAWN) continue;
+        }
+        match = m;
+        matchCount++;
+    }
+
+    if (matchCount == 1) return match;
+    return ChessMove();  // ambiguous or no match
+}
+
 ChessBoard& ChessGame::getPieceBoard() { return board; }
