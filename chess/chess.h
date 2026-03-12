@@ -318,6 +318,8 @@ class ChessGame {
 
     const std::vector<ChessMove>& getHistory() const;
 
+    std::string toFen() const;
+
     ChessBoard& getPieceBoard();
 
    private:
@@ -326,6 +328,7 @@ class ChessGame {
     ChessBoard board;
     int whiteProms = 0;
     int blackProms = 0;
+    int halfmoveClock = 0;
     std::vector<ChessMove> history;
     std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y);
 };

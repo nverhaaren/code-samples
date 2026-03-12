@@ -893,3 +893,150 @@ TEST_CASE("ChessGame: rules-off moves are not recorded in history", "[ChessGame]
     game.makeMove(ChessMove(1, 4, 3, 4));
     REQUIRE(game.getHistory().empty());
 }
+
+// ============================================================================
+// FEN Serialization
+// ============================================================================
+
+TEST_CASE("ChessGame: initial position FEN", "[ChessGame][FEN]") {
+    ChessGame game;
+    REQUIRE(game.toFen() ==
+            "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+}
+
+TEST_CASE("ChessGame: FEN after 1. e4", "[ChessGame][FEN]") {
+    ChessGame game;
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e2-e4
+    REQUIRE(game.toFen() ==
+            "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1");
+}
+
+TEST_CASE("ChessGame: FEN after 1. e4 e5", "[ChessGame][FEN]") {
+    ChessGame game;
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e2-e4
+    REQUIRE(game.makeMove(ChessMove(6, 4, 4, 4)));  // e7-e5
+    REQUIRE(game.toFen() ==
+            "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2");
+}
+
+TEST_CASE("ChessGame: FEN castling rights removed after king moves", "[ChessGame][FEN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));
+    cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.activate();
+    // Move white king
+    REQUIRE(cb.game.makeMove(ChessMove(0, 4, 0, 5)));
+    std::string fen = cb.game.toFen();
+    // After king moves, white has no castling rights; black has none either
+    // FEN castling field should be "-"
+    // Extract castling field (3rd space-separated field)
+    int spaces = 0;
+    std::string castling;
+    for (char c : fen) {
+        if (c == ' ') { spaces++; continue; }
+        if (spaces == 2) castling += c;
+        if (spaces > 2) break;
+    }
+    REQUIRE(castling == "-");
+}
+
+TEST_CASE("ChessGame: FEN castling rights after only kingside rook moves", "[ChessGame][FEN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));
+    cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.activate();
+    // Move kingside rook
+    REQUIRE(cb.game.makeMove(ChessMove(0, 7, 1, 7)));
+    std::string fen = cb.game.toFen();
+    // White should still have queenside castling (Q), but not kingside
+    int spaces = 0;
+    std::string castling;
+    for (char c : fen) {
+        if (c == ' ') { spaces++; continue; }
+        if (spaces == 2) castling += c;
+        if (spaces > 2) break;
+    }
+    REQUIRE(castling == "Q");
+}
+
+TEST_CASE("ChessGame: FEN with empty board except kings", "[ChessGame][FEN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.activate();
+    REQUIRE(cb.game.toFen() == "4k3/8/8/8/8/8/8/4K3 w - - 0 1");
+}
+
+TEST_CASE("ChessGame: FEN halfmove clock resets on pawn move", "[ChessGame][FEN]") {
+    ChessGame game;
+    // 1. Nf3 Nf6  (two non-pawn, non-capture moves → halfmove clock = 2)
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Ng1-f3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Ng8-f6
+    std::string fen = game.toFen();
+    // Extract halfmove clock (5th space-separated field)
+    int spaces = 0;
+    std::string halfmove;
+    for (char c : fen) {
+        if (c == ' ') { spaces++; continue; }
+        if (spaces == 4) halfmove += c;
+        if (spaces > 4) break;
+    }
+    REQUIRE(halfmove == "2");
+
+    // Now a pawn move resets halfmove clock to 0
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e2-e4
+    fen = game.toFen();
+    spaces = 0;
+    halfmove.clear();
+    for (char c : fen) {
+        if (c == ' ') { spaces++; continue; }
+        if (spaces == 4) halfmove += c;
+        if (spaces > 4) break;
+    }
+    REQUIRE(halfmove == "0");
+}
+
+TEST_CASE("ChessGame: FEN halfmove clock resets on capture", "[ChessGame][FEN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(3, 3, new Knight(WHITE, false, cb.b));
+    // Knight from (3,3) can reach (4,1) — place black piece there for capture.
+    cb.place(4, 1, new Knight(BLACK, false, cb.b));
+    cb.activate();
+    // Non-capture king moves to build up the clock.
+    REQUIRE(cb.game.makeMove(ChessMove(0, 4, 0, 5)));  // halfmove = 1
+    REQUIRE(cb.game.makeMove(ChessMove(7, 4, 7, 5)));  // halfmove = 2
+    // White knight captures black knight at (4,1): halfmove resets to 0
+    REQUIRE(cb.game.makeMove(ChessMove(3, 3, 4, 1)));
+    std::string fen = cb.game.toFen();
+    int spaces = 0;
+    std::string halfmove;
+    for (char c : fen) {
+        if (c == ' ') { spaces++; continue; }
+        if (spaces == 4) halfmove += c;
+        if (spaces > 4) break;
+    }
+    REQUIRE(halfmove == "0");
+}
+
+TEST_CASE("ChessGame: FEN fullmove number increments after black moves", "[ChessGame][FEN]") {
+    ChessGame game;
+    // Initial: fullmove = 1
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // 1. e4
+    // After white's first move, still fullmove 1
+    std::string fen = game.toFen();
+    REQUIRE(fen.back() == '1');
+    REQUIRE(game.makeMove(ChessMove(6, 4, 4, 4)));  // 1... e5
+    // After black's first move, fullmove = 2
+    fen = game.toFen();
+    REQUIRE(fen.back() == '2');
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // 2. Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 1, 5, 2)));  // 2... Nc6
+    fen = game.toFen();
+    REQUIRE(fen.back() == '3');
+}

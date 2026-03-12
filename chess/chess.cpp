@@ -704,6 +704,8 @@ bool King::inCheck() const {
     return false;
 }
 
+bool King::getMoved() const { return hasMoved; }
+
 PieceType King::getType() const { return KING; }
 
 ///////
@@ -1085,9 +1087,17 @@ bool ChessGame::makeMove(const ChessMove& cm) {
     if (rulesOn) {
         ChessPiece* piece = board.getMoveablePiece(cm.getStartX(), cm.getStartY());
         if (piece == nullptr || piece->getWhite() != whiteTurn) return false;
+        bool isPawnMove = (piece->getType() == PAWN);
+        bool isCapture = (board.getPiece(cm.getEndX(), cm.getEndY()) != nullptr);
+        // En passant is also a capture (destination is empty but a pawn is taken).
+        if (isPawnMove && !isCapture && cm.getStartY() != cm.getEndY()) isCapture = true;
         bool b = piece->move(cm.getEndX(), cm.getEndY());
         if (b) {
             history.push_back(cm);
+            if (isPawnMove || isCapture)
+                halfmoveClock = 0;
+            else
+                halfmoveClock++;
             bool movedColor = whiteTurn;  // capture before flip
             // Handle pawn promotion: replace pawn with requested piece type.
             // Write directly to board.grid (ChessGame is a friend of ChessBoard)
@@ -1131,6 +1141,114 @@ void ChessGame::setPiece(int x, int y, std::unique_ptr<ChessPiece> piece) {
     if (rulesOn) return;
     if (x < 0 || x > 7 || y < 0 || y > 7) return;
     board.place(x, y, std::move(piece));
+}
+
+std::string ChessGame::toFen() const {
+    std::string fen;
+
+    // 1. Piece placement (rank 8 down to rank 1 = x=7 down to x=0)
+    for (int x = 7; x >= 0; x--) {
+        int empty = 0;
+        for (int y = 0; y < 8; y++) {
+            const ChessPiece* p = board.getPiece(x, y);
+            if (p == nullptr) {
+                empty++;
+            } else {
+                if (empty > 0) {
+                    fen += std::to_string(empty);
+                    empty = 0;
+                }
+                char c;
+                switch (p->getType()) {
+                    case PAWN: c = 'p'; break;
+                    case ROOK: c = 'r'; break;
+                    case KNIGHT: c = 'n'; break;
+                    case BISHOP: c = 'b'; break;
+                    case QUEEN: c = 'q'; break;
+                    case KING: c = 'k'; break;
+                }
+                if (p->getWhite()) c = c - 32;  // uppercase for white
+                fen += c;
+            }
+        }
+        if (empty > 0) fen += std::to_string(empty);
+        if (x > 0) fen += '/';
+    }
+
+    // 2. Active color
+    fen += whiteTurn ? " w" : " b";
+
+    // 3. Castling availability
+    std::string castling;
+    // White kingside: king at (0,4) unmoved, rook at (0,7) unmoved
+    const ChessPiece* wk = board.getPiece(0, 4);
+    if (wk != nullptr && wk->getType() == KING && wk->getWhite()) {
+        const King* king = dynamic_cast<const King*>(wk);
+        if (!king->getMoved()) {
+            const ChessPiece* wr = board.getPiece(0, 7);
+            if (wr != nullptr && wr->getType() == ROOK && wr->getWhite()) {
+                const Rook* rook = dynamic_cast<const Rook*>(wr);
+                if (!rook->getMoved()) castling += 'K';
+            }
+            const ChessPiece* wqr = board.getPiece(0, 0);
+            if (wqr != nullptr && wqr->getType() == ROOK && wqr->getWhite()) {
+                const Rook* rook = dynamic_cast<const Rook*>(wqr);
+                if (!rook->getMoved()) castling += 'Q';
+            }
+        }
+    }
+    // Black kingside: king at (7,4) unmoved, rook at (7,7) unmoved
+    const ChessPiece* bk = board.getPiece(7, 4);
+    if (bk != nullptr && bk->getType() == KING && !bk->getWhite()) {
+        const King* king = dynamic_cast<const King*>(bk);
+        if (!king->getMoved()) {
+            const ChessPiece* br = board.getPiece(7, 7);
+            if (br != nullptr && br->getType() == ROOK && !br->getWhite()) {
+                const Rook* rook = dynamic_cast<const Rook*>(br);
+                if (!rook->getMoved()) castling += 'k';
+            }
+            const ChessPiece* bqr = board.getPiece(7, 0);
+            if (bqr != nullptr && bqr->getType() == ROOK && !bqr->getWhite()) {
+                const Rook* rook = dynamic_cast<const Rook*>(bqr);
+                if (!rook->getMoved()) castling += 'q';
+            }
+        }
+    }
+    fen += ' ';
+    fen += castling.empty() ? "-" : castling;
+
+    // 4. En passant target square
+    std::string ep = "-";
+    for (int y = 0; y < 8; y++) {
+        // En passant target is on the square "behind" the pawn that just double-advanced.
+        // Check pawns that have the enPassant flag set.
+        // White pawn with enPassant is at row 3 (just moved from row 1 to 3); target = row 2.
+        // Black pawn with enPassant is at row 4 (just moved from row 6 to 4); target = row 5.
+        for (int x = 0; x < 8; x++) {
+            const ChessPiece* p = board.getPiece(x, y);
+            if (p != nullptr && p->getType() == PAWN) {
+                const Pawn* pawn = dynamic_cast<const Pawn*>(p);
+                if (pawn->getEnPassant()) {
+                    int targetX = pawn->getWhite() ? (x - 1) : (x + 1);
+                    ep = "";
+                    ep += ChessMove::fileLetters[y];
+                    ep += std::to_string(targetX + 1);
+                }
+            }
+        }
+    }
+    fen += ' ';
+    fen += ep;
+
+    // 5. Halfmove clock
+    fen += ' ';
+    fen += std::to_string(halfmoveClock);
+
+    // 6. Fullmove number
+    fen += ' ';
+    fen += std::to_string(1 + (int)history.size() / 2);
+
+    return fen;
 }
 
 ChessBoard& ChessGame::getPieceBoard() { return board; }
