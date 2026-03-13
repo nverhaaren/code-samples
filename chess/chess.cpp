@@ -1269,6 +1269,9 @@ std::string ChessGame::positionKey() const {
     return fen;  // fallback (shouldn't happen)
 }
 
+// O(n) scan over full history. Could be improved by only scanning back
+// halfmoveClock entries (positions can't repeat across pawn moves or captures)
+// or by maintaining an unordered_map<string, int> as a running counter.
 int ChessGame::positionCount() const {
     if (positionHistory.empty()) return 0;
     const std::string& current = positionHistory.back();
