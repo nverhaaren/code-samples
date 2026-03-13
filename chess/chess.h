@@ -184,6 +184,7 @@ class King : public ChessPiece {
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
+    void markMoved();
     bool move(int x, int y) override;
     bool inCheck() const;
     PieceType getType() const override;
@@ -324,9 +325,13 @@ class ChessGame {
     const std::vector<ChessMove>& getHistory() const;
 
     std::string toFen() const;
+    static std::unique_ptr<ChessGame> fromFen(const std::string& fen);
 
     bool canClaimDraw() const;
     bool isAutomaticDraw() const;
+
+    /** Returns a JSON string representing the full game state. */
+    std::string toJson() const;
 
     ChessBoard& getPieceBoard();
 
