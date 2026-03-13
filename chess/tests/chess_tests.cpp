@@ -1154,3 +1154,110 @@ TEST_CASE("ChessGame: pawn move resets 50-move counter for draw", "[ChessGame][D
     // After pawn move, draw definitely not claimable
     REQUIRE_FALSE(game.canClaimDraw());
 }
+
+// ============================================================================
+// FEN Deserialization
+// ============================================================================
+
+TEST_CASE("ChessGame::fromFen: round-trip initial position", "[ChessGame][FEN]") {
+    ChessGame game;
+    std::string originalFen = game.toFen();
+    auto loaded = ChessGame::fromFen(originalFen);
+    REQUIRE(loaded->toFen() == originalFen);
+}
+
+TEST_CASE("ChessGame::fromFen: mid-game position pieces placed correctly", "[ChessGame][FEN]") {
+    // Sicilian Defense after 1. e4 c5
+    std::string fen = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2";
+    auto game = ChessGame::fromFen(fen);
+    // White pawn on e4 (x=3, y=4)
+    const ChessPiece* wp = game->getPiece(3, 4);
+    REQUIRE(wp != nullptr);
+    REQUIRE(wp->getType() == PAWN);
+    REQUIRE(wp->getWhite() == true);
+    // Black pawn on c5 (x=4, y=2)
+    const ChessPiece* bp = game->getPiece(4, 2);
+    REQUIRE(bp != nullptr);
+    REQUIRE(bp->getType() == PAWN);
+    REQUIRE(bp->getWhite() == false);
+    // Empty square at e2 (x=1, y=4) — pawn moved away
+    REQUIRE(game->getPiece(1, 4) == nullptr);
+    // FEN round-trips
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves active color (black to move)", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->getTurn() == BLACK);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves partial castling rights", "[ChessGame][FEN]") {
+    // Only white queenside and black kingside castling available
+    std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w Qk - 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // Verify: white king unmoved, white kingside rook moved, white queenside rook unmoved
+    const ChessPiece* wk = game->getPiece(0, 4);
+    REQUIRE(wk != nullptr);
+    REQUIRE(wk->getType() == KING);
+    const King* whiteKing = dynamic_cast<const King*>(wk);
+    REQUIRE_FALSE(whiteKing->getMoved());
+    // White kingside rook at (0,7) should be marked moved (no K right)
+    const ChessPiece* wkr = game->getPiece(0, 7);
+    REQUIRE(wkr != nullptr);
+    REQUIRE(wkr->getType() == ROOK);
+    const Rook* whiteKSRook = dynamic_cast<const Rook*>(wkr);
+    REQUIRE(whiteKSRook->getMoved());
+    // White queenside rook at (0,0) should be unmoved (Q right present)
+    const ChessPiece* wqr = game->getPiece(0, 0);
+    REQUIRE(wqr != nullptr);
+    const Rook* whiteQSRook = dynamic_cast<const Rook*>(wqr);
+    REQUIRE_FALSE(whiteQSRook->getMoved());
+}
+
+TEST_CASE("ChessGame::fromFen: preserves en passant target square", "[ChessGame][FEN]") {
+    // After 1. e4, en passant target is e3
+    std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // The white pawn at e4 (x=3, y=4) should have enPassant flag set
+    const ChessPiece* p = game->getPiece(3, 4);
+    REQUIRE(p != nullptr);
+    REQUIRE(p->getType() == PAWN);
+    const Pawn* pawn = dynamic_cast<const Pawn*>(p);
+    REQUIRE(pawn->getEnPassant());
+}
+
+TEST_CASE("ChessGame::fromFen: preserves halfmove clock", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves fullmove number via toFen", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: no castling rights (dash)", "[ChessGame][FEN]") {
+    std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w - - 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // Both kings should be marked as moved
+    const King* wk = dynamic_cast<const King*>(game->getPiece(0, 4));
+    REQUIRE(wk->getMoved());
+    const King* bk = dynamic_cast<const King*>(game->getPiece(7, 4));
+    REQUIRE(bk->getMoved());
+}
+
+TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGame][FEN]") {
+    // Scholar's mate setup: white to play Qxf7#
+    std::string fen = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3";
+    auto game = ChessGame::fromFen(fen);
+    // White queen on f3 (x=2, y=5) captures f7 (x=6, y=5) — should be checkmate
+    REQUIRE(game->makeMove(ChessMove(2, 5, 6, 5)));
+    REQUIRE(game->checkmate(BLACK));
+}

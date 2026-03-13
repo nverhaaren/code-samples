@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstdlib>
+#include <sstream>
 
 using std::abs;
 
@@ -705,6 +706,7 @@ bool King::inCheck() const {
 }
 
 bool King::getMoved() const { return hasMoved; }
+void King::markMoved() { hasMoved = true; }
 
 PieceType King::getType() const { return KING; }
 
@@ -1252,6 +1254,145 @@ std::string ChessGame::toFen() const {
     fen += std::to_string(1 + (int)history.size() / 2);
 
     return fen;
+}
+
+std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
+    std::istringstream ss(fen);
+    std::string placement, activeColor, castling, enPassant;
+    int halfmove = 0, fullmove = 1;
+    ss >> placement >> activeColor >> castling >> enPassant >> halfmove >> fullmove;
+
+    if (ss.fail()) {
+        fprintf(stderr, "fromFen: failed to parse FEN string: %s\n", fen.c_str());
+        std::abort();
+    }
+
+    auto game = std::unique_ptr<ChessGame>(new ChessGame());
+    game->setRules(false);
+
+    // Clear the board
+    for (int rx = 0; rx < 8; rx++)
+        for (int ry = 0; ry < 8; ry++)
+            game->setPiece(rx, ry, nullptr);
+
+    // 1. Parse piece placement (rank 8 = x=7 down to rank 1 = x=0)
+    int x = 7;
+    int y = 0;
+    for (char c : placement) {
+        if (c == '/') {
+            x--;
+            y = 0;
+        } else if (c >= '1' && c <= '8') {
+            y += (c - '0');
+        } else {
+            bool isWhite = (c >= 'A' && c <= 'Z');
+            char lower = isWhite ? static_cast<char>(c + 32) : c;
+            bool isKingSide = (y > 3);
+            // Pawn index based on column, matching ChessBoard constructor convention
+            int pawnIdx = isKingSide ? (y - 3) : (4 - y);
+
+            std::unique_ptr<ChessPiece> piece;
+            switch (lower) {
+                case 'p':
+                    piece = std::make_unique<Pawn>(isWhite, isKingSide, game->board, pawnIdx);
+                    break;
+                case 'r':
+                    piece = std::make_unique<Rook>(isWhite, isKingSide, game->board, 0);
+                    break;
+                case 'n':
+                    piece = std::make_unique<Knight>(isWhite, isKingSide, game->board, 0);
+                    break;
+                case 'b':
+                    piece = std::make_unique<Bishop>(isWhite, isKingSide, game->board, 0);
+                    break;
+                case 'q':
+                    piece = std::make_unique<Queen>(isWhite, game->board, 0, isKingSide);
+                    break;
+                case 'k':
+                    piece = std::make_unique<King>(isWhite, game->board);
+                    break;
+                default:
+                    fprintf(stderr, "fromFen: unexpected piece character '%c'\n", c);
+                    std::abort();
+            }
+            game->board.place(x, y, std::move(piece));
+            y++;
+        }
+    }
+
+    // 2. Active color
+    game->whiteTurn = (activeColor == "w");
+
+    // 3. Castling rights — pieces default to hasMoved=false.
+    //    Mark pieces as moved when they lack castling rights.
+    bool whiteKS = (castling.find('K') != std::string::npos);
+    bool whiteQS = (castling.find('Q') != std::string::npos);
+    bool blackKS = (castling.find('k') != std::string::npos);
+    bool blackQS = (castling.find('q') != std::string::npos);
+
+    // White king: if no castling rights at all, mark moved
+    if (!whiteKS && !whiteQS) {
+        ChessPiece* wk = game->board.getMoveablePiece(0, 4);
+        if (wk != nullptr && wk->getType() == KING)
+            dynamic_cast<King*>(wk)->markMoved();
+    }
+    if (!whiteKS) {
+        ChessPiece* wr = game->board.getMoveablePiece(0, 7);
+        if (wr != nullptr && wr->getType() == ROOK)
+            dynamic_cast<Rook*>(wr)->markMoved();
+    }
+    if (!whiteQS) {
+        ChessPiece* wr = game->board.getMoveablePiece(0, 0);
+        if (wr != nullptr && wr->getType() == ROOK)
+            dynamic_cast<Rook*>(wr)->markMoved();
+    }
+    // Black king: if no castling rights at all, mark moved
+    if (!blackKS && !blackQS) {
+        ChessPiece* bk = game->board.getMoveablePiece(7, 4);
+        if (bk != nullptr && bk->getType() == KING)
+            dynamic_cast<King*>(bk)->markMoved();
+    }
+    if (!blackKS) {
+        ChessPiece* br = game->board.getMoveablePiece(7, 7);
+        if (br != nullptr && br->getType() == ROOK)
+            dynamic_cast<Rook*>(br)->markMoved();
+    }
+    if (!blackQS) {
+        ChessPiece* br = game->board.getMoveablePiece(7, 0);
+        if (br != nullptr && br->getType() == ROOK)
+            dynamic_cast<Rook*>(br)->markMoved();
+    }
+
+    // 4. En passant target square
+    if (enPassant != "-") {
+        int epY = enPassant[0] - 'a';  // file
+        int epX = enPassant[1] - '1';  // rank (0-indexed)
+        // The pawn that double-pushed is one rank past the target:
+        // If it's black's turn (activeColor == "b"), white just pushed, pawn at epX+1.
+        // If it's white's turn (activeColor == "w"), black just pushed, pawn at epX-1.
+        int pawnX = (activeColor == "b") ? (epX + 1) : (epX - 1);
+        ChessPiece* p = game->board.getMoveablePiece(pawnX, epY);
+        if (p != nullptr && p->getType() == PAWN)
+            dynamic_cast<Pawn*>(p)->setEnPassant(true);
+    }
+
+    // 5. Halfmove clock
+    game->halfmoveClock = halfmove;
+
+    // 6. Fullmove number — derive history size so toFen() reproduces it.
+    //    toFen() computes: 1 + history.size() / 2
+    //    So: history.size() = (fullmove - 1) * 2 + (black to move ? 1 : 0)
+    int histSize = (fullmove - 1) * 2 + (activeColor == "b" ? 1 : 0);
+    game->history.clear();
+    for (int i = 0; i < histSize; i++)
+        game->history.push_back(ChessMove());
+
+    // 7. Initialize position history with the current position
+    game->positionHistory.clear();
+    game->setRules(true);
+    game->positionHistory.push_back(game->positionKey());
+
+    return game;
 }
 
 std::string ChessGame::positionKey() const {
