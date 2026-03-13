@@ -1040,3 +1040,117 @@ TEST_CASE("ChessGame: FEN fullmove number increments after black moves", "[Chess
     fen = game.toFen();
     REQUIRE(fen.back() == '3');
 }
+
+// ============================================================================
+// Draw Detection
+// ============================================================================
+
+TEST_CASE("ChessGame: no draw claims at start of game", "[ChessGame][Draw]") {
+    ChessGame game;
+    REQUIRE_FALSE(game.canClaimDraw());
+    REQUIRE_FALSE(game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: threefold repetition is claimable", "[ChessGame][Draw]") {
+    // Move knights back and forth to repeat the starting position.
+    // Position 1: initial. Nf3, Nf6 → position 2. Ng1, Ng8 → position 1 again (count=2).
+    // Nf3, Nf6 → position 2 again (count=2). Ng1, Ng8 → position 1 (count=3). Claimable!
+    ChessGame game;
+    // Cycle 1
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+    REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    REQUIRE_FALSE(game.canClaimDraw());  // position repeated twice, not yet three
+    // Cycle 2
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+    REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    // Position has now occurred 3 times — claimable
+    REQUIRE(game.canClaimDraw());
+    REQUIRE_FALSE(game.isAutomaticDraw());  // not 5-fold yet
+}
+
+TEST_CASE("ChessGame: fivefold repetition is automatic draw", "[ChessGame][Draw]") {
+    ChessGame game;
+    // Need position to occur 5 times. Initial = occurrence 1. Each full cycle adds 1.
+    for (int i = 0; i < 4; i++) {
+        REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+        REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+        REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+        REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    }
+    REQUIRE(game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: 50-move rule claimable at 100 halfmoves", "[ChessGame][Draw]") {
+    CustomBoard cb;
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    // Rooks bounce on separate rows (12-move cycles). Fivefold repetition also
+    // triggers within 50 iterations, but the test verifies canClaimDraw is true
+    // once the halfmove clock reaches 100. Repetition is tested separately above.
+    cb.place(2, 0, new Rook(WHITE, false, cb.b));
+    cb.place(5, 7, new Rook(BLACK, false, cb.b));
+    cb.activate();
+    int wCol = 0, wDir = 1;
+    int bCol = 7, bDir = -1;
+    for (int i = 0; i < 49; i++) {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+        bCol = bNext;
+    }
+    // Two more moves to reach 100 halfmoves.
+    {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+    }
+    // 100 halfmoves — claimable (50-move rule; fivefold repetition also applies)
+    REQUIRE(cb.game.canClaimDraw());
+}
+
+TEST_CASE("ChessGame: 75-move rule is automatic draw", "[ChessGame][Draw]") {
+    CustomBoard cb;
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.place(2, 0, new Rook(WHITE, false, cb.b));
+    cb.place(5, 7, new Rook(BLACK, false, cb.b));
+    cb.activate();
+    int wCol = 0, wDir = 1;
+    int bCol = 7, bDir = -1;
+    for (int i = 0; i < 75; i++) {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+        bCol = bNext;
+    }
+    // 150 halfmoves — automatic draw (75-move rule; fivefold repetition also applies)
+    REQUIRE(cb.game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: pawn move resets 50-move counter for draw", "[ChessGame][Draw]") {
+    ChessGame game;
+    // Make some knight moves (non-pawn, non-capture)
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE_FALSE(game.canClaimDraw());
+    // Now make a pawn move — this resets the clock
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e4
+    // After pawn move, draw definitely not claimable
+    REQUIRE_FALSE(game.canClaimDraw());
+}

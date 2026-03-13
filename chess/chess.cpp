@@ -1030,7 +1030,9 @@ bool ChessBoard::checkCheck(bool isW) const {
 ///////////
 // CHESSGAME
 
-ChessGame::ChessGame() : rulesOn(true), whiteTurn(true), board(ChessBoard()) {}
+ChessGame::ChessGame() : rulesOn(true), whiteTurn(true), board(ChessBoard()) {
+    positionHistory.push_back(positionKey());
+}
 
 void ChessGame::setRules(bool on) { rulesOn = on; }
 bool ChessGame::getRules() const { return rulesOn; }
@@ -1125,6 +1127,7 @@ bool ChessGame::makeMove(const ChessMove& cm) {
                     }
                 }
             }
+            positionHistory.push_back(positionKey());
         }
         return b;
     } else {
@@ -1249,6 +1252,42 @@ std::string ChessGame::toFen() const {
     fen += std::to_string(1 + (int)history.size() / 2);
 
     return fen;
+}
+
+std::string ChessGame::positionKey() const {
+    std::string fen = toFen();
+    // Extract first 4 space-separated fields (piece placement, active color,
+    // castling, en passant) — halfmove clock and fullmove number are not part
+    // of position identity.
+    int spaces = 0;
+    for (size_t i = 0; i < fen.size(); i++) {
+        if (fen[i] == ' ') {
+            spaces++;
+            if (spaces == 4) return fen.substr(0, i);
+        }
+    }
+    return fen;  // fallback (shouldn't happen)
+}
+
+// O(n) scan over full history. Could be improved by only scanning back
+// halfmoveClock entries (positions can't repeat across pawn moves or captures)
+// or by maintaining an unordered_map<string, int> as a running counter.
+int ChessGame::positionCount() const {
+    if (positionHistory.empty()) return 0;
+    const std::string& current = positionHistory.back();
+    int count = 0;
+    for (const auto& pos : positionHistory) {
+        if (pos == current) count++;
+    }
+    return count;
+}
+
+bool ChessGame::canClaimDraw() const {
+    return halfmoveClock >= 100 || positionCount() >= 3;
+}
+
+bool ChessGame::isAutomaticDraw() const {
+    return halfmoveClock >= 150 || positionCount() >= 5;
 }
 
 ChessBoard& ChessGame::getPieceBoard() { return board; }

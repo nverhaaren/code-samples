@@ -294,6 +294,11 @@ class ChessMove {
  * Move history: every successful rules-on move is recorded in order.
  * Retrieve via getHistory(). Rules-off moves (used during board setup)
  * are not recorded.
+ *
+ * Draw detection: canClaimDraw() returns true when the 50-move rule
+ * (halfmove clock >= 100) or threefold repetition is met.
+ * isAutomaticDraw() returns true at the FIDE automatic thresholds
+ * (75-move / fivefold repetition).
  */
 class ChessGame {
    public:
@@ -320,6 +325,9 @@ class ChessGame {
 
     std::string toFen() const;
 
+    bool canClaimDraw() const;
+    bool isAutomaticDraw() const;
+
     ChessBoard& getPieceBoard();
 
    private:
@@ -330,7 +338,11 @@ class ChessGame {
     int blackProms = 0;
     int halfmoveClock = 0;
     std::vector<ChessMove> history;
+    std::vector<std::string> positionHistory;  // FEN position keys (first 4 fields)
     std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y);
+
+    std::string positionKey() const;
+    int positionCount() const;
 };
 
 #endif  // def _CHESS_H
