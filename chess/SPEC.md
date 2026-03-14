@@ -421,13 +421,6 @@ draw. The engine must report when this condition is met.
 occurs five times, the game is automatically drawn — no claim required. If the fifth
 occurrence results from a move that delivers checkmate, checkmate takes priority.
 
-**Deviation from FIDE Article 9.2.2:** Under strict FIDE interpretation, the en passant
-target square is only relevant to position identity if a legal en passant capture exists.
-This specification intentionally departs from that interpretation: the en passant target
-square is always part of position identity when recorded, regardless of whether a legal
-capture exists. This simplifies implementation (the engine need not test for legal en
-passant captures when computing position identity) and matches common engine practice.
-
 **Implementation note:** Positions should be compared using a hash or canonical
 representation. The en passant legality check for position identity requires generating
 and testing the en passant capture for legality (including the horizontal pin case from
