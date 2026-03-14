@@ -333,6 +333,8 @@ class ChessGame {
     /** Returns a JSON string representing the full game state. */
     std::string toJson() const;
 
+    ChessMove parseSan(const std::string& san) const;
+
     ChessBoard& getPieceBoard();
 
    private:

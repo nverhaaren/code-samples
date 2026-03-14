@@ -1121,6 +1121,176 @@ TEST_CASE("ChessGame: FEN fullmove number increments after black moves", "[Chess
 }
 
 // ============================================================================
+// SAN (Standard Algebraic Notation) Parsing
+// ============================================================================
+
+TEST_CASE("ChessGame: parseSan pawn move e4", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("e4");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartX() == 1);
+    REQUIRE(move.getStartY() == 4);
+    REQUIRE(move.getEndX() == 3);
+    REQUIRE(move.getEndY() == 4);
+}
+
+TEST_CASE("ChessGame: parseSan pawn move e3 (single push)", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("e3");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartX() == 1);
+    REQUIRE(move.getStartY() == 4);
+    REQUIRE(move.getEndX() == 2);
+    REQUIRE(move.getEndY() == 4);
+}
+
+TEST_CASE("ChessGame: parseSan knight move Nf3", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Nf3");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartY() == 6);  // g-file knight
+    REQUIRE(move.getEndX() == 2);
+    REQUIRE(move.getEndY() == 5);
+}
+
+TEST_CASE("ChessGame: parseSan piece capture Bxd6", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(3, 5, new Bishop(WHITE, false, cb.b));  // Bishop on f4
+    cb.place(5, 3, new Pawn(BLACK, false, cb.b, 1));  // Pawn on d6
+    cb.activate();
+    ChessMove move = cb.game.parseSan("Bxd6");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getEndX() == 5);
+    REQUIRE(move.getEndY() == 3);
+}
+
+TEST_CASE("ChessGame: parseSan pawn capture exd5", "[ChessGame][SAN]") {
+    ChessGame game;
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // 1. e4
+    REQUIRE(game.makeMove(ChessMove(6, 3, 4, 3)));  // 1... d5
+    ChessMove move = game.parseSan("exd5");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartY() == 4);  // e-file
+    REQUIRE(move.getEndX() == 4);
+    REQUIRE(move.getEndY() == 3);    // d-file
+}
+
+TEST_CASE("ChessGame: parseSan kingside castling O-O", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.activate();
+    ChessMove move = cb.game.parseSan("O-O");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartX() == 0);
+    REQUIRE(move.getStartY() == 4);
+    REQUIRE(move.getEndX() == 0);
+    REQUIRE(move.getEndY() == 6);
+}
+
+TEST_CASE("ChessGame: parseSan queenside castling O-O-O", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.activate();
+    ChessMove move = cb.game.parseSan("O-O-O");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartX() == 0);
+    REQUIRE(move.getStartY() == 4);
+    REQUIRE(move.getEndX() == 0);
+    REQUIRE(move.getEndY() == 2);
+}
+
+TEST_CASE("ChessGame: parseSan promotion e8=Q", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(6, 4, new Pawn(WHITE, false, cb.b, 1));  // white pawn on e7
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    ChessMove move = cb.game.parseSan("e8=Q");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getEndX() == 7);
+    REQUIRE(move.getEndY() == 4);
+    REQUIRE(move.getPromotion() == QUEEN);
+}
+
+TEST_CASE("ChessGame: parseSan promotion with capture dxe8=N", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(6, 3, new Pawn(WHITE, false, cb.b, 1));  // white pawn on d7
+    cb.place(7, 4, new Knight(BLACK, false, cb.b));    // black knight on e8
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.activate();
+    ChessMove move = cb.game.parseSan("dxe8=N");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartY() == 3);  // d-file
+    REQUIRE(move.getEndX() == 7);
+    REQUIRE(move.getEndY() == 4);    // e-file
+    REQUIRE(move.getPromotion() == KNIGHT);
+}
+
+TEST_CASE("ChessGame: parseSan knight disambiguation by file Nbd2", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(2, 5, new Knight(WHITE, false, cb.b));  // Knight on f3
+    cb.place(0, 1, new Knight(WHITE, false, cb.b));  // Knight on b1
+    cb.activate();
+    // Both knights can reach d2 (row 1, col 3). Nbd2 specifies b-file knight.
+    ChessMove move = cb.game.parseSan("Nbd2");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartY() == 1);  // b-file
+    REQUIRE(move.getEndX() == 1);
+    REQUIRE(move.getEndY() == 3);
+}
+
+TEST_CASE("ChessGame: parseSan knight disambiguation by rank N1d2", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(2, 5, new Knight(WHITE, false, cb.b));  // Knight on f3 (rank 3)
+    cb.place(0, 1, new Knight(WHITE, false, cb.b));  // Knight on b1 (rank 1)
+    cb.activate();
+    ChessMove move = cb.game.parseSan("N1d2");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getStartX() == 0);  // rank 1
+    REQUIRE(move.getEndX() == 1);
+    REQUIRE(move.getEndY() == 3);
+}
+
+TEST_CASE("ChessGame: parseSan invalid move returns end sentinel", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Qd4");  // Queen can't move to d4 from initial position
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan with check suffix Bb8+", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(3, 5, new Bishop(WHITE, false, cb.b));  // Bishop on f4
+    cb.activate();
+    ChessMove move = cb.game.parseSan("Bb8+");
+    REQUIRE(!move.isEnd());
+    REQUIRE(move.getEndX() == 7);
+    REQUIRE(move.getEndY() == 1);
+}
+
+TEST_CASE("ChessGame: parseSan rejects false capture annotation", "[ChessGame][SAN]") {
+    ChessGame game;
+    // Nxf3 is invalid — f3 is empty, so 'x' is a false capture claim
+    ChessMove move = game.parseSan("Nxf3");
+    REQUIRE(move.isEnd());
+    // But Nf3 (without x) works
+    move = game.parseSan("Nf3");
+    REQUIRE(!move.isEnd());
+}
+
+// ============================================================================
 // Draw Detection
 // ============================================================================
 

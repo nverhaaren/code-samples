@@ -11,9 +11,6 @@
 
 void printMoves(bool color, const ChessGame& game);
 void printMoveList(const std::vector<ChessMove>& moves);
-// TODO: complete algebraic notation parsing (Phase 6)
-// ChessMove parseAlgMove( const char * szMove, const ChessBoard & board );
-// int stdMoves( const char * szMove, const ChessBoard & board );
 
 int main(int argc, char* argv[]) {
     srand(time(nullptr));  // initialize random number generator
@@ -22,9 +19,8 @@ int main(int argc, char* argv[]) {
     std::string input;
 
     printf("Chess Version 1.0\n\n");
-    printf(
-        "Commands:\nx#-x#\t\tmove\nend\t\texit\nmoves\t\tshow moves\nmoves x#\tshow moves at x#\n");
-    printf("rand\t\tmake a random move\n\n");
+    printf("Commands:\nNf3, e4, O-O\tSAN move\nx#-x#\t\tLAN move\nend\t\texit\n");
+    printf("moves\t\tshow moves\nmoves x#\tshow moves at x#\nrand\t\trandom move\n\n");
 
     while (true) {
         if (print) {
@@ -80,24 +76,28 @@ int main(int argc, char* argv[]) {
                 print = true;
             }
         } else {
-            ChessMove move = ChessMove(input.c_str());
-            // Temporary: if a pawn is moving to the back rank, ask for the
-            // promotion piece. Will be superseded by the algebraic notation
-            // parser in Phase 6.
-            const ChessPiece* piece = game.getPiece(move.getStartX(), move.getStartY());
-            if (piece != nullptr && piece->getType() == PAWN) {
-                int endRank = move.getEndX();
-                bool isPromoRank = (piece->getWhite() == WHITE) ? endRank == 7 : endRank == 0;
-                if (isPromoRank) {
-                    printf("Promote to? (q=queen, r=rook, b=bishop, n=knight): ");
-                    std::string promo;
-                    if (std::getline(std::cin, promo)) {
-                        PieceType pt = QUEEN;  // default to queen
-                        if (promo == "r") pt = ROOK;
-                        else if (promo == "b") pt = BISHOP;
-                        else if (promo == "n") pt = KNIGHT;
-                        move = ChessMove(move.getStartX(), move.getStartY(), endRank,
-                                         move.getEndY(), pt);
+            // Try SAN first (e.g., "e4", "Nf3", "O-O", "exd5", "e8=Q").
+            // Falls back to LAN (e.g., "e2-e4", "e2e4") if SAN doesn't match.
+            ChessMove move = game.parseSan(input);
+            if (move.isEnd()) {
+                // SAN didn't match — try LAN. For LAN promotion, prompt the user.
+                move = ChessMove(input.c_str());
+                const ChessPiece* piece = game.getPiece(move.getStartX(), move.getStartY());
+                if (piece != nullptr && piece->getType() == PAWN) {
+                    int endRank = move.getEndX();
+                    bool isPromoRank =
+                        (piece->getWhite() == WHITE) ? endRank == 7 : endRank == 0;
+                    if (isPromoRank) {
+                        printf("Promote to? (q=queen, r=rook, b=bishop, n=knight): ");
+                        std::string promo;
+                        if (std::getline(std::cin, promo)) {
+                            PieceType pt = QUEEN;
+                            if (promo == "r") pt = ROOK;
+                            else if (promo == "b") pt = BISHOP;
+                            else if (promo == "n") pt = KNIGHT;
+                            move = ChessMove(move.getStartX(), move.getStartY(), endRank,
+                                             move.getEndY(), pt);
+                        }
                     }
                 }
             }
@@ -120,13 +120,3 @@ void printMoveList(const std::vector<ChessMove>& moves) {
         printf("%s\n", m.toString());
     }
 }
-
-// TODO (Phase 6): implement full algebraic notation parsing.
-// The function below is incomplete and currently unused. Commented out to
-// suppress compiler warnings until the implementation is ready.
-//
-// ChessMove parseAlgMove( const char * szMove, const ChessGame & game )
-// {
-//     ... (incomplete stub — O-O/O-O-O castling partially handled,
-//          pawn moves and piece moves not implemented)
-// }
