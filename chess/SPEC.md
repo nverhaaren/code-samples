@@ -674,6 +674,60 @@ A conforming implementation must accept only canonical SAN on input:
 Every legal move in a given position has exactly one canonical SAN representation,
 determined by applying the above rules.
 
+### 6.3 SAN Normalization
+
+When loading games from external sources (e.g., PGN files, game databases), move strings
+may contain annotations and stylistic variations that are not part of canonical SAN. A
+conforming implementation must provide a normalization function that converts annotated
+SAN into canonical SAN suitable for the engine's strict input parser.
+
+#### 6.3.1 Annotation Stripping
+
+The following suffixes may appear after a SAN move and must be stripped during
+normalization:
+
+**Move assessment glyphs** (appended after check/checkmate suffixes, if present):
+- `!` — good move
+- `?` — poor move / mistake
+- `!!` — brilliant move
+- `??` — blunder
+- `!?` — interesting / speculative move
+- `?!` — dubious move
+
+**Numeric Annotation Glyphs (NAGs):** PGN uses `$` followed by a non-negative integer
+(e.g., `$1` for good move, `$2` for mistake, `$6` for dubious). NAGs are typically
+separated from the move by whitespace in PGN movetext and should be stripped.
+
+Normalization must strip these annotations without altering the core move. For example,
+`Nf3!` becomes `Nf3`, `Bxh7+??` becomes `Bxh7+`, `O-O!!` becomes `O-O`.
+
+#### 6.3.2 Castling Normalization
+
+Digit-zero castling variants must be converted to the canonical letter-O form:
+- `0-0` → `O-O`
+- `0-0-0` → `O-O-O`
+
+#### 6.3.3 Check/Checkmate Suffix Normalization
+
+Check and checkmate suffixes are optional on input to the engine (see [Section
+6.2.8](#628-input-strictness)). During normalization, existing `+` and `#` suffixes
+should be preserved if present but are not added. The engine will validate correctness
+when the move is submitted.
+
+#### 6.3.4 Normalization Pipeline
+
+The recommended normalization order is:
+1. Strip NAGs (remove `$` followed by digits).
+2. Strip move assessment glyphs (`!!`, `??`, `!?`, `?!`, `!`, `?` — match longest
+   first to avoid partial stripping).
+3. Convert digit-zero castling to letter-O castling.
+4. Strip leading/trailing whitespace.
+
+The resulting string should be valid input for the engine's strict SAN parser. If
+normalization produces a string that the parser still rejects, the original move string
+is malformed beyond what normalization can repair, and a descriptive error should be
+reported.
+
 ---
 
 ## 7. Game Lifecycle
