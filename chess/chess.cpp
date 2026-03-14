@@ -1254,9 +1254,14 @@ std::string ChessGame::toFen() const {
 ChessMove ChessGame::parseSan(const std::string& san) const {
     if (san.empty()) return ChessMove();
 
-    // Strip check/checkmate suffixes (+, #) for parsing.
+    // Strip and record check/checkmate suffixes (+, #).
     std::string s = san;
-    while (!s.empty() && (s.back() == '+' || s.back() == '#')) s.pop_back();
+    bool hasCheck = false, hasCheckmate = false;
+    while (!s.empty() && (s.back() == '+' || s.back() == '#')) {
+        if (s.back() == '#') hasCheckmate = true;
+        else hasCheck = true;
+        s.pop_back();
+    }
     if (s.empty()) return ChessMove();
 
     // Castling.
@@ -1315,10 +1320,12 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         s = s.substr(1);
     }
 
-    // Remove 'x' capture indicator.
+    // Remove and record 'x' capture indicator.
+    bool hasCapture = false;
     std::string cleaned;
     for (char c : s) {
-        if (c != 'x') cleaned += c;
+        if (c == 'x') hasCapture = true;
+        else cleaned += c;
     }
     s = cleaned;
 
@@ -1366,8 +1373,23 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         matchCount++;
     }
 
-    if (matchCount == 1) return match;
-    return ChessMove();  // ambiguous or no match
+    if (matchCount != 1) return ChessMove();  // ambiguous or no match
+
+    // Validate capture annotation: 'x' must correspond to an actual capture.
+    // A capture occurs when the destination is occupied, or for en passant
+    // (pawn moves diagonally to an empty square).
+    if (hasCapture) {
+        bool isCapture = (board.getPiece(endX, endY) != nullptr);
+        if (!isCapture && pieceType == PAWN && match.getStartY() != match.getEndY())
+            isCapture = true;  // en passant
+        if (!isCapture) return ChessMove();
+    }
+
+    // Note: check (+) and checkmate (#) annotations are accepted but not
+    // validated, as verification would require simulating the move. These
+    // are informational annotations per SAN convention.
+
+    return match;
 }
 
 ChessBoard& ChessGame::getPieceBoard() { return board; }

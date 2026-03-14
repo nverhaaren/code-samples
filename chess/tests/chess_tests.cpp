@@ -1074,12 +1074,7 @@ TEST_CASE("ChessGame: parseSan knight move Nf3", "[ChessGame][SAN]") {
     REQUIRE(move.getEndY() == 5);
 }
 
-TEST_CASE("ChessGame: parseSan piece move with capture Bxc4", "[ChessGame][SAN]") {
-    ChessGame game;
-    // 1. e4 e5 2. Bc4 is needed first — but Bxc4 requires a capture target.
-    // Set up: 1. e4 d5 2. Bxd5? No, bishop can't reach d5 from f1 in one move.
-    // Use: 1. e4 d5 2. exd5 (pawn capture — not what we're testing).
-    // Better: custom board.
+TEST_CASE("ChessGame: parseSan piece capture Bxd6", "[ChessGame][SAN]") {
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
@@ -1194,16 +1189,24 @@ TEST_CASE("ChessGame: parseSan invalid move returns end sentinel", "[ChessGame][
     REQUIRE(move.isEnd());
 }
 
-TEST_CASE("ChessGame: parseSan with check suffix Bb5+", "[ChessGame][SAN]") {
-    // The parser should ignore + and # suffixes.
+TEST_CASE("ChessGame: parseSan with check suffix Bb8+", "[ChessGame][SAN]") {
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(3, 5, new Bishop(WHITE, false, cb.b));  // Bishop on f4
     cb.activate();
-    ChessMove move = cb.game.parseSan("Bb8+");  // bishop to b8 (with check annotation)
-    // Check if b8 is reachable from f4: (3,5)→(7,1) — diagonal of 4. Yes!
+    ChessMove move = cb.game.parseSan("Bb8+");
     REQUIRE(!move.isEnd());
     REQUIRE(move.getEndX() == 7);
     REQUIRE(move.getEndY() == 1);
+}
+
+TEST_CASE("ChessGame: parseSan rejects false capture annotation", "[ChessGame][SAN]") {
+    ChessGame game;
+    // Nxf3 is invalid — f3 is empty, so 'x' is a false capture claim
+    ChessMove move = game.parseSan("Nxf3");
+    REQUIRE(move.isEnd());
+    // But Nf3 (without x) works
+    move = game.parseSan("Nf3");
+    REQUIRE(!move.isEnd());
 }
