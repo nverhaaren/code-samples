@@ -1730,6 +1730,80 @@ TEST_CASE("ChessGame: initial position is NOT insufficient material", "[ChessGam
 }
 
 // ============================================================================
+// Termination Priority (SPEC 4.5)
+// ============================================================================
+
+TEST_CASE("ChessGame: checkmate takes priority over 75-move automatic draw", "[ChessGame][Draw]") {
+    // Black king g8, black rook f8, white rook e1, white king a1. White to move.
+    // Re8# delivers back-rank checkmate (rook defended by... itself is the only
+    // piece on rank 8). Actually: Rxf8# — captures the rook, but that's a capture
+    // which resets halfmove. Use a different setup.
+    // White rook on a8, white king on a1, black king on c8, black pawn b7.
+    // Ra8 is already on a8 — move to c8? No, that's the king.
+    // Simpler: White queen h1, white bishop g2. Black king h8, black pawn g7.
+    // Qh7# doesn't work (pawn on g7 blocks?). Let me think...
+    // Back-rank with queen+bishop: Qh7, bishop on b1 defends h7 along diagonal.
+    // Actually just use queen + rook for a simple mating pattern.
+    // White: Kg1 (0,6), Qd1 (0,3), Rd7 (6,3). Black: Kg8 (7,6), Rf8 (7,5), pawn g7.
+    // Qd8 captures? No...
+    // Simplest: scholar's mate but with high halfmove clock.
+    // Kf3, Qf7, against Ke8 (and block all escapes). Qf7 is already check...
+    // Let me just use a 2-rook back rank mate.
+    // White: Ra1, Rb1, Ka3. Black: Ka8, pawns a7 b7. halfmove=149.
+    // Rb8# — rook to b8 (7,1). Black king a8 (7,0). a7 (6,0) has pawn.
+    // Is b8 defended? Ra1 on (0,0) doesn't defend b8. But wait — Rb8 is (7,1),
+    // and Ra1 is on a-file. Not defending. Hmm.
+    // Actually: Ra7, Rb1. Rb8#. Ra7 (6,0) blocks a7 escape.
+    // No — let me use: white rooks on a-file and b-file, high rank.
+    // Rb7 (6,1) and Ra1 (0,0), Kc1 (0,2). Black: Ka8 (7,0), pawn a6 (5,0).
+    // Rb8# — rook from b7 to b8. But black king can't go to a7 (blocked by...
+    // Rb7 is moving to b8, so b7 is vacated. King can go to a7 (6,0) if not attacked.
+    // Ra1 doesn't attack a7 directly. Hmm.
+    //
+    // I'll use a simpler approach: set the halfmove clock directly.
+    // Rook on e1, rook on d1, king a1. Black: king h8, pawns g7 h7 f7.
+    // Re8# — rook to e8 (7,4). Defended by Rd1? No. Let me just use a queen mate.
+    //
+    // Actually the simplest back rank mate: K on g1, R on d8, black K on g8 with
+    // pawns f7 g7 h7. Rd8 is already check. But I need to DELIVER it.
+    //
+    // Position: Kg1 (0,6), Rd1 (0,3). Black: Kg8 (7,6), Rf8 (7,5), pf7 (6,5), pg7 (6,6), ph7 (6,7).
+    // White plays Rd8 (0,3 -> 7,3). Check along rank 8? No, Rf8 blocks.
+    // Rxf8? That's a capture (resets clock).
+    //
+    // OK let me try: two white rooks, one delivers mate defended by the other.
+    // Rd1 (0,3), Re1 (0,4), Kg1 (0,6). Black: Kg8 (7,6), pf7, pg7, ph7.
+    // Rd8# — rook from d1 to d8 (7,3). Is black in check? Rd8 attacks along rank 8
+    // but Rf8... wait, there's no Rf8 here. Rank 8: only king on g8. So Rd8 checks
+    // the king on g8? d8 (7,3) to g8 (7,6): same rank, nothing between d8 and g8
+    // on rank 8 (e8, f8 are empty). Yes, check! King can go to: f8 (7,5) — is it
+    // attacked? Rd8 on d8 attacks rank 8 (including f8). h8 (7,7) — attacked by Rd8.
+    // Kh7 (6,7) — has own pawn. Kf7? (6,5) — own pawn. Can king capture Rd8? (7,3)
+    // That's too far. So: h8 attacked, f8 attacked, g7 own pawn, h7 own pawn, f7 own
+    // pawn. No legal moves → checkmate! And Re1 defends... actually Re1 doesn't need
+    // to defend Rd8 since the king can't reach d8 anyway. The point is all escape squares
+    // are blocked by own pawns or attacked by the rook.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 149 100");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->isAutomaticDraw());
+    // Rd8# — rook from d1 (0,3) to d8 (7,3)
+    REQUIRE(game->makeMove(ChessMove(0, 3, 7, 3)));
+    REQUIRE(game->checkmate(false));
+    REQUIRE_FALSE(game->isAutomaticDraw());
+    REQUIRE_FALSE(game->canClaimDraw());
+}
+
+TEST_CASE("ChessGame: checkmate takes priority over 50-move claimable draw", "[ChessGame][Draw]") {
+    // Same position, halfmove=99.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 99 100");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->canClaimDraw());
+    REQUIRE(game->makeMove(ChessMove(0, 3, 7, 3)));  // Rd8#
+    REQUIRE(game->checkmate(false));
+    REQUIRE_FALSE(game->canClaimDraw());
+}
+
+// ============================================================================
 // JSON Board State (toJson)
 // ============================================================================
 

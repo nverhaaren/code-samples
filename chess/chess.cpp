@@ -1876,10 +1876,14 @@ int ChessGame::positionCount() const {
 }
 
 bool ChessGame::canClaimDraw() const {
+    // Per SPEC 4.5: checkmate has priority over claimable draws.
+    if (checkmate(true) || checkmate(false)) return false;
     return halfmoveClock >= 100 || positionCount() >= 3;
 }
 
 bool ChessGame::isAutomaticDraw() const {
+    // Per SPEC 4.5: checkmate has priority over automatic draws.
+    if (checkmate(true) || checkmate(false)) return false;
     return halfmoveClock >= 150 || positionCount() >= 5;
 }
 
