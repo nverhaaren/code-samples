@@ -163,7 +163,8 @@ correctly handle this case.
 
 When a pawn reaches the back rank (rank 8 for White, rank 1 for Black), it must
 immediately be replaced by a piece of the same color chosen by the player: queen, rook,
-bishop, or knight. Promotion is mandatory; a pawn cannot remain a pawn on the back rank.
+bishop, or knight. Promotion is mandatory; a pawn cannot remain a pawn on the back rank. Promotion to a
+king or pawn is illegal.
 
 Promotion may occur on a straight push or a diagonal capture (including en passant, though
 en passant to the back rank is geometrically impossible in standard chess since it requires
@@ -408,6 +409,13 @@ draw. The engine must report when this condition is met.
 occurs five times, the game is automatically drawn — no claim required. If the fifth
 occurrence results from a move that delivers checkmate, checkmate takes priority.
 
+**Deviation from FIDE Article 9.2.2:** Under strict FIDE interpretation, the en passant
+target square is only relevant to position identity if a legal en passant capture exists.
+This specification intentionally departs from that interpretation: the en passant target
+square is always part of position identity when recorded, regardless of whether a legal
+capture exists. This simplifies implementation (the engine need not test for legal en
+passant captures when computing position identity) and matches common engine practice.
+
 **Implementation note:** Positions should be compared using a hash or canonical
 serialization (e.g., FEN without the halfmove clock and fullmove number fields, since
 those are not part of position identity).
@@ -421,13 +429,16 @@ moves:
 - King + Knight vs. King
 - King + Bishop vs. King + Bishop, where both bishops are on the same color square
 
+This list is exhaustive. The engine must report insufficient material for exactly these
+four material combinations and no others.
+
 **Advisory status:** The engine must report insufficient material as a queryable status.
 It is not an automatic game termination — the game may continue if the players choose
 (e.g., to reach a move count or for other reasons).
 
-**Not insufficient material:** King + Knight + Knight vs. King is **not** automatic draw
+**Not insufficient material:** King + Knight + Knight vs. King is **not** insufficient
 (checkmate is possible with opponent cooperation). King + Bishop vs. King + Bishop with
-opposite-colored bishops is not automatic draw.
+opposite-colored bishops is not insufficient.
 
 ### 4.5 Termination Priority
 
@@ -515,6 +526,8 @@ FEN includes but is not limited to:
 - Wrong number of fields (not exactly 6).
 - Wrong number of ranks (not exactly 8 `/`-separated segments in field 1).
 - Rank with more than 8 squares (piece letters + digit values exceed 8).
+- Consecutive digits within a rank (e.g., `44` instead of `8`). Empty squares must be
+  represented as a single merged digit.
 - Invalid piece letter.
 - Active color not `w` or `b`.
 - Invalid castling characters.
@@ -525,7 +538,12 @@ FEN includes but is not limited to:
 The implementation should also validate the position itself:
 - Exactly one White king and one Black king.
 - No pawns on rank 1 or rank 8 (they would have promoted).
-- No more than 16 pieces per side.
+- No more than 16 pieces per side. No more than 8 pawns per side.
+- The side **not** to move must not be in check (this would mean the side to move made
+  an illegal move that failed to resolve check, or delivered check and then passed the
+  turn — neither is possible in a legal game).
+- The two kings must not be on adjacent squares (the one that moved there would have
+  moved into check, which is illegal).
 - Castling rights are consistent with king/rook positions (e.g., if White claims kingside
   castling, there should be a White king on e1 and a White rook on h1). However, this
   validation is advisory — FEN strings from external sources (e.g., chess databases) may
@@ -553,12 +571,14 @@ destination squares.
 **Format:** `<source><destination>[<promotion>]`
 
 - Source and destination are square names in lowercase: `e2e4`, `g1f3`.
-- A hyphen separator is accepted on input but not produced on output: `e2-e4` is valid
-  input but the canonical form is `e2e4`.
 - Promotion is indicated by appending the promoted piece type in lowercase: `e7e8q`
   (pawn promotes to queen).
 - Castling is encoded as the king's movement: `e1g1` (White kingside), `e1c1` (White
   queenside), `e8g8` (Black kingside), `e8c8` (Black queenside).
+
+**Input strictness:** A conforming implementation must accept only canonical LAN on
+input: lowercase letters, no hyphens, no extra characters. Non-canonical forms (e.g.,
+`e2-e4`, `E2E4`) must be rejected with a descriptive error.
 
 **Uniqueness:** Every legal move has exactly one canonical LAN representation. LAN is
 the recommended format for cross-validation comparisons.
@@ -590,13 +610,15 @@ square is partially specified to distinguish them. Disambiguation is determined 
 considering only movement rules and path obstruction, ignoring the legality constraint of
 rule 2.1.5 (pins). This matches the FIDE standard and PGN specification.
 
-Disambiguation rules, applied in order:
-1. If the pieces are on different files, add the source file letter: `Rae1`.
-2. If the pieces are on the same file but different ranks, add the source rank digit:
+Use the minimum disambiguation needed, applying these rules in order:
+1. If the source file uniquely identifies the piece among all same-type pieces that can
+   reach the destination, add the source file letter: `Rae1`.
+2. If the source file is not sufficient (two or more of the candidate pieces share a
+   file) but the source rank uniquely identifies the piece, add the source rank digit:
    `R1e1`.
-3. If neither file nor rank alone is sufficient (pieces on the same file and same rank is
-   impossible, but this can occur with three or more pieces of the same type after
-   promotions), add both file and rank: `Qa1e1`.
+3. If neither file nor rank alone is sufficient (possible with three or more pieces of
+   the same type after promotions — e.g., queens on a1, a5, and e1 all reaching a3),
+   add both file and rank: `Qa1a3`.
 
 The disambiguation characters are placed between the piece letter and the capture
 indicator or destination square.
@@ -614,8 +636,9 @@ indicator or destination square.
 - **Kingside:** `O-O` (uppercase letter O, not digit zero).
 - **Queenside:** `O-O-O`.
 
-On input, implementations should accept `0-0` and `0-0-0` (with digit zeros) as
-equivalent. On output, the canonical form uses uppercase letter O.
+On input, implementations must accept only the canonical forms `O-O` and `O-O-O`
+(uppercase letter O). Digit-zero variants (`0-0`, `0-0-0`) must be rejected. On output,
+the canonical form uses uppercase letter O.
 
 #### 6.2.7 Check and Checkmate Suffixes
 
@@ -623,7 +646,21 @@ equivalent. On output, the canonical form uses uppercase letter O.
 - Append `#` if the move delivers checkmate: `Qh7#`.
 - These suffixes are mandatory in the canonical output form.
 
-#### 6.2.8 Uniqueness
+#### 6.2.8 Input Strictness
+
+A conforming implementation must accept only canonical SAN on input:
+- Piece letters must be uppercase (`N`, not `n`).
+- File letters and destination squares must be lowercase.
+- The `x` capture indicator must be present for captures and absent for non-captures.
+- Check (`+`) and checkmate (`#`) suffixes are **optional** on input but **mandatory**
+  on output. An input move without the suffix is accepted if it is otherwise valid;
+  an input move with an incorrect suffix (e.g., `+` when the move does not give check)
+  must be rejected.
+- Promotion must use `=` followed by an uppercase piece letter (`=Q`, not `=q` or `Q`).
+- No extra whitespace or characters.
+- Non-canonical forms must be rejected with a descriptive error.
+
+#### 6.2.9 Uniqueness
 
 Every legal move in a given position has exactly one canonical SAN representation,
 determined by applying the above rules.
@@ -709,7 +746,7 @@ After each successful move, the engine must be able to provide on request:
 - The current game status (from [Section 7.4](#74-game-status)).
 - Whether the side to move is currently in check.
 - The list of all legal moves for the side to move (in both LAN and SAN).
-- The move history (all moves played so far).
+- The move history (all moves played so far, in SAN).
 
 ---
 
@@ -742,28 +779,31 @@ to the enemy king. The definition of "attack" (Section 3.1) considers only geome
 reachability, not legality.
 
 ```
-FEN: 8/8/8/8/Rk1rK3/8/8/8 w - - 0 1
+FEN: k7/8/8/8/r3K3/8/8/R7 w - - 0 1
 ```
 
 ```
-8  .  .  .  .  .  .  .  .
+8  k  .  .  .  .  .  .  .
 7  .  .  .  .  .  .  .  .
 6  .  .  .  .  .  .  .  .
 5  .  .  .  .  .  .  .  .
-4  R  k  .  r  K  .  .  .
+4  r  .  .  .  K  .  .  .
 3  .  .  .  .  .  .  .  .
 2  .  .  .  .  .  .  .  .
-1  .  .  .  .  .  .  .  .
+1  R  .  .  .  .  .  .  .
    a  b  c  d  e  f  g  h
 ```
 
-The Black rook on d4 is pinned against the Black king on b4 by the White rook on a4
-(along rank 4). The Black rook cannot legally move — any move along the rank would
-expose the Black king to the White rook. However, the Black rook still **attacks** e4.
+The Black rook on a4 is pinned along the a-file against the Black king on a8 by the
+White rook on a1. If the Black rook moves off the a-file, the White rook would attack
+the Black king along the a-file. However, the Black rook still **attacks** e4 along
+rank 4, where the White king sits.
 
-**Expected:** White is in check from the Black rook on d4. White's legal moves must
-all resolve the check (king moves off rank 4, or Kxd4). The fact that the Black rook
-is pinned and cannot legally move does not prevent it from delivering check.
+**Expected:** White is in check from the Black rook on a4. White's legal moves must
+all resolve the check: king moves to d3, d5, e3, e5, f3, or f5 (but not d4 or f4,
+which remain on rank 4 under the rook's attack), or Rxa4 capturing the checking piece.
+The fact that the Black rook is pinned and cannot legally move off the a-file does not
+prevent it from delivering check.
 
 #### 9.1.2 Discovered Check
 
@@ -814,8 +854,7 @@ e6 to f8 is +1 file, +2 ranks). Both pieces give check simultaneously.
 
 **Expected:** After Ne6, Black is in double check. Only king moves are legal — blocking
 or capturing can resolve at most one check. The knight on e6 attacks c5, c7, d4, d8,
-f4, f8, g5, g7, so g7 is also attacked. Legal king moves for Black: e8, e7, g8 (if
-none of those are attacked by other pieces).
+f4, f8, g5, g7, so g7 is also attacked. Legal king moves for Black: e8, e7, g8.
 
 #### 9.1.4 Pawn Does Not Give Check Forward
 
