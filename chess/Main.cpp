@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
             }
         } else {
             // Try SAN first (e.g., "e4", "Nf3", "O-O", "exd5", "e8=Q").
-            // Falls back to LAN (e.g., "e2-e4", "e2e4") if SAN doesn't match.
+            // Falls back to LAN (e.g., "e2e4") if SAN doesn't match.
             ChessMove move = game.parseSan(input);
             if (move.isEnd()) {
                 // SAN didn't match — try LAN. For LAN promotion, prompt the user.
