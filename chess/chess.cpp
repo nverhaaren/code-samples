@@ -1519,6 +1519,74 @@ std::string ChessGame::toSan(const ChessMove& move) const {
     return san;
 }
 
+std::string ChessGame::normalizeSan(const std::string& san) {
+    std::string s = san;
+
+    // 0. Strip leading/trailing whitespace first so other steps work on clean input.
+    {
+        size_t start = s.find_first_not_of(" \t\n\r");
+        if (start == std::string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\n\r");
+        s = s.substr(start, end - start + 1);
+    }
+
+    // 1. Strip NAGs: '$' followed by digits.
+    {
+        std::string result;
+        for (size_t i = 0; i < s.size(); i++) {
+            if (s[i] == '$') {
+                // Skip $ and following digits.
+                i++;
+                while (i < s.size() && s[i] >= '0' && s[i] <= '9') i++;
+                i--;  // loop increment
+            } else {
+                result += s[i];
+            }
+        }
+        s = result;
+    }
+
+    // 2. Strip move assessment glyphs (longest first): !!, ??, !?, ?!, !, ?
+    {
+        // Strip from the end, after any check/checkmate suffix.
+        // First, save and strip check/checkmate suffixes.
+        std::string suffix;
+        while (!s.empty() && (s.back() == '+' || s.back() == '#')) {
+            suffix = s.back() + suffix;
+            s.pop_back();
+        }
+        // Now strip assessment glyphs from the end.
+        bool changed = true;
+        while (changed && !s.empty()) {
+            changed = false;
+            for (const char* glyph : {"!!", "??", "!?", "?!", "!", "?"}) {
+                size_t glen = strlen(glyph);
+                if (s.size() >= glen && s.substr(s.size() - glen) == glyph) {
+                    s.resize(s.size() - glen);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        s += suffix;
+    }
+
+    // 3. Convert digit-zero castling to letter-O.
+    if (s == "0-0" || s == "0-0+" || s == "0-0#") {
+        s = "O-O" + s.substr(3);
+    } else if (s == "0-0-0" || s == "0-0-0+" || s == "0-0-0#") {
+        s = "O-O-O" + s.substr(5);
+    }
+
+    // 4. Strip leading/trailing whitespace.
+    size_t start = s.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(" \t\n\r");
+    s = s.substr(start, end - start + 1);
+
+    return s;
+}
+
 std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     // Split into exactly 6 space-separated fields.
     std::vector<std::string> fields;
