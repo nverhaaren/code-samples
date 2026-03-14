@@ -254,16 +254,33 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         // movePiece returns whatever piece was displaced at the destination
         // (the capture candidate). After checking, we move our piece back and
         // restore the displaced piece via setPiece.
-        // FIXME: en passant temp-undo doesn't remove the captured pawn, so
-        // check detection is wrong for a horizontally-pinned en passant capture.
-        // Tracked for a later PR.
+        //
+        // For en passant, we must also temporarily remove the captured pawn
+        // from (cx, y) — it sits on the same rank as the capturing pawn, one
+        // column over.  Without this, a horizontal pin through both pawns is
+        // invisible to checkCheck because the captured pawn still blocks the
+        // sliding attack.  We handle this by first moving the captured pawn to
+        // the destination square (x, y), so the subsequent movePiece of the
+        // capturing pawn displaces it and returns it as 'temp'.
+        bool isEnPassant = (y != cy) && (board.getPiece(x, y) == nullptr);
+        if (isEnPassant) {
+            // Move captured pawn from (cx, y) to destination (x, y).
+            // This clears it from the rank for accurate check detection.
+            (void)movePiece(board, ChessMove(cx, y, x, y));
+        }
         auto temp = movePiece(board, ChessMove(cx, cy, x, y));
         bool ret = !(board.checkCheck(isWhite));
         (void)movePiece(board, ChessMove(x, y, cx, cy));
-        // temp->posX/posY is stale while temp is off the board, but
-        // checkCheck only reads pieces via the grid so this is safe.
-        // place() (called by setPiece) restores the cache here.
-        setPiece(board, x, y, std::move(temp));
+        if (isEnPassant) {
+            // Restore captured pawn to its original square (cx, y).
+            // temp holds the captured pawn (displaced by the capturing pawn).
+            setPiece(board, cx, y, std::move(temp));
+        } else {
+            // temp->posX/posY is stale while temp is off the board, but
+            // checkCheck only reads pieces via the grid so this is safe.
+            // place() (called by setPiece) restores the cache here.
+            setPiece(board, x, y, std::move(temp));
+        }
         return ret;
     } else
         return true;
@@ -1427,6 +1444,99 @@ bool ChessGame::canClaimDraw() const {
 
 bool ChessGame::isAutomaticDraw() const {
     return halfmoveClock >= 150 || positionCount() >= 5;
+}
+
+std::string ChessGame::toJson() const {
+    std::string json = "{";
+
+    // fen
+    json += "\"fen\":\"" + toFen() + "\"";
+
+    // turn
+    json += ",\"turn\":\"";
+    json += whiteTurn ? "white" : "black";
+    json += "\"";
+
+    // board: 8x8 array, rank 8 (x=7) to rank 1 (x=0)
+    json += ",\"board\":[";
+    for (int x = 7; x >= 0; x--) {
+        json += "[";
+        for (int y = 0; y < 8; y++) {
+            const ChessPiece* p = board.getPiece(x, y);
+            if (p == nullptr) {
+                json += "null";
+            } else {
+                json += "{\"type\":\"";
+                switch (p->getType()) {
+                    case PAWN: json += "pawn"; break;
+                    case ROOK: json += "rook"; break;
+                    case KNIGHT: json += "knight"; break;
+                    case BISHOP: json += "bishop"; break;
+                    case QUEEN: json += "queen"; break;
+                    case KING: json += "king"; break;
+                }
+                json += "\",\"color\":\"";
+                json += p->getWhite() ? "white" : "black";
+                json += "\"}";
+            }
+            if (y < 7) json += ",";
+        }
+        json += "]";
+        if (x > 0) json += ",";
+    }
+    json += "]";
+
+    // legalMoves
+    bool currentTurn = whiteTurn;
+    std::vector<ChessMove> moves = getMoves(currentTurn);
+    json += ",\"legalMoves\":[";
+    for (size_t i = 0; i < moves.size(); i++) {
+        json += "\"";
+        json += moves[i].toString();
+        json += "\"";
+        if (i + 1 < moves.size()) json += ",";
+    }
+    json += "]";
+
+    // inCheck
+    bool inChk = board.checkCheck(currentTurn);
+    json += ",\"inCheck\":";
+    json += inChk ? "true" : "false";
+
+    // isCheckmate
+    json += ",\"isCheckmate\":";
+    json += checkmate(currentTurn) ? "true" : "false";
+
+    // isStalemate
+    json += ",\"isStalemate\":";
+    json += stalemate(currentTurn) ? "true" : "false";
+
+    // canClaimDraw
+    json += ",\"canClaimDraw\":";
+    json += canClaimDraw() ? "true" : "false";
+
+    // isAutomaticDraw
+    json += ",\"isAutomaticDraw\":";
+    json += isAutomaticDraw() ? "true" : "false";
+
+    // halfmoveClock
+    json += ",\"halfmoveClock\":" + std::to_string(halfmoveClock);
+
+    // fullmoveNumber
+    json += ",\"fullmoveNumber\":" + std::to_string(1 + static_cast<int>(history.size()) / 2);
+
+    // moveHistory
+    json += ",\"moveHistory\":[";
+    for (size_t i = 0; i < history.size(); i++) {
+        json += "\"";
+        json += history[i].toString();
+        json += "\"";
+        if (i + 1 < history.size()) json += ",";
+    }
+    json += "]";
+
+    json += "}";
+    return json;
 }
 
 ChessBoard& ChessGame::getPieceBoard() { return board; }

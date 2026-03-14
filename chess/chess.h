@@ -330,6 +330,9 @@ class ChessGame {
     bool canClaimDraw() const;
     bool isAutomaticDraw() const;
 
+    /** Returns a JSON string representing the full game state. */
+    std::string toJson() const;
+
     ChessBoard& getPieceBoard();
 
    private:
