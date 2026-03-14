@@ -184,6 +184,7 @@ class King : public ChessPiece {
     bool canMove(int x, int y, bool chkchk = true) const override;
     std::vector<ChessMove> getMoves() const override;
     bool getMoved() const;
+    void markMoved();
     bool move(int x, int y) override;
     bool inCheck() const;
     PieceType getType() const override;
@@ -294,6 +295,11 @@ class ChessMove {
  * Move history: every successful rules-on move is recorded in order.
  * Retrieve via getHistory(). Rules-off moves (used during board setup)
  * are not recorded.
+ *
+ * Draw detection: canClaimDraw() returns true when the 50-move rule
+ * (halfmove clock >= 100) or threefold repetition is met.
+ * isAutomaticDraw() returns true at the FIDE automatic thresholds
+ * (75-move / fivefold repetition).
  */
 class ChessGame {
    public:
@@ -319,6 +325,13 @@ class ChessGame {
     const std::vector<ChessMove>& getHistory() const;
 
     std::string toFen() const;
+    static std::unique_ptr<ChessGame> fromFen(const std::string& fen);
+
+    bool canClaimDraw() const;
+    bool isAutomaticDraw() const;
+
+    /** Returns a JSON string representing the full game state. */
+    std::string toJson() const;
 
     ChessMove parseSan(const std::string& san) const;
 
@@ -332,7 +345,11 @@ class ChessGame {
     int blackProms = 0;
     int halfmoveClock = 0;
     std::vector<ChessMove> history;
+    std::vector<std::string> positionHistory;  // FEN position keys (first 4 fields)
     std::unique_ptr<ChessPiece> makePiece(PieceType type, bool white, int y);
+
+    std::string positionKey() const;
+    int positionCount() const;
 };
 
 #endif  // def _CHESS_H

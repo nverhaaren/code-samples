@@ -323,6 +323,85 @@ TEST_CASE("Pawn: en passant opportunity expires after opponent's move", "[Pawn]"
     REQUIRE(!pawn->canMove(5, 5));
 }
 
+TEST_CASE("Pawn: en passant illegal when horizontally pinned (white)", "[Pawn][EnPassantPin]") {
+    // White King a5 (row 4, col 0), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true, Black Rook h5 (row 4, col 7).
+    // dxe6 e.p. would remove both pawns from rank 5, exposing king to rook.
+    CustomBoard cb;
+    cb.place(0, 4, new King(BLACK, cb.b));                // black king e1 (not in the way)
+    cb.place(4, 0, new King(WHITE, cb.b));                // white king a5
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5 (just double-pushed)
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.place(4, 7, new Rook(BLACK, false, cb.b));         // black rook h5
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    // The en passant capture dxe6 (row 4 col 3 -> row 5 col 4) must be illegal.
+    REQUIRE_FALSE(wpawn->canMove(5, 4));
+}
+
+TEST_CASE("Pawn: en passant illegal when horizontally pinned (black)", "[Pawn][EnPassantPin]") {
+    // Black King h4 (row 3, col 7), Black Pawn e4 (row 3, col 4),
+    // White Pawn d4 (row 3, col 3) with enPassant=true, White Rook a4 (row 3, col 0).
+    // exd3 e.p. would remove both pawns from rank 4, exposing black king to rook.
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));                // white king e1 (not in the way)
+    cb.place(3, 7, new King(BLACK, cb.b));                // black king h4
+    auto* wpawn_ep = new Pawn(WHITE, false, cb.b, 3);
+    wpawn_ep->setEnPassant(true);
+    cb.place(3, 3, wpawn_ep);                             // white pawn d4 (just double-pushed)
+    cb.place(3, 4, new Pawn(BLACK, false, cb.b, 4));      // black pawn e4
+    cb.place(3, 0, new Rook(WHITE, false, cb.b));         // white rook a4
+    cb.activate();
+
+    const ChessPiece* bpawn = cb.game.getPiece(3, 4);
+    REQUIRE(bpawn != nullptr);
+    // The en passant capture exd3 (row 3 col 4 -> row 2 col 3) must be illegal.
+    REQUIRE_FALSE(bpawn->canMove(2, 3));
+}
+
+TEST_CASE("Pawn: en passant legal when not pinned (regression)", "[Pawn][EnPassantPin]") {
+    // White King a1 (row 0, col 0), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true.
+    // No rook on the rank — en passant should be legal.
+    CustomBoard cb;
+    cb.place(7, 4, new King(BLACK, cb.b));                // black king e8
+    cb.place(0, 0, new King(WHITE, cb.b));                // white king a1
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5 (just double-pushed)
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    REQUIRE(wpawn->canMove(5, 4));  // en passant should be legal
+}
+
+TEST_CASE("Pawn: en passant legal when king not on same rank", "[Pawn][EnPassantPin]") {
+    // White King e1 (row 0, col 4), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true,
+    // Black Rook h5 (row 4, col 7) — same rank as pawns but king is NOT on rank.
+    // Removing both pawns doesn't expose king. En passant should be legal.
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));                // white king e1
+    cb.place(7, 4, new King(BLACK, cb.b));                // black king e8
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.place(4, 7, new Rook(BLACK, false, cb.b));         // black rook h5 (same rank, king not on rank)
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    // King is on row 0, not row 4 — removing both pawns doesn't expose king.
+    REQUIRE(wpawn->canMove(5, 4));
+}
+
 // ============================================================================
 // Rook
 // ============================================================================
@@ -1209,4 +1288,309 @@ TEST_CASE("ChessGame: parseSan rejects false capture annotation", "[ChessGame][S
     // But Nf3 (without x) works
     move = game.parseSan("Nf3");
     REQUIRE(!move.isEnd());
+}
+
+// ============================================================================
+// Draw Detection
+// ============================================================================
+
+TEST_CASE("ChessGame: no draw claims at start of game", "[ChessGame][Draw]") {
+    ChessGame game;
+    REQUIRE_FALSE(game.canClaimDraw());
+    REQUIRE_FALSE(game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: threefold repetition is claimable", "[ChessGame][Draw]") {
+    // Move knights back and forth to repeat the starting position.
+    // Position 1: initial. Nf3, Nf6 → position 2. Ng1, Ng8 → position 1 again (count=2).
+    // Nf3, Nf6 → position 2 again (count=2). Ng1, Ng8 → position 1 (count=3). Claimable!
+    ChessGame game;
+    // Cycle 1
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+    REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    REQUIRE_FALSE(game.canClaimDraw());  // position repeated twice, not yet three
+    // Cycle 2
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+    REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    // Position has now occurred 3 times — claimable
+    REQUIRE(game.canClaimDraw());
+    REQUIRE_FALSE(game.isAutomaticDraw());  // not 5-fold yet
+}
+
+TEST_CASE("ChessGame: fivefold repetition is automatic draw", "[ChessGame][Draw]") {
+    ChessGame game;
+    // Need position to occur 5 times. Initial = occurrence 1. Each full cycle adds 1.
+    for (int i = 0; i < 4; i++) {
+        REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+        REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+        REQUIRE(game.makeMove(ChessMove(2, 5, 0, 6)));  // Ng1
+        REQUIRE(game.makeMove(ChessMove(5, 5, 7, 6)));  // Ng8
+    }
+    REQUIRE(game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: 50-move rule claimable at 100 halfmoves", "[ChessGame][Draw]") {
+    CustomBoard cb;
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    // Rooks bounce on separate rows (12-move cycles). Fivefold repetition also
+    // triggers within 50 iterations, but the test verifies canClaimDraw is true
+    // once the halfmove clock reaches 100. Repetition is tested separately above.
+    cb.place(2, 0, new Rook(WHITE, false, cb.b));
+    cb.place(5, 7, new Rook(BLACK, false, cb.b));
+    cb.activate();
+    int wCol = 0, wDir = 1;
+    int bCol = 7, bDir = -1;
+    for (int i = 0; i < 49; i++) {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+        bCol = bNext;
+    }
+    // Two more moves to reach 100 halfmoves.
+    {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+    }
+    // 100 halfmoves — claimable (50-move rule; fivefold repetition also applies)
+    REQUIRE(cb.game.canClaimDraw());
+}
+
+TEST_CASE("ChessGame: 75-move rule is automatic draw", "[ChessGame][Draw]") {
+    CustomBoard cb;
+    cb.place(0, 0, new King(WHITE, cb.b));
+    cb.place(7, 7, new King(BLACK, cb.b));
+    cb.place(2, 0, new Rook(WHITE, false, cb.b));
+    cb.place(5, 7, new Rook(BLACK, false, cb.b));
+    cb.activate();
+    int wCol = 0, wDir = 1;
+    int bCol = 7, bDir = -1;
+    for (int i = 0; i < 75; i++) {
+        int wNext = wCol + wDir;
+        if (wNext > 6 || wNext < 0) { wDir = -wDir; wNext = wCol + wDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(2, wCol, 2, wNext)));
+        wCol = wNext;
+        int bNext = bCol + bDir;
+        if (bNext < 1 || bNext > 7) { bDir = -bDir; bNext = bCol + bDir; }
+        REQUIRE(cb.game.makeMove(ChessMove(5, bCol, 5, bNext)));
+        bCol = bNext;
+    }
+    // 150 halfmoves — automatic draw (75-move rule; fivefold repetition also applies)
+    REQUIRE(cb.game.isAutomaticDraw());
+}
+
+TEST_CASE("ChessGame: pawn move resets 50-move counter for draw", "[ChessGame][Draw]") {
+    ChessGame game;
+    // Make some knight moves (non-pawn, non-capture)
+    REQUIRE(game.makeMove(ChessMove(0, 6, 2, 5)));  // Nf3
+    REQUIRE(game.makeMove(ChessMove(7, 6, 5, 5)));  // Nf6
+    REQUIRE_FALSE(game.canClaimDraw());
+    // Now make a pawn move — this resets the clock
+    REQUIRE(game.makeMove(ChessMove(1, 4, 3, 4)));  // e4
+    // After pawn move, draw definitely not claimable
+    REQUIRE_FALSE(game.canClaimDraw());
+}
+
+// ============================================================================
+// JSON Board State (toJson)
+// ============================================================================
+
+TEST_CASE("toJson: initial position contains correct FEN", "[ChessGame][JSON]") {
+    ChessGame game;
+    std::string json = game.toJson();
+    REQUIRE(json.find("\"fen\":\"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1\"") !=
+            std::string::npos);
+}
+
+TEST_CASE("toJson: initial position has turn white", "[ChessGame][JSON]") {
+    ChessGame game;
+    std::string json = game.toJson();
+    REQUIRE(json.find("\"turn\":\"white\"") != std::string::npos);
+}
+
+TEST_CASE("toJson: initial position has 20 legal moves", "[ChessGame][JSON]") {
+    ChessGame game;
+    std::string json = game.toJson();
+    // Count occurrences of move strings in legalMoves array
+    auto start = json.find("\"legalMoves\":[");
+    REQUIRE(start != std::string::npos);
+    auto end = json.find(']', start + 14);
+    REQUIRE(end != std::string::npos);
+    std::string movesStr = json.substr(start + 14, end - start - 14);
+    // Count commas + 1 = number of elements (if non-empty)
+    int count = movesStr.empty() ? 0 : 1;
+    for (char c : movesStr) {
+        if (c == ',') count++;
+    }
+    REQUIRE(count == 20);
+}
+
+TEST_CASE("toJson: after 1.e4 has turn black and en passant in FEN", "[ChessGame][JSON]") {
+    ChessGame game;
+    game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
+    std::string json = game.toJson();
+    REQUIRE(json.find("\"turn\":\"black\"") != std::string::npos);
+    REQUIRE(json.find("e3") != std::string::npos);  // en passant square in FEN
+}
+
+TEST_CASE("toJson: board array has correct pieces at initial position", "[ChessGame][JSON]") {
+    ChessGame game;
+    std::string json = game.toJson();
+    // Black rook should appear
+    REQUIRE(json.find("{\"type\":\"rook\",\"color\":\"black\"}") != std::string::npos);
+    // White pawn should appear
+    REQUIRE(json.find("{\"type\":\"pawn\",\"color\":\"white\"}") != std::string::npos);
+    // White king should appear
+    REQUIRE(json.find("{\"type\":\"king\",\"color\":\"white\"}") != std::string::npos);
+    // Null squares (empty) should appear
+    REQUIRE(json.find("null") != std::string::npos);
+}
+
+TEST_CASE("toJson: checkmate position has isCheckmate true", "[ChessGame][JSON]") {
+    // Scholar's mate: 1. e4 e5 2. Bc4 Nc6 3. Qh5 Nf6 4. Qxf7#
+    ChessGame game;
+    game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
+    game.makeMove(ChessMove(6, 4, 4, 4));  // e7-e5
+    game.makeMove(ChessMove(0, 5, 3, 2));  // Bf1-c4
+    game.makeMove(ChessMove(7, 1, 5, 2));  // Nb8-c6
+    game.makeMove(ChessMove(0, 3, 4, 7));  // Qd1-h5
+    game.makeMove(ChessMove(7, 6, 5, 5));  // Ng8-f6
+    game.makeMove(ChessMove(4, 7, 6, 5));  // Qh5xf7#
+    std::string json = game.toJson();
+    REQUIRE(json.find("\"isCheckmate\":true") != std::string::npos);
+    REQUIRE(json.find("\"inCheck\":true") != std::string::npos);
+}
+
+TEST_CASE("toJson: moveHistory grows after moves", "[ChessGame][JSON]") {
+    ChessGame game;
+    std::string json = game.toJson();
+    REQUIRE(json.find("\"moveHistory\":[]") != std::string::npos);
+
+    game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
+    json = game.toJson();
+    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\"]") != std::string::npos);
+
+    game.makeMove(ChessMove(6, 4, 4, 4));  // e7-e5
+    json = game.toJson();
+    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\",\"e7-e5\"]") != std::string::npos);
+}
+
+// ============================================================================
+// FEN Deserialization
+// ============================================================================
+
+TEST_CASE("ChessGame::fromFen: round-trip initial position", "[ChessGame][FEN]") {
+    ChessGame game;
+    std::string originalFen = game.toFen();
+    auto loaded = ChessGame::fromFen(originalFen);
+    REQUIRE(loaded->toFen() == originalFen);
+}
+
+TEST_CASE("ChessGame::fromFen: mid-game position pieces placed correctly", "[ChessGame][FEN]") {
+    // Sicilian Defense after 1. e4 c5
+    std::string fen = "rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2";
+    auto game = ChessGame::fromFen(fen);
+    // White pawn on e4 (x=3, y=4)
+    const ChessPiece* wp = game->getPiece(3, 4);
+    REQUIRE(wp != nullptr);
+    REQUIRE(wp->getType() == PAWN);
+    REQUIRE(wp->getWhite() == true);
+    // Black pawn on c5 (x=4, y=2)
+    const ChessPiece* bp = game->getPiece(4, 2);
+    REQUIRE(bp != nullptr);
+    REQUIRE(bp->getType() == PAWN);
+    REQUIRE(bp->getWhite() == false);
+    // Empty square at e2 (x=1, y=4) — pawn moved away
+    REQUIRE(game->getPiece(1, 4) == nullptr);
+    // FEN round-trips
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves active color (black to move)", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->getTurn() == BLACK);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves partial castling rights", "[ChessGame][FEN]") {
+    // Only white queenside and black kingside castling available
+    std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w Qk - 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // Verify: white king unmoved, white kingside rook moved, white queenside rook unmoved
+    const ChessPiece* wk = game->getPiece(0, 4);
+    REQUIRE(wk != nullptr);
+    REQUIRE(wk->getType() == KING);
+    const King* whiteKing = dynamic_cast<const King*>(wk);
+    REQUIRE_FALSE(whiteKing->getMoved());
+    // White kingside rook at (0,7) should be marked moved (no K right)
+    const ChessPiece* wkr = game->getPiece(0, 7);
+    REQUIRE(wkr != nullptr);
+    REQUIRE(wkr->getType() == ROOK);
+    const Rook* whiteKSRook = dynamic_cast<const Rook*>(wkr);
+    REQUIRE(whiteKSRook->getMoved());
+    // White queenside rook at (0,0) should be unmoved (Q right present)
+    const ChessPiece* wqr = game->getPiece(0, 0);
+    REQUIRE(wqr != nullptr);
+    const Rook* whiteQSRook = dynamic_cast<const Rook*>(wqr);
+    REQUIRE_FALSE(whiteQSRook->getMoved());
+}
+
+TEST_CASE("ChessGame::fromFen: preserves en passant target square", "[ChessGame][FEN]") {
+    // After 1. e4, en passant target is e3
+    std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // The white pawn at e4 (x=3, y=4) should have enPassant flag set
+    const ChessPiece* p = game->getPiece(3, 4);
+    REQUIRE(p != nullptr);
+    REQUIRE(p->getType() == PAWN);
+    const Pawn* pawn = dynamic_cast<const Pawn*>(p);
+    REQUIRE(pawn->getEnPassant());
+}
+
+TEST_CASE("ChessGame::fromFen: preserves halfmove clock", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppppppp/8/8/8/5N2/PPPPPPPP/RNBQKB1R b KQkq - 1 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: preserves fullmove number via toFen", "[ChessGame][FEN]") {
+    std::string fen = "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6 0 2";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+}
+
+TEST_CASE("ChessGame::fromFen: no castling rights (dash)", "[ChessGame][FEN]") {
+    std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w - - 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game->toFen() == fen);
+    // Both kings should be marked as moved
+    const King* wk = dynamic_cast<const King*>(game->getPiece(0, 4));
+    REQUIRE(wk->getMoved());
+    const King* bk = dynamic_cast<const King*>(game->getPiece(7, 4));
+    REQUIRE(bk->getMoved());
+}
+
+TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGame][FEN]") {
+    // Scholar's mate setup: white to play Qxf7#
+    std::string fen = "r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3";
+    auto game = ChessGame::fromFen(fen);
+    // White queen on f3 (x=2, y=5) captures f7 (x=6, y=5) — should be checkmate
+    REQUIRE(game->makeMove(ChessMove(2, 5, 6, 5)));
+    REQUIRE(game->checkmate(BLACK));
 }
