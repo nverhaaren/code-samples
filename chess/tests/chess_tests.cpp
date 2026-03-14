@@ -323,6 +323,85 @@ TEST_CASE("Pawn: en passant opportunity expires after opponent's move", "[Pawn]"
     REQUIRE(!pawn->canMove(5, 5));
 }
 
+TEST_CASE("Pawn: en passant illegal when horizontally pinned (white)", "[Pawn][EnPassantPin]") {
+    // White King a5 (row 4, col 0), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true, Black Rook h5 (row 4, col 7).
+    // dxe6 e.p. would remove both pawns from rank 5, exposing king to rook.
+    CustomBoard cb;
+    cb.place(0, 4, new King(BLACK, cb.b));                // black king e1 (not in the way)
+    cb.place(4, 0, new King(WHITE, cb.b));                // white king a5
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5 (just double-pushed)
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.place(4, 7, new Rook(BLACK, false, cb.b));         // black rook h5
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    // The en passant capture dxe6 (row 4 col 3 -> row 5 col 4) must be illegal.
+    REQUIRE_FALSE(wpawn->canMove(5, 4));
+}
+
+TEST_CASE("Pawn: en passant illegal when horizontally pinned (black)", "[Pawn][EnPassantPin]") {
+    // Black King h4 (row 3, col 7), Black Pawn e4 (row 3, col 4),
+    // White Pawn d4 (row 3, col 3) with enPassant=true, White Rook a4 (row 3, col 0).
+    // exd3 e.p. would remove both pawns from rank 4, exposing black king to rook.
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));                // white king e1 (not in the way)
+    cb.place(3, 7, new King(BLACK, cb.b));                // black king h4
+    auto* wpawn_ep = new Pawn(WHITE, false, cb.b, 3);
+    wpawn_ep->setEnPassant(true);
+    cb.place(3, 3, wpawn_ep);                             // white pawn d4 (just double-pushed)
+    cb.place(3, 4, new Pawn(BLACK, false, cb.b, 4));      // black pawn e4
+    cb.place(3, 0, new Rook(WHITE, false, cb.b));         // white rook a4
+    cb.activate();
+
+    const ChessPiece* bpawn = cb.game.getPiece(3, 4);
+    REQUIRE(bpawn != nullptr);
+    // The en passant capture exd3 (row 3 col 4 -> row 2 col 3) must be illegal.
+    REQUIRE_FALSE(bpawn->canMove(2, 3));
+}
+
+TEST_CASE("Pawn: en passant legal when not pinned (regression)", "[Pawn][EnPassantPin]") {
+    // White King a1 (row 0, col 0), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true.
+    // No rook on the rank — en passant should be legal.
+    CustomBoard cb;
+    cb.place(7, 4, new King(BLACK, cb.b));                // black king e8
+    cb.place(0, 0, new King(WHITE, cb.b));                // white king a1
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5 (just double-pushed)
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    REQUIRE(wpawn->canMove(5, 4));  // en passant should be legal
+}
+
+TEST_CASE("Pawn: en passant legal when king not on same rank", "[Pawn][EnPassantPin]") {
+    // White King e1 (row 0, col 4), White Pawn d5 (row 4, col 3),
+    // Black Pawn e5 (row 4, col 4) with enPassant=true,
+    // Black Rook h5 (row 4, col 7) — same rank as pawns but king is NOT on rank.
+    // Removing both pawns doesn't expose king. En passant should be legal.
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));                // white king e1
+    cb.place(7, 4, new King(BLACK, cb.b));                // black king e8
+    auto* bpawn = new Pawn(BLACK, false, cb.b, 4);
+    bpawn->setEnPassant(true);
+    cb.place(4, 4, bpawn);                                // black pawn e5
+    cb.place(4, 3, new Pawn(WHITE, false, cb.b, 3));      // white pawn d5
+    cb.place(4, 7, new Rook(BLACK, false, cb.b));         // black rook h5 (same rank, king not on rank)
+    cb.activate();
+
+    const ChessPiece* wpawn = cb.game.getPiece(4, 3);
+    REQUIRE(wpawn != nullptr);
+    // King is on row 0, not row 4 — removing both pawns doesn't expose king.
+    REQUIRE(wpawn->canMove(5, 4));
+}
+
 // ============================================================================
 // Rook
 // ============================================================================

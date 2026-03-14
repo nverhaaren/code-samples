@@ -253,16 +253,33 @@ bool Pawn::canMove(int x, int y, bool chkchk) const {
         // movePiece returns whatever piece was displaced at the destination
         // (the capture candidate). After checking, we move our piece back and
         // restore the displaced piece via setPiece.
-        // FIXME: en passant temp-undo doesn't remove the captured pawn, so
-        // check detection is wrong for a horizontally-pinned en passant capture.
-        // Tracked for a later PR.
+        //
+        // For en passant, we must also temporarily remove the captured pawn
+        // from (cx, y) — it sits on the same rank as the capturing pawn, one
+        // column over.  Without this, a horizontal pin through both pawns is
+        // invisible to checkCheck because the captured pawn still blocks the
+        // sliding attack.  We handle this by first moving the captured pawn to
+        // the destination square (x, y), so the subsequent movePiece of the
+        // capturing pawn displaces it and returns it as 'temp'.
+        bool isEnPassant = (y != cy) && (board.getPiece(x, y) == nullptr);
+        if (isEnPassant) {
+            // Move captured pawn from (cx, y) to destination (x, y).
+            // This clears it from the rank for accurate check detection.
+            (void)movePiece(board, ChessMove(cx, y, x, y));
+        }
         auto temp = movePiece(board, ChessMove(cx, cy, x, y));
         bool ret = !(board.checkCheck(isWhite));
         (void)movePiece(board, ChessMove(x, y, cx, cy));
-        // temp->posX/posY is stale while temp is off the board, but
-        // checkCheck only reads pieces via the grid so this is safe.
-        // place() (called by setPiece) restores the cache here.
-        setPiece(board, x, y, std::move(temp));
+        if (isEnPassant) {
+            // Restore captured pawn to its original square (cx, y).
+            // temp holds the captured pawn (displaced by the capturing pawn).
+            setPiece(board, cx, y, std::move(temp));
+        } else {
+            // temp->posX/posY is stale while temp is off the board, but
+            // checkCheck only reads pieces via the grid so this is safe.
+            // place() (called by setPiece) restores the cache here.
+            setPiece(board, x, y, std::move(temp));
+        }
         return ret;
     } else
         return true;
