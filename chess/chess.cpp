@@ -1420,6 +1420,94 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
     return match;
 }
 
+std::string ChessGame::toSan(const ChessMove& move) const {
+    if (move.isEnd()) return "";
+
+    int sx = move.getStartX(), sy = move.getStartY();
+    int ex = move.getEndX(),   ey = move.getEndY();
+    const ChessPiece* piece = board.getPiece(sx, sy);
+    if (piece == nullptr) return "";
+
+    PieceType type = piece->getType();
+    bool isWhite = piece->getWhite();
+
+    std::string san;
+
+    // Castling.
+    if (type == KING && std::abs(sy - ey) == 2) {
+        san = (ey > sy) ? "O-O" : "O-O-O";
+    } else {
+        // Piece letter prefix (not for pawns).
+        const char pieceLetters[] = {'?', 'R', 'N', 'B', 'K', 'Q'};
+        if (type != PAWN) {
+            san += pieceLetters[type];
+
+            // Disambiguation: find all same-type, same-color pieces that can
+            // geometrically reach the destination (canMove with chkchk=false).
+            bool needFile = false, needRank = false;
+            bool sameFile = false, sameRank = false;
+            int ambigCount = 0;
+            for (int x = 0; x < 8; x++) {
+                for (int y = 0; y < 8; y++) {
+                    if (x == sx && y == sy) continue;
+                    const ChessPiece* other = board.getPiece(x, y);
+                    if (other == nullptr) continue;
+                    if (other->getType() != type || other->getWhite() != isWhite) continue;
+                    if (!other->canMove(ex, ey, false)) continue;
+                    ambigCount++;
+                    if (y == sy) sameFile = true;
+                    if (x == sx) sameRank = true;
+                }
+            }
+            if (ambigCount > 0) {
+                if (!sameFile) {
+                    needFile = true;
+                } else if (!sameRank) {
+                    needRank = true;
+                } else {
+                    needFile = true;
+                    needRank = true;
+                }
+            }
+            if (needFile) san += static_cast<char>('a' + sy);
+            if (needRank) san += static_cast<char>('1' + sx);
+        }
+
+        // Capture indicator.
+        bool isCapture = (board.getPiece(ex, ey) != nullptr);
+        // En passant: pawn moves diagonally to empty square.
+        if (type == PAWN && sy != ey && !isCapture) isCapture = true;
+        if (isCapture) {
+            if (type == PAWN) san += static_cast<char>('a' + sy);  // pawn source file
+            san += 'x';
+        }
+
+        // Destination square.
+        san += static_cast<char>('a' + ey);
+        san += static_cast<char>('1' + ex);
+
+        // Promotion.
+        if (move.getPromotion() != PAWN) {
+            san += '=';
+            san += pieceLetters[move.getPromotion()];
+        }
+    }
+
+    // Check/checkmate suffix: simulate the move to test.
+    // Make a copy via FEN round-trip to avoid mutating this game.
+    auto copy = ChessGame::fromFen(toFen());
+    if (copy && copy->makeMove(ChessMove(sx, sy, ex, ey, move.getPromotion()))) {
+        bool opponentColor = !isWhite;
+        if (copy->checkmate(opponentColor)) {
+            san += '#';
+        } else if (copy->board.checkCheck(opponentColor)) {
+            san += '+';
+        }
+    }
+
+    return san;
+}
+
 std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     // Split into exactly 6 space-separated fields.
     std::vector<std::string> fields;
