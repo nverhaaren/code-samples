@@ -116,8 +116,10 @@ intermediate square and the destination square are empty.
 **Postconditions:**
 - The pawn occupies the destination square (two ranks ahead).
 - The en passant target square is set to the intermediate square (the square the pawn
-  passed over). This target square is recorded regardless of whether any enemy pawn is in
-  position to capture en passant (see [Section 5.1](#51-format), field 4).
+  passed over). This target square is always recorded in the FEN regardless of whether
+  any enemy pawn is in position to capture en passant (see [Section 5.1](#51-format),
+  field 4). However, for position identity in repetition detection, the en passant
+  target is only relevant when a legal capture exists (see [Section 4.3](#43-threefold-repetition)).
 
 #### 2.2.4 Diagonal Capture
 
@@ -394,13 +396,23 @@ If the same position occurs three times during the game (not necessarily on cons
 moves), the repetition condition is met.
 
 **Position identity.** Two positions are the same if and only if all of the following
-match:
+match (per FIDE Article 9.2.3 — "the possible moves of all the pieces of both players
+are the same"):
 1. The same pieces of the same colors occupy the same squares.
 2. The same side is to move.
 3. The same castling rights are available (all four flags: K, Q, k, q).
-4. The same en passant target square is available (or both have none). The en passant
-   target square is recorded whenever a double push occurs, regardless of whether a legal
-   en passant capture exists (see [Section 2.2.3](#223-double-push)).
+4. The en passant state is the same. An en passant target square is considered part of
+   the position only if a **fully legal** en passant capture exists — that is, an enemy
+   pawn is adjacent on the correct rank **and** it can legally execute the capture
+   (accounting for pins and check). If no legal en passant capture exists, the en passant
+   target square is ignored for position identity even if it is recorded in the FEN (see
+   [Section 5.1](#51-format), field 4).
+
+Note: FEN field 4 always records the en passant target square after a double push,
+regardless of whether a legal capture exists (see [Section 2.2.3](#223-double-push)).
+This is a serialization convention. Position identity for repetition detection is
+stricter — it considers the en passant target only when it actually affects the set of
+legal moves.
 
 **Claim-based draw:** When the third occurrence is reached, either player may claim a
 draw. The engine must report when this condition is met.
@@ -409,16 +421,13 @@ draw. The engine must report when this condition is met.
 occurs five times, the game is automatically drawn — no claim required. If the fifth
 occurrence results from a move that delivers checkmate, checkmate takes priority.
 
-**Deviation from FIDE Article 9.2.2:** Under strict FIDE interpretation, the en passant
-target square is only relevant to position identity if a legal en passant capture exists.
-This specification intentionally departs from that interpretation: the en passant target
-square is always part of position identity when recorded, regardless of whether a legal
-capture exists. This simplifies implementation (the engine need not test for legal en
-passant captures when computing position identity) and matches common engine practice.
-
 **Implementation note:** Positions should be compared using a hash or canonical
-serialization (e.g., FEN without the halfmove clock and fullmove number fields, since
-those are not part of position identity).
+representation. The en passant legality check for position identity requires generating
+and testing the en passant capture for legality (including the horizontal pin case from
+[Section 2.2.5](#225-en-passant)). A simple approach is to include the en passant file
+in the position hash only when `has_legal_en_passant()` returns true. FEN alone
+(without the halfmove clock and fullmove number fields) is **not** sufficient as a
+position key because it always records the en passant target regardless of legality.
 
 ### 4.4 Insufficient Material
 
