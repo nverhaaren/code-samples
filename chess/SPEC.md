@@ -859,6 +859,8 @@ stateDiagram-v2
 **State descriptions:**
 
 - **`no_game`**: Server is running but no game exists. Only `create_game` is available.
+  If `create_game` is called with an invalid FEN or history, the server remains in
+  `no_game` (see [Section 8.5.1, `create_game`](#create_game) for validation rules).
 - **`awaiting_players`**: A game has been created but fewer than two players have joined.
   Query tools work for spectators and the first player. Action tools are unavailable.
 - **`ongoing`**: Game is in progress. All tools available per role and turn rules. Check
@@ -880,7 +882,7 @@ During an `ongoing` game, the server monitors client activity. If the server has
 received any tool call from **either** client for 10 consecutive minutes, the game ends
 as a draw due to inactivity.
 
-Clients should send at least one tool call every 10 minutes to avoid the timeout. A
+Clients shall send at least one tool call every 10 minutes to avoid the timeout. A
 frequency of approximately once per minute is recommended to prevent timing issues and
 game delays. A `get_status` call counts as activity.
 
@@ -932,6 +934,16 @@ Available to any connected session regardless of role.
 ##### `create_game`
 
 Creates a new game. Only valid in the `no_game` state.
+
+If a `fen` parameter is provided, the server validates it per [Section
+5.3](#53-deserialization) — both syntactic validity (field count, rank structure, piece
+letters, etc.) and position validity (one king per side, no pawns on back ranks, side
+not to move not in check, kings not adjacent, etc.). An invalid FEN is rejected with
+`invalid_fen` and the server remains in `no_game`.
+
+If `history` is provided, each move is replayed sequentially from the starting position.
+If any move is illegal in its position, the game is not created and `invalid_history` is
+returned.
 
 **Parameters:**
 
