@@ -1057,10 +1057,11 @@ The `game_status` transitions to `ongoing` when the second player joins.
 | `color_taken` | The requested color is already claimed. |
 | `already_joined` | This session has already joined. |
 
-##### `save_game`
+##### `export_game`
 
-Saves the current game state to a file. Available in any state except `no_game`
-(including `awaiting_players`, `ongoing`, and `game_over`).
+Returns the current game in the requested format. Available in any state except
+`no_game` (including `awaiting_players`, `ongoing`, and `game_over`). The server
+returns the serialized content directly; it does not write to the filesystem.
 
 **Parameters:**
 
@@ -1068,15 +1069,11 @@ Saves the current game state to a file. Available in any state except `no_game`
 {
   "type": "object",
   "properties": {
-    "path": {
-      "type": "string",
-      "description": "File path. Server chooses a default if omitted."
-    },
     "format": {
       "type": "string",
       "enum": ["fen", "pgn"],
       "default": "pgn",
-      "description": "'fen' saves position only; 'pgn' saves the full game."
+      "description": "'fen' returns position only; 'pgn' returns the full game."
     }
   },
   "additionalProperties": false
@@ -1094,7 +1091,7 @@ minutes and seconds are zero-padded to two digits. Examples: `{[%clk 1:30:00.0]}
 
 ```json
 {
-  "path": "string (where the file was saved)"
+  "content": "string (FEN string or PGN text)"
 }
 ```
 
@@ -1103,7 +1100,6 @@ minutes and seconds are zero-padded to two digits. Examples: `{[%clk 1:30:00.0]}
 | Code | Condition |
 |------|-----------|
 | `no_active_game` | No game exists. |
-| `io_error` | File could not be written. |
 
 ##### `done`
 
@@ -1607,9 +1603,21 @@ All errors are returned as MCP tool errors with a structured content object:
 }
 ```
 
-The `error` field contains one of the error codes defined in the tool tables above. The
-`message` field provides context (e.g., `"Illegal move: pawn on e2 cannot reach e5"` for
-`illegal_move`). Error messages are informational and should not be parsed
+The `error` field contains one of the error codes defined in the tool tables above, or
+`internal_error` for unexpected server failures (e.g., a caught panic or unhandled
+exception). For `internal_error`, the response includes an additional
+implementation-defined `detail` field:
+
+```json
+{
+  "error": "internal_error",
+  "message": "An unexpected error occurred.",
+  "detail": "implementation-defined context (e.g., stack trace, error type)"
+}
+```
+
+The `message` field provides context (e.g., `"Illegal move: pawn on e2 cannot reach e5"`
+for `illegal_move`). Error messages are informational and should not be parsed
 programmatically — use the `error` code for control flow.
 
 ### 8.7 Chess Clock
@@ -1808,19 +1816,28 @@ The `game_id` field is generated differently in normal and seeded modes:
 For N-version comparison, both implementations must be started in seeded mode with the
 same seed. The test harness compares all response fields including `game_id`.
 
-#### 8.9.3 Fields Excluded from Comparison
+#### 8.9.3 Elapsed Time in Seeded Mode
+
+In seeded mode, `elapsed_ms` is fixed to `0` for all recording log entries and clock
+calculations. This ensures that clock state (remaining time per player) is fully
+deterministic across implementations regardless of processing speed differences. The
+think time formula becomes simply `max(0, receive_timestamp - turn_start_timestamp)`.
+
+#### 8.9.4 Fields Excluded from Comparison
 
 When comparing responses across implementations in non-seeded mode, the following fields
 should be excluded:
 
 - `game_id` — non-deterministic in normal mode.
 - `elapsed_ms` in recording logs — implementation-dependent processing time.
+- `clock_ms` in responses and recording logs — affected by `elapsed_ms` differences.
 
 All other fields, including `termination_reason`, are compared exactly.
 
 The recommended approach for the test harness is to use seeded mode, making all fields
-comparable. If non-seeded comparison is needed, exclusion can be implemented via a
-simple jq-style path list (e.g., `.game_id`, `.elapsed_ms`).
+deterministic and fully comparable. If non-seeded comparison is needed, exclusion can be
+implemented via a simple jq-style path list (e.g., `.game_id`, `.elapsed_ms`,
+`.clock_ms`).
 
 ### 8.10 Client Disconnection
 
