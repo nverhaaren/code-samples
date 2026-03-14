@@ -1606,6 +1606,55 @@ bool ChessGame::isAutomaticDraw() const {
     return halfmoveClock >= 150 || positionCount() >= 5;
 }
 
+bool ChessGame::insufficientMaterial() const {
+    // SPEC 4.4: Exactly these material combinations are insufficient:
+    // 1. K vs K
+    // 2. K+B vs K
+    // 3. K+N vs K
+    // 4. K+B vs K+B (same color square bishops)
+
+    int whiteBishops = 0, blackBishops = 0;
+    int whiteKnights = 0, blackKnights = 0;
+    int whiteOther = 0, blackOther = 0;  // pawns, rooks, queens
+    int whiteBishopColor = -1, blackBishopColor = -1;  // 0=dark, 1=light
+
+    for (int x = 0; x < 8; x++) {
+        for (int y = 0; y < 8; y++) {
+            const ChessPiece* p = board.getPiece(x, y);
+            if (p == nullptr) continue;
+            PieceType t = p->getType();
+            if (t == KING) continue;
+            bool w = p->getWhite();
+            if (t == BISHOP) {
+                if (w) { whiteBishops++; whiteBishopColor = (x + y) % 2; }
+                else   { blackBishops++; blackBishopColor = (x + y) % 2; }
+            } else if (t == KNIGHT) {
+                if (w) whiteKnights++; else blackKnights++;
+            } else {
+                if (w) whiteOther++; else blackOther++;
+            }
+        }
+    }
+
+    // Any pawns, rooks, or queens → sufficient
+    if (whiteOther > 0 || blackOther > 0) return false;
+
+    int wMinor = whiteBishops + whiteKnights;
+    int bMinor = blackBishops + blackKnights;
+
+    // K vs K
+    if (wMinor == 0 && bMinor == 0) return true;
+    // K+B vs K or K+N vs K (either side)
+    if (wMinor == 1 && bMinor == 0) return true;
+    if (wMinor == 0 && bMinor == 1) return true;
+    // K+B vs K+B same color
+    if (whiteBishops == 1 && blackBishops == 1 &&
+        whiteKnights == 0 && blackKnights == 0 &&
+        whiteBishopColor == blackBishopColor) return true;
+
+    return false;
+}
+
 std::string ChessGame::toJson() const {
     std::string json = "{";
 
