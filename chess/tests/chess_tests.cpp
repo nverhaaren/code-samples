@@ -1421,6 +1421,48 @@ TEST_CASE("ChessGame: pawn move resets 50-move counter for draw", "[ChessGame][D
 }
 
 // ============================================================================
+// Position identity for repetition detection
+// ============================================================================
+
+TEST_CASE("ChessGame: position identity ignores ep square when no legal capture exists",
+          "[ChessGame][Draw]") {
+    // The standard initial position + 1.e4 creates an ep target on e3, but no
+    // black pawn is on d4 or f4 to capture it. So for position identity, the ep
+    // field should be ignored.
+    //
+    // Play: 1. e4 Nc6  2. Nf3 Nb8  3. Ng1 Nc6  4. Ng1 Nb8  5. ...
+    // After 2. Nf3 Nb8: board = initial except e-pawn on e4, black to move
+    // After 4. Ng1 Nb8: same board, black to move = second occurrence
+    //
+    // But we need a third occurrence. Use a different approach:
+    // Start from a FEN where a double push just happened (ep target set) but
+    // no enemy pawn can capture. Then cycle to repeat.
+
+    // Use fromFen to set up: pawn already on a4, black pawn on h7,
+    // black to move, ep=a3 (irrelevant since no black pawn near a-file).
+    auto game = ChessGame::fromFen("4k3/7p/8/8/P7/8/8/4K3 b - a3 0 1");
+    REQUIRE(game != nullptr);
+
+    // Position 1 (from FEN): kings e1/e8, white pawn a4, black pawn h7, black to move
+    // Note: ep=a3 in FEN but since no legal capture, position key should use "-"
+
+    // 1... Kd8  2. Kd1  3... Ke8  4. Ke1 → position 2 (same board, black to move)
+    REQUIRE(game->makeMove(ChessMove(7, 4, 7, 3)));  // 1... Kd8
+    REQUIRE(game->makeMove(ChessMove(0, 4, 0, 3)));  // 2. Kd1
+    REQUIRE(game->makeMove(ChessMove(7, 3, 7, 4)));  // 2... Ke8
+    REQUIRE(game->makeMove(ChessMove(0, 3, 0, 4)));  // 3. Ke1
+    // Position 2: same as 1 (black to move), no ep target
+    REQUIRE(game->makeMove(ChessMove(7, 4, 7, 3)));  // 3... Kd8
+    REQUIRE(game->makeMove(ChessMove(0, 4, 0, 3)));  // 4. Kd1
+    REQUIRE(game->makeMove(ChessMove(7, 3, 7, 4)));  // 4... Ke8
+    REQUIRE(game->makeMove(ChessMove(0, 3, 0, 4)));  // 5. Ke1
+    // Position 3: same as 1 and 2
+
+    // With correct ep handling: all three positions identical → threefold repetition
+    REQUIRE(game->canClaimDraw());
+}
+
+// ============================================================================
 // JSON Board State (toJson)
 // ============================================================================
 
