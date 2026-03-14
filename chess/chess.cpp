@@ -1263,8 +1263,7 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     ss >> placement >> activeColor >> castling >> enPassant >> halfmove >> fullmove;
 
     if (ss.fail()) {
-        fprintf(stderr, "fromFen: failed to parse FEN string: %s\n", fen.c_str());
-        std::abort();
+        return nullptr;
     }
 
     auto game = std::unique_ptr<ChessGame>(new ChessGame());
@@ -1312,8 +1311,7 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
                     piece = std::make_unique<King>(isWhite, game->board);
                     break;
                 default:
-                    fprintf(stderr, "fromFen: unexpected piece character '%c'\n", c);
-                    std::abort();
+                    return nullptr;  // invalid piece character
             }
             game->board.place(x, y, std::move(piece));
             y++;
