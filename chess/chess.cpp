@@ -1292,27 +1292,42 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
     }
     if (s.empty()) return ChessMove();
 
+    // Helper: validate check/checkmate suffix against the actual move result.
+    auto validateSuffix = [&](const ChessMove& m) -> ChessMove {
+        if (!hasCheck && !hasCheckmate) return m;
+        auto copy = ChessGame::fromFen(toFen());
+        if (!copy) return ChessMove();
+        if (!copy->makeMove(ChessMove(m.getStartX(), m.getStartY(),
+                                       m.getEndX(), m.getEndY(), m.getPromotion())))
+            return ChessMove();
+        bool opponent = !whiteTurn;  // the side being checked is the one not moving
+        bool givesCheck = copy->board.checkCheck(opponent);
+        bool givesCheckmate = copy->checkmate(opponent);
+        if (hasCheckmate && !givesCheckmate) return ChessMove();
+        if (hasCheck && !givesCheck) return ChessMove();
+        return m;
+    };
+
     // Castling.
-    if (s == "O-O" || s == "0-0") {
+    if (s == "O-O") {
         int rank = whiteTurn ? 0 : 7;
         ChessMove cm(rank, 4, rank, 6);
-        // Verify it's legal.
         auto moves = getMoves(whiteTurn);
         for (const auto& m : moves) {
             if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
                 m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
-                return m;
+                return validateSuffix(m);
         }
         return ChessMove();
     }
-    if (s == "O-O-O" || s == "0-0-0") {
+    if (s == "O-O-O") {
         int rank = whiteTurn ? 0 : 7;
         ChessMove cm(rank, 4, rank, 2);
         auto moves = getMoves(whiteTurn);
         for (const auto& m : moves) {
             if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
                 m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
-                return m;
+                return validateSuffix(m);
         }
         return ChessMove();
     }
@@ -1324,10 +1339,10 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         if (eq != std::string::npos && eq + 1 < s.size()) {
             char pc = s[eq + 1];
             switch (pc) {
-                case 'Q': case 'q': promo = QUEEN; break;
-                case 'R': case 'r': promo = ROOK; break;
-                case 'B': case 'b': promo = BISHOP; break;
-                case 'N': case 'n': promo = KNIGHT; break;
+                case 'Q': promo = QUEEN; break;
+                case 'R': promo = ROOK; break;
+                case 'B': promo = BISHOP; break;
+                case 'N': promo = KNIGHT; break;
                 default: return ChessMove();
             }
             s = s.substr(0, eq);
@@ -1413,11 +1428,7 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         if (!isCapture) return ChessMove();
     }
 
-    // Note: check (+) and checkmate (#) annotations are accepted but not
-    // validated, as verification would require simulating the move. These
-    // are informational annotations per SAN convention.
-
-    return match;
+    return validateSuffix(match);
 }
 
 std::string ChessGame::toSan(const ChessMove& move) const {
