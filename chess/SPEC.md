@@ -383,8 +383,8 @@ It is incremented by 1 after each half-move that is not a pawn move and does not
 a capture. It is reset to 0 on any pawn move or any capture (including en passant
 captures, which are both pawn moves and captures).
 
-**Claim-based draw:** When the halfmove clock reaches 100 (after a move), either player
-may claim a draw. The engine must report when this condition is met.
+**Claim-based draw:** When the halfmove clock reaches 100 (after a move), the player
+to move may claim a draw. The engine must report when this condition is met.
 
 **Automatic draw at 75 moves:** Per FIDE rules (2014), if 75 consecutive moves by each
 side (150 half-moves) occur with no pawn move and no capture, the game is automatically
@@ -414,8 +414,8 @@ This is a serialization convention. Position identity for repetition detection i
 stricter — it considers the en passant target only when it actually affects the set of
 legal moves.
 
-**Claim-based draw:** When the third occurrence is reached, either player may claim a
-draw. The engine must report when this condition is met.
+**Claim-based draw:** When the third occurrence is reached, the player to move may claim
+a draw. The engine must report when this condition is met.
 
 **Automatic draw at fivefold repetition:** Per FIDE rules (2014), if the same position
 occurs five times, the game is automatically drawn — no claim required. If the fifth
@@ -815,15 +815,855 @@ After each successful move, the engine must be able to provide on request:
 
 ## 8. MCP Tool Interface
 
-> **TODO:** This section will define the MCP (Model Context Protocol) server interface
-> that both implementations must expose. It will specify exact tool names, parameter
-> schemas (JSON Schema), response schemas, error formats, and session/state management
-> semantics. The test harness will send identical MCP requests to both implementations and
-> compare responses.
->
-> This section is deferred until the MCP server design is further along. The game rules
-> and notation sections above are sufficient to begin implementation and cross-validation
-> of core engine logic.
+This section defines the MCP (Model Context Protocol) server interface that both
+implementations must expose. The test harness sends identical MCP requests to both
+implementations and compares responses field-by-field.
+
+### 8.1 Transport and Sessions
+
+The server uses **Streamable HTTP** transport on localhost. Two independent clients
+(players) connect to the same server, each identified by the `Mcp-Session-Id` header.
+
+Each session is in one of these roles:
+- **Unjoined** — connected but has not joined a game. Can only use game management tools.
+- **Player (White/Black)** — joined with a color. Full access to query and action tools.
+- **Spectator** — joined as observer. Access to query tools except `get_messages`. No
+  access to action tools.
+
+### 8.2 Server States
+
+The server maintains a single state machine governing the game and server lifecycle.
+
+```mermaid
+stateDiagram-v2
+    [*] --> no_game: Server starts
+
+    no_game --> awaiting_players: create_game
+
+    awaiting_players --> awaiting_players: join_game (first player)
+    awaiting_players --> ongoing: join_game (second player)
+
+    ongoing --> ongoing: make_move / query / message
+    ongoing --> ongoing: move delivers or resolves check
+    ongoing --> game_over: checkmate
+    ongoing --> game_over: stalemate
+    ongoing --> game_over: draw (claimed, agreed, automatic)
+    ongoing --> game_over: resign
+    ongoing --> game_over: flag (clock expired)
+    ongoing --> game_over: inactivity timeout
+
+    game_over --> game_over: query tools / done (first client)
+    game_over --> [*]: both done received OR 5-min shutdown timeout
+```
+
+**State descriptions:**
+
+- **`no_game`**: Server is running but no game exists. Only `create_game` is available.
+- **`awaiting_players`**: A game has been created but fewer than two players have joined.
+  Query tools work for spectators and the first player. Action tools are unavailable.
+- **`ongoing`**: Game is in progress. All tools available per role and turn rules. Check
+  is not a separate server state — it is reflected in the `is_check` field of
+  `get_status`.
+- **`game_over`**: Terminal state. Clients can still use query tools (`get_status`,
+  `get_history`, `get_board`) and must each send a `done` message when finished. The
+  server shuts down after both `done` messages are received or 5 minutes after game end,
+  whichever is sooner.
+
+**Transitions from `game_over`:** A new `create_game` is not supported after game over.
+The server is single-use: one game per server instance.
+
+### 8.3 Inactivity and Shutdown
+
+#### 8.3.1 Inactivity Timeout
+
+During an `ongoing` game, the server monitors client activity. If the server has not
+received any tool call from **either** client for 10 consecutive minutes, the game ends
+as a draw due to inactivity.
+
+Clients should send at least one tool call every 10 minutes to avoid the timeout. A
+frequency of approximately once per minute is recommended to prevent timing issues and
+game delays. A `get_status` call counts as activity.
+
+The inactivity timeout is independent of the chess clock. A timed game may end by flag
+(clock expiry) before the inactivity timeout, or by inactivity timeout in an untimed
+game.
+
+#### 8.3.2 Server Shutdown
+
+After the game enters the `game_over` state (by any means — checkmate, draw, resign,
+flag, inactivity), the server remains running to allow clients to query the final game
+state. Shutdown occurs when:
+
+1. Both clients have sent `done`, OR
+2. 5 minutes have elapsed since the game ended.
+
+Whichever comes first. After shutdown, the server process terminates and no further
+tool calls are accepted.
+
+### 8.4 Move Input Parsing
+
+When a move string is submitted via `make_move`, the server applies the following
+parsing pipeline:
+
+1. **SAN normalization** — Apply the normalization rules from [Section
+   6.3](#63-san-normalization) (strip annotations, convert digit-zero castling, trim
+   whitespace).
+2. **SAN parse** — Attempt to parse the normalized string as canonical SAN per [Section
+   6.2](#62-standard-algebraic-notation-san). If successful, resolve to a legal move.
+3. **LAN fallback** — If SAN parsing fails, attempt to parse the original string as
+   canonical LAN per [Section 6.1](#61-long-algebraic-notation-lan). If successful,
+   resolve to a legal move.
+4. **Reject** — If both fail, return an `invalid_format` error.
+
+There are no ambiguities between canonical SAN and canonical LAN: SAN uses piece
+prefixes (`Nf3`) or bare destinations for pawns (`e4`), while LAN always has a
+4-or-5-character source-destination format (`g1f3`, `e2e4`). Castling in SAN (`O-O`) is
+syntactically distinct from LAN (`e1g1`).
+
+### 8.5 Tool Definitions
+
+Each tool is defined with its parameters (JSON Schema), response schema, preconditions,
+and error codes.
+
+#### 8.5.1 Game Management Tools
+
+Available to any connected session regardless of role.
+
+##### `create_game`
+
+Creates a new game. Only valid in the `no_game` state.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "fen": {
+      "type": "string",
+      "description": "Starting position in FEN. Default: standard initial position."
+    },
+    "history": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Move history to replay from the starting position. Each move is parsed per Section 8.4 (SAN with normalization, LAN fallback)."
+    },
+    "white_name": {
+      "type": "string",
+      "description": "Display name for the White player."
+    },
+    "black_name": {
+      "type": "string",
+      "description": "Display name for the Black player."
+    },
+    "time_control": {
+      "description": "Chess clock configuration. Omit for untimed games. See Section 8.7.",
+      "$ref": "#/$defs/time_control"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "game_id": "string",
+  "fen": "string (position after history replay, if provided)",
+  "status": "awaiting_players",
+  "time_control": "object | null"
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `invalid_fen` | FEN string is malformed or represents an invalid position. |
+| `invalid_history` | A move in the history is illegal in its position. |
+| `wrong_state` | Server is not in `no_game` state. |
+
+##### `join_game`
+
+Claims a seat in the active game.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "color": {
+      "type": "string",
+      "enum": ["white", "black", "random", "spectator"],
+      "description": "Requested role."
+    },
+    "name": {
+      "type": "string",
+      "description": "Player display name."
+    }
+  },
+  "required": ["color"],
+  "additionalProperties": false
+}
+```
+
+**Random color assignment:** Both players may join with `"random"`. When both have
+submitted `"random"`, the server randomly assigns one to White and the other to Black.
+If only one player submits `"random"` and the other picks a specific color, the random
+player gets the remaining color. If both pick the same specific color, the second
+request fails.
+
+**Response:**
+
+```json
+{
+  "assigned_color": "white | black | spectator",
+  "game_status": "awaiting_players | ongoing"
+}
+```
+
+The `game_status` transitions to `ongoing` when the second player joins.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `no_active_game` | No game has been created. |
+| `color_taken` | The requested color is already claimed. |
+| `already_joined` | This session has already joined. |
+
+##### `save_game`
+
+Saves the current game state to a file.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "File path. Server chooses a default if omitted."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["fen", "pgn"],
+      "default": "pgn",
+      "description": "'fen' saves position only; 'pgn' saves the full game."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**PGN output format:** The seven required tag pairs (Event, Site, Date, White, Black,
+Result) plus TimeControl. SAN movetext with clock annotations in the `{[%clk h:mm:ss]}`
+format after each move (de facto standard). No NAGs, variations, or comments.
+
+**Response:**
+
+```json
+{
+  "path": "string (where the file was saved)"
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `no_active_game` | No game to save. |
+| `io_error` | File could not be written. |
+
+##### `done`
+
+Signals that this client is finished with the game. Only valid in the `game_over` state.
+After both clients send `done`, the server shuts down.
+
+**Parameters:** None.
+
+**Response:**
+
+```json
+{
+  "acknowledged": true,
+  "clients_remaining": "integer (number of clients that have not yet sent done)"
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `game_not_over` | The game is still in progress. |
+| `already_done` | This client has already sent `done`. |
+
+#### 8.5.2 Query Tools
+
+Available to any joined session. `get_messages` is restricted from spectators.
+
+##### `get_board`
+
+Returns the current board state.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "enum": ["fen", "ascii", "both"],
+      "default": "both"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "fen": "string (if format is 'fen' or 'both')",
+  "ascii": "string (if format is 'ascii' or 'both')"
+}
+```
+
+##### `get_status`
+
+Returns the current game status. This is the primary tool for polling game state.
+
+**Parameters:** None.
+
+**Response:**
+
+```json
+{
+  "server_state": "no_game | awaiting_players | ongoing | game_over",
+  "status": "awaiting_players | ongoing | check | checkmate | stalemate | draw_fifty_move | draw_repetition | draw_agreement | draw_automatic_fifty | draw_automatic_repetition | draw_inactivity | resigned | flag",
+  "turn": "white | black",
+  "fen": "string",
+  "move_number": "integer",
+  "halfmove_clock": "integer",
+  "is_check": "boolean",
+  "can_claim_draw": {
+    "fifty_move": "boolean",
+    "repetition": "boolean"
+  },
+  "insufficient_material": "boolean (advisory, see Section 4.4)",
+  "draw_offered": "boolean (true if opponent has offered a draw; only shown to the recipient)",
+  "last_move": {
+    "san": "string",
+    "lan": "string"
+  },
+  "result": "1-0 | 0-1 | 1/2-1/2 | null",
+  "termination_reason": "string | null (human-readable explanation when game is over)",
+  "clock": "object | null (see Section 8.7)"
+}
+```
+
+The `server_state` field reflects the server state machine from [Section
+8.2](#82-server-states). The `status` field provides finer-grained game status. Both
+are always included.
+
+**`termination_reason` examples:**
+- `"Checkmate — White wins"`
+- `"Stalemate — draw"`
+- `"Draw by threefold repetition (claimed by Black)"`
+- `"Draw by fivefold repetition — automatic under FIDE rules"`
+- `"Draw by 75-move rule — automatic under FIDE rules"`
+- `"Draw by agreement"`
+- `"White resigns — Black wins"`
+- `"Black wins on time — White's clock expired"`
+- `"Draw — White's clock expired but Black has insufficient material"`
+- `"Draw by inactivity — no client activity for 10 minutes"`
+
+##### `get_legal_moves`
+
+Returns all legal moves for the side to move.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "square": {
+      "type": "string",
+      "description": "Filter to moves from this square (e.g., 'e2')."
+    },
+    "format": {
+      "type": "string",
+      "enum": ["san", "lan", "both"],
+      "default": "both"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "moves": [
+    { "san": "string", "lan": "string" }
+  ],
+  "count": "integer"
+}
+```
+
+When `format` is `"san"` or `"lan"`, each entry contains only that field.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `invalid_square` | The `square` parameter is not a valid square name. |
+
+##### `get_history`
+
+Returns the move history.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "format": {
+      "type": "string",
+      "enum": ["san", "lan", "both"],
+      "default": "san"
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "moves": [
+    {
+      "move_number": "integer",
+      "white": { "san": "string", "lan": "string" },
+      "black": { "san": "string", "lan": "string" }
+    }
+  ],
+  "total_half_moves": "integer"
+}
+```
+
+The last entry may have `black` as `null` if White just moved.
+
+##### `get_messages`
+
+Returns messages sent to this player. **Not available to spectators.**
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "clear": {
+      "type": "boolean",
+      "default": true,
+      "description": "Clear messages after reading."
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "messages": [
+    { "from": "white | black | server", "text": "string", "move_number": "integer" }
+  ]
+}
+```
+
+Messages with `from: "server"` are system messages (e.g., draw offers, game events).
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `spectator_not_allowed` | Spectators cannot read player messages. |
+
+#### 8.5.3 Action Tools
+
+Action tools modify game state. Some are **turn-gated** (only the player to move may
+use them), others are available to either player at any time. All action tools return
+`game_over` error if the game has already ended, and `not_joined` error if the session
+has not joined as a player.
+
+##### `make_move`
+
+Submit a move. **Turn-gated.**
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "move": {
+      "type": "string",
+      "description": "Move string, parsed per Section 8.4 (SAN with normalization, LAN fallback)."
+    }
+  },
+  "required": ["move"],
+  "additionalProperties": false
+}
+```
+
+**Postconditions:**
+- The move is applied to the board per [Section 7.3](#73-move-execution).
+- Automatic draw conditions are checked (75-move rule, fivefold repetition). If met
+  and the move did not deliver checkmate, the game ends as a draw (per [Section
+  4.5](#45-termination-priority)).
+- Any pending draw offer from the moving player is implicitly withdrawn.
+
+**Response:** Same shape as `get_status`, plus:
+
+```json
+{
+  "move_played": { "san": "string", "lan": "string" }
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `not_your_turn` | Session does not own the color to move. |
+| `illegal_move` | Move is not legal in the current position. |
+| `ambiguous_move` | SAN input matches multiple legal moves. |
+| `invalid_format` | Move string could not be parsed as SAN or LAN. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `claim_draw`
+
+Claim a draw under the fifty-move rule or threefold repetition. **Turn-gated.** Only
+the player to move may claim, matching [Section 4.2](#42-fifty-move-rule) and [Section
+4.3](#43-threefold-repetition).
+
+**Parameters:** None.
+
+**Postconditions:** If valid, the game ends as a draw. The `termination_reason` field
+indicates which rule was invoked.
+
+**Response:** Same shape as `get_status`.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `not_your_turn` | Session does not own the color to move. |
+| `draw_not_available` | Neither fifty-move nor threefold repetition conditions are met. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `offer_draw`
+
+Offer a draw to the opponent. **Not turn-gated** — either player at any time.
+
+**Parameters:** None.
+
+**Postconditions:** A draw offer is recorded. The opponent sees it via the `draw_offered`
+field in `get_status` and as a system message in `get_messages`.
+
+**Response:**
+
+```json
+{
+  "offered": true
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `already_offered` | A draw offer from this player is already pending. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `accept_draw`
+
+Accept a pending draw offer. **Not turn-gated.**
+
+**Parameters:** None.
+
+**Postconditions:** The game ends as a draw by agreement.
+
+**Response:** Same shape as `get_status`.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `no_pending_offer` | No draw offer to accept. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `decline_draw`
+
+Decline a pending draw offer. **Not turn-gated.**
+
+**Parameters:** None.
+
+**Response:**
+
+```json
+{
+  "declined": true
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `no_pending_offer` | No draw offer to decline. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `resign`
+
+Resign the game. **Not turn-gated** — either player at any time.
+
+**Parameters:** None.
+
+**Postconditions:** The game ends. The opponent wins.
+
+**Response:** Same shape as `get_status`.
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+##### `send_message`
+
+Send a message to the opponent. **Not turn-gated.** Not available to spectators.
+
+**Parameters:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Message text."
+    }
+  },
+  "required": ["text"],
+  "additionalProperties": false
+}
+```
+
+**Response:**
+
+```json
+{
+  "sent": true
+}
+```
+
+**Errors:**
+
+| Code | Condition |
+|------|-----------|
+| `spectator_not_allowed` | Spectators cannot send messages. |
+| `game_over` | Game has already ended. |
+| `not_joined` | Session has not joined as a player. |
+
+### 8.6 Error Format
+
+All errors are returned as MCP tool errors with a structured content object:
+
+```json
+{
+  "error": "error_code",
+  "message": "Human-readable description of the error."
+}
+```
+
+The `error` field contains one of the error codes defined in the tool tables above. The
+`message` field provides context (e.g., `"Illegal move: pawn on e2 cannot reach e5"` for
+`illegal_move`). Error messages are informational and should not be parsed
+programmatically — use the `error` code for control flow.
+
+### 8.7 Chess Clock
+
+The chess clock is managed by the MCP server, not the rules engine. It is optional —
+games created without `time_control` are untimed.
+
+#### 8.7.1 Clock Formats
+
+| Format | `type` value | Description |
+|--------|-------------|-------------|
+| Sudden death | `"sudden_death"` | Fixed total time, no increment. |
+| Fischer increment | `"fischer"` | Fixed total time + per-move increment added after each move. |
+| Bronstein delay | `"bronstein"` | Fixed total time + per-move delay before clock ticks. Unused delay is not banked. |
+| Multi-period | `"multi_period"` | Sequential time controls (e.g., 40 moves in 90 min, then 30 min sudden death). |
+
+#### 8.7.2 Time Control Schema
+
+**Simple formats (sudden death, Fischer, Bronstein):**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "type": { "enum": ["sudden_death", "fischer", "bronstein"] },
+    "initial_time_ms": { "type": "integer", "minimum": 1 },
+    "increment_ms": { "type": "integer", "minimum": 0, "description": "Fischer increment or Bronstein delay. 0 for sudden death." }
+  },
+  "required": ["type", "initial_time_ms"]
+}
+```
+
+**Multi-period:**
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "type": { "enum": ["multi_period"] },
+    "periods": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "moves": { "type": "integer", "minimum": 1, "description": "Number of moves in this period. Omit for the final period." },
+          "type": { "enum": ["sudden_death", "fischer", "bronstein"] },
+          "initial_time_ms": { "type": "integer", "minimum": 0, "description": "Time added at the start of this period." },
+          "increment_ms": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["type", "initial_time_ms"]
+      },
+      "minItems": 2
+    }
+  },
+  "required": ["type", "periods"]
+}
+```
+
+#### 8.7.3 Clock Behavior
+
+- The clock for a player starts ticking when it becomes their turn (after the opponent's
+  move is processed).
+- The clock stops when the player submits a move.
+- **Fischer increment:** The increment is added to the player's remaining time **after**
+  their move is processed.
+- **Bronstein delay:** The first N milliseconds of thinking time (where N = `increment_ms`)
+  do not consume clock time. Only time beyond the delay counts against the player. If the
+  player moves within the delay, no time is consumed. Unused delay is **not** banked.
+- **Flag:** If a player's remaining time reaches zero, they lose on time — unless the
+  opponent has insufficient material to checkmate (per [Section 4.4](#44-insufficient-material)),
+  in which case the result is a draw.
+
+#### 8.7.4 Multi-Period Transitions
+
+- Periods are sequential. The first period applies from the start; subsequent periods
+  begin when the move count for the current period is reached.
+- **Time rollover:** Unused time from a completed period carries over. The next period's
+  `initial_time_ms` is **added** to the remaining time.
+- **Time expiry mid-period:** If a player's time reaches zero during any period, they
+  lose on time (flag). There is no automatic advance to the next period.
+- **Final period:** The last period in the list has no `moves` field — it applies for the
+  remainder of the game. If the last period has a `moves` field, a further sudden-death
+  period with zero additional time is implied (the player continues on whatever time
+  remains).
+- Each period may be any clock type (sudden death, Fischer, or Bronstein).
+
+#### 8.7.5 Clock State in Responses
+
+When a time control is active, `get_status` and `make_move` responses include a `clock`
+object:
+
+```json
+{
+  "clock": {
+    "white_time_ms": "integer (remaining time)",
+    "black_time_ms": "integer (remaining time)",
+    "running_for": "white | black | null (null if game not started or over)",
+    "current_period": "integer (1-indexed, for multi-period)",
+    "moves_until_next_period": "integer | null",
+    "time_control": "object (the active time control configuration)"
+  }
+}
+```
+
+All time values are integer milliseconds.
+
+### 8.8 Recording Format
+
+Every tool invocation is logged to a JSON-lines file for replay and N-version testing.
+
+#### 8.8.1 Record Schema
+
+Each line is a JSON object:
+
+```json
+{
+  "ts_ms": "integer (Unix timestamp in milliseconds when the server received the request)",
+  "session_id": "string (identifies which client made the call)",
+  "tool": "string (tool name)",
+  "params": "object (tool parameters as submitted)",
+  "result": "object (full response including clock state)",
+  "elapsed_ms": "integer (server processing time in milliseconds)"
+}
+```
+
+**Key fields:**
+- `ts_ms` — Used for deterministic clock replay. Both implementations compute clock
+  state from recorded timestamps rather than real wall-clock time during replay.
+- `elapsed_ms` — Server processing time (informational). Subtracted from the player's
+  clock cost so that engine speed differences do not unfairly penalize a player.
+
+#### 8.8.2 Game Boundary Markers
+
+When the server starts a game, a boundary marker is written:
+
+```json
+{"ts_ms": 1710300000000, "type": "game_start", "game_id": "string", "fen": "string", "time_control": "object | null"}
+```
+
+When the game ends, an end marker is written:
+
+```json
+{"ts_ms": 1710300060000, "type": "game_end", "result": "1-0 | 0-1 | 1/2-1/2", "termination_reason": "string"}
+```
+
+#### 8.8.3 Replay Mode
+
+The server can operate in replay mode where it reads from a recording file and validates
+that each response matches the recorded response. Clock state is computed from the
+recorded timestamps, ensuring deterministic comparison.
+
+Disagreements between the replay response and the recorded response are logged with full
+context (tool name, parameters, expected result, actual result, position FEN) for triage.
+
+Replay configuration is implementation-defined (e.g., command-line flags). The recording
+format and comparison semantics are normative; the replay invocation mechanism is not.
 
 ---
 
