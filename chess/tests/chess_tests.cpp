@@ -1463,6 +1463,78 @@ TEST_CASE("ChessGame: position identity ignores ep square when no legal capture 
 }
 
 // ============================================================================
+// Insufficient Material (SPEC 4.4)
+// ============================================================================
+
+TEST_CASE("ChessGame: K vs K is insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+B vs K is insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KB2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K vs K+B is insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4kb2/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+N vs K is insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KN2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+B vs K+B same color bishops is insufficient material", "[ChessGame][Draw]") {
+    // Both bishops on light squares (f1=light, c8=light: f1 is (0,5) -> 0+5=5 odd=light,
+    // c8 is (7,2) -> 7+2=9 odd=light)
+    auto game = ChessGame::fromFen("2b1k3/8/8/8/8/8/8/4KB2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+B vs K+B opposite color bishops is NOT insufficient", "[ChessGame][Draw]") {
+    // White bishop on f1 (light), black bishop on b8 (dark: (7,1) -> 7+1=8 even=dark)
+    auto game = ChessGame::fromFen("1b2k3/8/8/8/8/8/8/4KB2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+N+N vs K is NOT insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3NKN2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+R vs K is NOT insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KR2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+Q vs K is NOT insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KQ2 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: K+P vs K is NOT insufficient material", "[ChessGame][Draw]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/4P3/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->insufficientMaterial());
+}
+
+TEST_CASE("ChessGame: initial position is NOT insufficient material", "[ChessGame][Draw]") {
+    ChessGame game;
+    REQUIRE_FALSE(game.insufficientMaterial());
+}
+
+// ============================================================================
 // JSON Board State (toJson)
 // ============================================================================
 

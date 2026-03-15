@@ -339,6 +339,7 @@ class ChessGame {
 
     bool canClaimDraw() const;
     bool isAutomaticDraw() const;
+    bool insufficientMaterial() const;
 
     /** Returns a JSON string representing the full game state. */
     std::string toJson() const;
