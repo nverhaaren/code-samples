@@ -1534,13 +1534,55 @@ std::string ChessGame::positionKey() const {
     // castling, en passant) — halfmove clock and fullmove number are not part
     // of position identity.
     int spaces = 0;
+    size_t end = fen.size();
     for (size_t i = 0; i < fen.size(); i++) {
         if (fen[i] == ' ') {
             spaces++;
-            if (spaces == 4) return fen.substr(0, i);
+            if (spaces == 4) { end = i; break; }
         }
     }
-    return fen;  // fallback (shouldn't happen)
+    std::string key = fen.substr(0, end);
+
+    // Per SPEC 4.3: the en passant target is only part of position identity
+    // when a fully legal en passant capture exists. If no legal capture is
+    // available, replace the ep field with "-" so positions match.
+    // Find the ep field (after 3rd space).
+    size_t epStart = 0;
+    int sp = 0;
+    for (size_t i = 0; i < key.size(); i++) {
+        if (key[i] == ' ') {
+            sp++;
+            if (sp == 3) { epStart = i + 1; break; }
+        }
+    }
+    std::string ep = key.substr(epStart);
+    if (ep != "-") {
+        // Check if any legal en passant capture exists.
+        bool hasLegalEp = false;
+        int epY = ep[0] - 'a';  // file
+        int epX = ep[1] - '1';  // rank (0-indexed)
+        // The capturing pawn must be on the same rank as the pawn that double-pushed,
+        // i.e., one rank "behind" the ep target from the capturing side's perspective.
+        // If white to move, ep target is on rank 5 (epX=5), capturing pawn on rank 4.
+        // If black to move, ep target is on rank 2 (epX=2), capturing pawn on rank 3.
+        int captRank = whiteTurn ? (epX - 1) : (epX + 1);
+        for (int dy : {-1, 1}) {
+            int adjFile = epY + dy;
+            if (adjFile < 0 || adjFile > 7) continue;
+            const ChessPiece* p = board.getPiece(captRank, adjFile);
+            if (p != nullptr && p->getType() == PAWN && p->getWhite() == whiteTurn) {
+                // Check if the en passant capture is legal (doesn't leave king in check).
+                if (p->canMove(epX, epY)) {
+                    hasLegalEp = true;
+                    break;
+                }
+            }
+        }
+        if (!hasLegalEp) {
+            key = key.substr(0, epStart) + "-";
+        }
+    }
+    return key;
 }
 
 // O(n) scan over full history. Could be improved by only scanning back
