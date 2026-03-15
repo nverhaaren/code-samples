@@ -116,6 +116,11 @@ TEST_CASE("ChessMove: string constructor parses 'a1b2' (no separator)", "[ChessM
     REQUIRE(cm.getEndY() == 1);
 }
 
+TEST_CASE("ChessMove: string constructor rejects invalid promotion character", "[ChessMove]") {
+    ChessMove cm("e7e8x");
+    REQUIRE(cm.isEnd());
+}
+
 TEST_CASE("ChessMove: getPromotion returns PAWN for non-promotion move", "[ChessMove]") {
     ChessMove cm(1, 2, 3, 4);
     REQUIRE(cm.getPromotion() == PAWN);
@@ -1468,6 +1473,23 @@ TEST_CASE("ChessGame: parseSan rejects non-canonical double hash ##", "[ChessGam
     REQUIRE(move.isEnd());
 }
 
+TEST_CASE("ChessGame: parseSan accepts + on a checkmating move", "[ChessGame][SAN]") {
+    // Back-rank mate: Rd8# — but + should also be accepted since checkmate implies check.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Rd8+");
+    // Rd8 delivers checkmate; + is accepted because checkmate implies check.
+    REQUIRE_FALSE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects digit-zero queenside castling 0-0-0", "[ChessGame][SAN]") {
+    // Position where queenside castling is legal.
+    auto game = ChessGame::fromFen("r3kbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("0-0-0");
+    REQUIRE(move.isEnd());
+}
+
 // ============================================================================
 // SAN Normalization (SPEC 6.3)
 // ============================================================================
@@ -1510,6 +1532,22 @@ TEST_CASE("ChessGame: normalizeSan preserves canonical SAN", "[ChessGame][SAN]")
 TEST_CASE("ChessGame: normalizeSan combined annotations", "[ChessGame][SAN]") {
     REQUIRE(ChessGame::normalizeSan("  0-0!!$3  ") == "O-O");
     REQUIRE(ChessGame::normalizeSan("Nf3!$1") == "Nf3");
+}
+
+TEST_CASE("ChessGame: normalizeSan edge cases", "[ChessGame][SAN]") {
+    // Bare $ with no digits
+    REQUIRE(ChessGame::normalizeSan("Nf3$") == "Nf3");
+    // Multiple consecutive NAGs
+    REQUIRE(ChessGame::normalizeSan("Nf3$1$6") == "Nf3");
+    // Whitespace between move and NAG
+    REQUIRE(ChessGame::normalizeSan("Nf3 $1") == "Nf3");
+    // Castling + glyph + check suffix
+    REQUIRE(ChessGame::normalizeSan("0-0!!+") == "O-O+");
+    REQUIRE(ChessGame::normalizeSan("0-0-0??#") == "O-O-O#");
+    // Empty string
+    REQUIRE(ChessGame::normalizeSan("") == "");
+    // NAG-only input
+    REQUIRE(ChessGame::normalizeSan("$3") == "");
 }
 
 TEST_CASE("ChessGame: parseSan rejects lowercase promotion =q", "[ChessGame][SAN]") {
@@ -1830,6 +1868,15 @@ TEST_CASE("ChessGame: stalemate takes priority over automatic draw", "[ChessGame
     REQUIRE(game->stalemate(false));   // black is stalemated
     REQUIRE_FALSE(game->isAutomaticDraw());  // stalemate has priority
     REQUIRE_FALSE(game->canClaimDraw());     // stalemate has priority
+}
+
+TEST_CASE("ChessGame: automatic draw still triggers in non-mate/stalemate position", "[ChessGame][Draw]") {
+    // K vs K at halfmove=150 — insufficient material AND 75-move threshold.
+    // Neither checkmate nor stalemate, so isAutomaticDraw should return true.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4K3 w - - 150 100");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->isAutomaticDraw());
+    REQUIRE(game->canClaimDraw());
 }
 
 // ============================================================================
@@ -2168,6 +2215,36 @@ TEST_CASE("ChessGame::fromFen: accepts ep rank 6 when white to move", "[ChessGam
     // rank 6 ep: black just double-pushed d7→d5, white to move
     auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w - d6 0 1");
     REQUIRE(game != nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects castling field out of order", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w kqKQ - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects duplicate castling character", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KKkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects empty string", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects whitespace-only string", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("   ");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects non-integer halfmove clock", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - abc 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects non-integer fullmove number", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1.5");
+    REQUIRE(game == nullptr);
 }
 
 // ============================================================================
