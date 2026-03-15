@@ -345,6 +345,8 @@ class ChessGame {
     std::string toJson() const;
 
     ChessMove parseSan(const std::string& san) const;
+    std::string toSan(const ChessMove& move) const;
+    static std::string normalizeSan(const std::string& san);
 
     ChessBoard& getPieceBoard();
 

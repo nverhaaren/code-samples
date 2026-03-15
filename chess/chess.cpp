@@ -34,11 +34,10 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY)
     ey = (int8_t)eY;
     repr[0] = fileLetters[sy];
     repr[1] = ChessPiece::digits[sx + 1];
-    repr[2] = '-';
-    repr[3] = fileLetters[ey];
-    repr[4] = ChessPiece::digits[ex + 1];
-    repr[5] = '\0';
-    repr[6] = repr[7] = '\0';
+    repr[2] = fileLetters[ey];
+    repr[3] = ChessPiece::digits[ex + 1];
+    repr[4] = '\0';
+    repr[5] = repr[6] = repr[7] = '\0';
 }
 
 // 5-arg ctor (with promotion) — delegates to 4-arg
@@ -52,20 +51,49 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
             static_assert(PAWN == 0 && ROOK == 1 && KNIGHT == 2 && BISHOP == 3 && QUEEN == 5,
                           "letters[] indexing assumes specific PieceType enum values");
             const char letters[] = {'p', 'r', 'n', 'b', 'k', 'q'};
-            repr[5] = letters[promo];
-            repr[6] = '\0';
+            repr[4] = letters[promo];
+            repr[5] = '\0';
         }
     }
 }
 
-// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format.
+// String ctor — canonical LAN only: "a1b2" or "a1b2q" (with promotion).
 // Argument mapping: sX=rank(str[1]-'1'), sY=file(str[0]-'a'),
 //   separator at str[2] (' ' or '-') shifts end-square indices by 1.
 ChessMove::ChessMove(const char* const str)
-    : ChessMove((int)(str[1] - '1'),
-                (int)(str[0] - 'a'),
-                (str[2] == ' ' || str[2] == '-') ? (int)(str[4] - '1') : (int)(str[3] - '1'),
-                (str[2] == ' ' || str[2] == '-') ? (int)(str[3] - 'a') : (int)(str[2] - 'a')) {}
+    : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
+    repr[0] = 'E'; repr[1] = 'N'; repr[2] = 'D'; repr[3] = '\0';
+    repr[4] = repr[5] = repr[6] = repr[7] = '\0';
+
+    // Canonical LAN only: 4 chars (e.g., "e2e4") or 5 chars with promotion
+    // (e.g., "e7e8q"). Reject hyphenated or spaced forms.
+    if (str == nullptr) return;
+    size_t len = strlen(str);
+    if (len < 4 || len > 5) return;
+
+    int sY = str[0] - 'a', sX = str[1] - '1';
+    int eY = str[2] - 'a', eX = str[3] - '1';
+    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 ||
+        eX < 0 || eX > 7 || eY < 0 || eY > 7) return;
+
+    sx = (int8_t)sX; sy = (int8_t)sY;
+    ex = (int8_t)eX; ey = (int8_t)eY;
+    repr[0] = str[0]; repr[1] = str[1];
+    repr[2] = str[2]; repr[3] = str[3];
+    repr[4] = '\0';
+
+    if (len == 5) {
+        char pc = str[4];
+        switch (pc) {
+            case 'q': promotion = QUEEN; break;
+            case 'r': promotion = ROOK; break;
+            case 'n': promotion = KNIGHT; break;
+            case 'b': promotion = BISHOP; break;
+            default: sx = -1; return;  // invalid promotion char
+        }
+        repr[4] = pc; repr[5] = '\0';
+    }
+}
 
 // Copy ctor
 ChessMove::ChessMove(const ChessMove& rcm)
@@ -1292,27 +1320,42 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
     }
     if (s.empty()) return ChessMove();
 
+    // Helper: validate check/checkmate suffix against the actual move result.
+    auto validateSuffix = [&](const ChessMove& m) -> ChessMove {
+        if (!hasCheck && !hasCheckmate) return m;
+        auto copy = ChessGame::fromFen(toFen());
+        if (!copy) return ChessMove();
+        if (!copy->makeMove(ChessMove(m.getStartX(), m.getStartY(),
+                                       m.getEndX(), m.getEndY(), m.getPromotion())))
+            return ChessMove();
+        bool opponent = !whiteTurn;  // the side being checked is the one not moving
+        bool givesCheck = copy->board.checkCheck(opponent);
+        bool givesCheckmate = copy->checkmate(opponent);
+        if (hasCheckmate && !givesCheckmate) return ChessMove();
+        if (hasCheck && !givesCheck) return ChessMove();
+        return m;
+    };
+
     // Castling.
-    if (s == "O-O" || s == "0-0") {
+    if (s == "O-O") {
         int rank = whiteTurn ? 0 : 7;
         ChessMove cm(rank, 4, rank, 6);
-        // Verify it's legal.
         auto moves = getMoves(whiteTurn);
         for (const auto& m : moves) {
             if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
                 m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
-                return m;
+                return validateSuffix(m);
         }
         return ChessMove();
     }
-    if (s == "O-O-O" || s == "0-0-0") {
+    if (s == "O-O-O") {
         int rank = whiteTurn ? 0 : 7;
         ChessMove cm(rank, 4, rank, 2);
         auto moves = getMoves(whiteTurn);
         for (const auto& m : moves) {
             if (m.getStartX() == cm.getStartX() && m.getStartY() == cm.getStartY() &&
                 m.getEndX() == cm.getEndX() && m.getEndY() == cm.getEndY())
-                return m;
+                return validateSuffix(m);
         }
         return ChessMove();
     }
@@ -1324,10 +1367,10 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         if (eq != std::string::npos && eq + 1 < s.size()) {
             char pc = s[eq + 1];
             switch (pc) {
-                case 'Q': case 'q': promo = QUEEN; break;
-                case 'R': case 'r': promo = ROOK; break;
-                case 'B': case 'b': promo = BISHOP; break;
-                case 'N': case 'n': promo = KNIGHT; break;
+                case 'Q': promo = QUEEN; break;
+                case 'R': promo = ROOK; break;
+                case 'B': promo = BISHOP; break;
+                case 'N': promo = KNIGHT; break;
                 default: return ChessMove();
             }
             s = s.substr(0, eq);
@@ -1413,22 +1456,286 @@ ChessMove ChessGame::parseSan(const std::string& san) const {
         if (!isCapture) return ChessMove();
     }
 
-    // Note: check (+) and checkmate (#) annotations are accepted but not
-    // validated, as verification would require simulating the move. These
-    // are informational annotations per SAN convention.
+    return validateSuffix(match);
+}
 
-    return match;
+std::string ChessGame::toSan(const ChessMove& move) const {
+    if (move.isEnd()) return "";
+
+    int sx = move.getStartX(), sy = move.getStartY();
+    int ex = move.getEndX(),   ey = move.getEndY();
+    const ChessPiece* piece = board.getPiece(sx, sy);
+    if (piece == nullptr) return "";
+
+    PieceType type = piece->getType();
+    bool isWhite = piece->getWhite();
+
+    std::string san;
+
+    // Castling.
+    if (type == KING && std::abs(sy - ey) == 2) {
+        san = (ey > sy) ? "O-O" : "O-O-O";
+    } else {
+        // Piece letter prefix (not for pawns).
+        const char pieceLetters[] = {'?', 'R', 'N', 'B', 'K', 'Q'};
+        if (type != PAWN) {
+            san += pieceLetters[type];
+
+            // Disambiguation: find all same-type, same-color pieces that can
+            // geometrically reach the destination (canMove with chkchk=false).
+            bool needFile = false, needRank = false;
+            bool sameFile = false, sameRank = false;
+            int ambigCount = 0;
+            for (int x = 0; x < 8; x++) {
+                for (int y = 0; y < 8; y++) {
+                    if (x == sx && y == sy) continue;
+                    const ChessPiece* other = board.getPiece(x, y);
+                    if (other == nullptr) continue;
+                    if (other->getType() != type || other->getWhite() != isWhite) continue;
+                    if (!other->canMove(ex, ey, false)) continue;
+                    ambigCount++;
+                    if (y == sy) sameFile = true;
+                    if (x == sx) sameRank = true;
+                }
+            }
+            if (ambigCount > 0) {
+                if (!sameFile) {
+                    needFile = true;
+                } else if (!sameRank) {
+                    needRank = true;
+                } else {
+                    needFile = true;
+                    needRank = true;
+                }
+            }
+            if (needFile) san += static_cast<char>('a' + sy);
+            if (needRank) san += static_cast<char>('1' + sx);
+        }
+
+        // Capture indicator.
+        bool isCapture = (board.getPiece(ex, ey) != nullptr);
+        // En passant: pawn moves diagonally to empty square.
+        if (type == PAWN && sy != ey && !isCapture) isCapture = true;
+        if (isCapture) {
+            if (type == PAWN) san += static_cast<char>('a' + sy);  // pawn source file
+            san += 'x';
+        }
+
+        // Destination square.
+        san += static_cast<char>('a' + ey);
+        san += static_cast<char>('1' + ex);
+
+        // Promotion.
+        if (move.getPromotion() != PAWN) {
+            san += '=';
+            san += pieceLetters[move.getPromotion()];
+        }
+    }
+
+    // Check/checkmate suffix: simulate the move to test.
+    // Make a copy via FEN round-trip to avoid mutating this game.
+    auto copy = ChessGame::fromFen(toFen());
+    if (copy && copy->makeMove(ChessMove(sx, sy, ex, ey, move.getPromotion()))) {
+        bool opponentColor = !isWhite;
+        if (copy->checkmate(opponentColor)) {
+            san += '#';
+        } else if (copy->board.checkCheck(opponentColor)) {
+            san += '+';
+        }
+    }
+
+    return san;
+}
+
+std::string ChessGame::normalizeSan(const std::string& san) {
+    std::string s = san;
+
+    // 0. Strip leading/trailing whitespace first so other steps work on clean input.
+    {
+        size_t start = s.find_first_not_of(" \t\n\r");
+        if (start == std::string::npos) return "";
+        size_t end = s.find_last_not_of(" \t\n\r");
+        s = s.substr(start, end - start + 1);
+    }
+
+    // 1. Strip NAGs: '$' followed by digits.
+    {
+        std::string result;
+        for (size_t i = 0; i < s.size(); i++) {
+            if (s[i] == '$') {
+                // Skip $ and following digits.
+                i++;
+                while (i < s.size() && s[i] >= '0' && s[i] <= '9') i++;
+                i--;  // loop increment
+            } else {
+                result += s[i];
+            }
+        }
+        s = result;
+    }
+
+    // 2. Strip move assessment glyphs (longest first): !!, ??, !?, ?!, !, ?
+    {
+        // Strip from the end, after any check/checkmate suffix.
+        // First, save and strip check/checkmate suffixes.
+        std::string suffix;
+        while (!s.empty() && (s.back() == '+' || s.back() == '#')) {
+            suffix = s.back() + suffix;
+            s.pop_back();
+        }
+        // Now strip assessment glyphs from the end.
+        bool changed = true;
+        while (changed && !s.empty()) {
+            changed = false;
+            for (const char* glyph : {"!!", "??", "!?", "?!", "!", "?"}) {
+                size_t glen = strlen(glyph);
+                if (s.size() >= glen && s.substr(s.size() - glen) == glyph) {
+                    s.resize(s.size() - glen);
+                    changed = true;
+                    break;
+                }
+            }
+        }
+        s += suffix;
+    }
+
+    // 3. Convert digit-zero castling to letter-O.
+    if (s == "0-0" || s == "0-0+" || s == "0-0#") {
+        s = "O-O" + s.substr(3);
+    } else if (s == "0-0-0" || s == "0-0-0+" || s == "0-0-0#") {
+        s = "O-O-O" + s.substr(5);
+    }
+
+    // 4. Strip leading/trailing whitespace.
+    size_t start = s.find_first_not_of(" \t\n\r");
+    if (start == std::string::npos) return "";
+    size_t end = s.find_last_not_of(" \t\n\r");
+    s = s.substr(start, end - start + 1);
+
+    return s;
 }
 
 std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
-    std::istringstream ss(fen);
-    std::string placement, activeColor, castling, enPassant;
-    int halfmove = 0, fullmove = 1;
-    ss >> placement >> activeColor >> castling >> enPassant >> halfmove >> fullmove;
+    // Split into exactly 6 space-separated fields.
+    std::vector<std::string> fields;
+    {
+        std::istringstream ss(fen);
+        std::string token;
+        while (ss >> token) fields.push_back(token);
+    }
+    if (fields.size() != 6) return nullptr;
 
-    if (ss.fail()) {
+    const std::string& placement = fields[0];
+    const std::string& activeColor = fields[1];
+    const std::string& castling = fields[2];
+    const std::string& enPassant = fields[3];
+
+    // Validate halfmove clock and fullmove number (must be non-negative integers).
+    int halfmove, fullmove;
+    try {
+        size_t pos;
+        halfmove = std::stoi(fields[4], &pos);
+        if (pos != fields[4].size()) return nullptr;  // trailing chars
+        fullmove = std::stoi(fields[5], &pos);
+        if (pos != fields[5].size()) return nullptr;
+    } catch (...) {
         return nullptr;
     }
+    if (halfmove < 0) return nullptr;
+    if (fullmove < 1) return nullptr;
+
+    // Validate active color.
+    if (activeColor != "w" && activeColor != "b") return nullptr;
+
+    // Validate castling field: must be "-" or a subset of "KQkq" in order.
+    if (castling != "-") {
+        const std::string allowed = "KQkq";
+        size_t prev = 0;
+        for (char c : castling) {
+            size_t idx = allowed.find(c);
+            if (idx == std::string::npos) return nullptr;
+            if (idx < prev) return nullptr;  // wrong order
+            prev = idx + 1;
+        }
+    }
+
+    // Validate en passant field.
+    if (enPassant != "-") {
+        if (enPassant.size() != 2) return nullptr;
+        if (enPassant[0] < 'a' || enPassant[0] > 'h') return nullptr;
+        if (enPassant[1] < '1' || enPassant[1] > '8') return nullptr;
+        // ep target must be on rank 3 or 6
+        if (enPassant[1] != '3' && enPassant[1] != '6') return nullptr;
+    }
+
+    // Validate and parse piece placement.
+    // Split by '/' — must have exactly 8 ranks.
+    std::vector<std::string> ranks;
+    {
+        std::string rank;
+        for (char c : placement) {
+            if (c == '/') {
+                ranks.push_back(rank);
+                rank.clear();
+            } else {
+                rank += c;
+            }
+        }
+        ranks.push_back(rank);
+    }
+    if (ranks.size() != 8) return nullptr;
+
+    // Validate each rank: no consecutive digits, exactly 8 squares, valid piece chars.
+    // Also count kings and check for pawns on back ranks.
+    int whiteKings = 0, blackKings = 0;
+    int whiteKingX = -1, whiteKingY = -1, blackKingX = -1, blackKingY = -1;
+
+    // Build a piece map: ranks[0] = rank 8 (x=7), ranks[7] = rank 1 (x=0).
+    struct PlacedPiece { int x; int y; char letter; bool isWhite; };
+    std::vector<PlacedPiece> pieces;
+
+    for (int ri = 0; ri < 8; ri++) {
+        int boardX = 7 - ri;  // rank 8 → x=7, rank 1 → x=0
+        int squares = 0;
+        bool lastWasDigit = false;
+        for (char c : ranks[ri]) {
+            if (c >= '1' && c <= '8') {
+                if (lastWasDigit) return nullptr;  // consecutive digits
+                squares += (c - '0');
+                lastWasDigit = true;
+            } else {
+                lastWasDigit = false;
+                bool isWhite = (c >= 'A' && c <= 'Z');
+                char lower = isWhite ? static_cast<char>(c + 32) : c;
+                if (lower != 'p' && lower != 'r' && lower != 'n' &&
+                    lower != 'b' && lower != 'q' && lower != 'k')
+                    return nullptr;  // invalid piece letter
+
+                // Pawn on back rank check
+                if (lower == 'p' && (boardX == 0 || boardX == 7))
+                    return nullptr;
+
+                // Count kings
+                if (lower == 'k') {
+                    if (isWhite) { whiteKings++; whiteKingX = boardX; whiteKingY = squares; }
+                    else         { blackKings++; blackKingX = boardX; blackKingY = squares; }
+                }
+
+                pieces.push_back({boardX, squares, lower, isWhite});
+                squares++;
+            }
+        }
+        if (squares != 8) return nullptr;  // rank doesn't have exactly 8 squares
+    }
+
+    // Exactly one king per side.
+    if (whiteKings != 1 || blackKings != 1) return nullptr;
+
+    // Kings must not be adjacent.
+    if (std::abs(whiteKingX - blackKingX) <= 1 && std::abs(whiteKingY - blackKingY) <= 1)
+        return nullptr;
+
+    // --- All validation passed; build the game. ---
 
     auto game = std::unique_ptr<ChessGame>(new ChessGame());
     game->setRules(false);
@@ -1438,55 +1745,26 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
         for (int ry = 0; ry < 8; ry++)
             game->setPiece(rx, ry, nullptr);
 
-    // 1. Parse piece placement (rank 8 = x=7 down to rank 1 = x=0)
-    int x = 7;
-    int y = 0;
-    for (char c : placement) {
-        if (c == '/') {
-            x--;
-            y = 0;
-        } else if (c >= '1' && c <= '8') {
-            y += (c - '0');
-        } else {
-            bool isWhite = (c >= 'A' && c <= 'Z');
-            char lower = isWhite ? static_cast<char>(c + 32) : c;
-            bool isKingSide = (y > 3);
-            // Pawn index based on column, matching ChessBoard constructor convention
-            int pawnIdx = isKingSide ? (y - 3) : (4 - y);
-
-            std::unique_ptr<ChessPiece> piece;
-            switch (lower) {
-                case 'p':
-                    piece = std::make_unique<Pawn>(isWhite, isKingSide, game->board, pawnIdx);
-                    break;
-                case 'r':
-                    piece = std::make_unique<Rook>(isWhite, isKingSide, game->board, 0);
-                    break;
-                case 'n':
-                    piece = std::make_unique<Knight>(isWhite, isKingSide, game->board, 0);
-                    break;
-                case 'b':
-                    piece = std::make_unique<Bishop>(isWhite, isKingSide, game->board, 0);
-                    break;
-                case 'q':
-                    piece = std::make_unique<Queen>(isWhite, game->board, 0, isKingSide);
-                    break;
-                case 'k':
-                    piece = std::make_unique<King>(isWhite, game->board);
-                    break;
-                default:
-                    return nullptr;  // invalid piece character
-            }
-            game->board.place(x, y, std::move(piece));
-            y++;
+    // Place pieces.
+    for (const auto& pp : pieces) {
+        bool isKingSide = (pp.y > 3);
+        int pawnIdx = isKingSide ? (pp.y - 3) : (4 - pp.y);
+        std::unique_ptr<ChessPiece> piece;
+        switch (pp.letter) {
+            case 'p': piece = std::make_unique<Pawn>(pp.isWhite, isKingSide, game->board, pawnIdx); break;
+            case 'r': piece = std::make_unique<Rook>(pp.isWhite, isKingSide, game->board, 0); break;
+            case 'n': piece = std::make_unique<Knight>(pp.isWhite, isKingSide, game->board, 0); break;
+            case 'b': piece = std::make_unique<Bishop>(pp.isWhite, isKingSide, game->board, 0); break;
+            case 'q': piece = std::make_unique<Queen>(pp.isWhite, game->board, 0, isKingSide); break;
+            case 'k': piece = std::make_unique<King>(pp.isWhite, game->board); break;
         }
+        game->board.place(pp.x, pp.y, std::move(piece));
     }
 
-    // 2. Active color
+    // Active color.
     game->whiteTurn = (activeColor == "w");
 
-    // 3. Castling rights — set independent flags on ChessBoard.
-    //    Default is all true; clear the ones not present in the FEN string.
+    // Castling rights — default is all true; clear the ones not present.
     if (castling.find('K') == std::string::npos)
         game->board.clearCastlingRight(true, true);
     if (castling.find('Q') == std::string::npos)
@@ -1496,33 +1774,32 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     if (castling.find('q') == std::string::npos)
         game->board.clearCastlingRight(false, false);
 
-    // 4. En passant target square
+    // En passant target square.
     if (enPassant != "-") {
-        int epY = enPassant[0] - 'a';  // file
-        int epX = enPassant[1] - '1';  // rank (0-indexed)
-        // The pawn that double-pushed is one rank past the target:
-        // If it's black's turn (activeColor == "b"), white just pushed, pawn at epX+1.
-        // If it's white's turn (activeColor == "w"), black just pushed, pawn at epX-1.
+        int epY = enPassant[0] - 'a';
+        int epX = enPassant[1] - '1';
         int pawnX = (activeColor == "b") ? (epX + 1) : (epX - 1);
         ChessPiece* p = game->board.getMoveablePiece(pawnX, epY);
         if (p != nullptr && p->getType() == PAWN)
             dynamic_cast<Pawn*>(p)->setEnPassant(true);
     }
 
-    // 5. Halfmove clock
+    // Halfmove clock.
     game->halfmoveClock = halfmove;
 
-    // 6. Fullmove number — derive history size so toFen() reproduces it.
-    //    toFen() computes: 1 + history.size() / 2
-    //    So: history.size() = (fullmove - 1) * 2 + (black to move ? 1 : 0)
+    // Fullmove number — derive history size so toFen() reproduces it.
     int histSize = (fullmove - 1) * 2 + (activeColor == "b" ? 1 : 0);
     game->history.clear();
     for (int i = 0; i < histSize; i++)
         game->history.push_back(ChessMove());
 
-    // 7. Initialize position history with the current position
-    game->positionHistory.clear();
+    // Side not to move must not be in check.
     game->setRules(true);
+    bool notToMove = !game->whiteTurn;
+    if (game->board.checkCheck(notToMove)) return nullptr;
+
+    // Initialize position history with the current position.
+    game->positionHistory.clear();
     game->positionHistory.push_back(game->positionKey());
 
     return game;
