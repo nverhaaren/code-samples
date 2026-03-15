@@ -225,9 +225,19 @@ class ChessBoard {
 
     const char* toString();
 
+    /**
+     * Returns whether the given castling right is still available.
+     * @param isWhite true for White, false for Black.
+     * @param isKingSide true for kingside, false for queenside.
+     */
+    bool getCastlingRight(bool isWhite, bool isKingSide) const;
+    void setCastlingRight(bool isWhite, bool isKingSide, bool value);
+
     friend class ChessGame;
 
    private:
+    bool castlingRights[2][2] = {{true, true}, {true, true}};  // [white/black][kingside/queenside]
+    void clearCastlingRight(bool isWhite, bool isKingSide);
     std::unique_ptr<ChessPiece> grid[8][8];
     std::unique_ptr<ChessPiece> movePiece(ChessMove move);
     ChessPiece* getMoveablePiece(int x, int y);

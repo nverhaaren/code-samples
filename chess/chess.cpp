@@ -612,6 +612,10 @@ bool King::canMove(int x, int y, bool chkchk) const {
             // King always starts at column 4 (hard-coded assumption).
             // Rook column: (7 + 7*sign)/2 -> kingside=7, queenside=0.
             int sign = (y - cy) / 2;
+            bool isKingSide = (sign == 1);
+
+            // Check independent castling right flag.
+            if (!board.getCastlingRight(isWhite, isKingSide)) return false;
 
             if (board.getPiece(cx, 4 + sign) == nullptr &&
                 board.getPiece(cx, 4 + 2 * sign) == nullptr &&
@@ -890,6 +894,18 @@ ChessBoard::ChessBoard() {
 
 ChessBoard::~ChessBoard() {}  // unique_ptrs in grid[] clean up automatically
 
+bool ChessBoard::getCastlingRight(bool isWhite, bool isKingSide) const {
+    return castlingRights[isWhite ? 0 : 1][isKingSide ? 0 : 1];
+}
+
+void ChessBoard::clearCastlingRight(bool isWhite, bool isKingSide) {
+    castlingRights[isWhite ? 0 : 1][isKingSide ? 0 : 1] = false;
+}
+
+void ChessBoard::setCastlingRight(bool isWhite, bool isKingSide, bool value) {
+    castlingRights[isWhite ? 0 : 1][isKingSide ? 0 : 1] = value;
+}
+
 const char* ChessBoard::toString() {
     // Layout: 8 ranks x 4 display rows/rank + 1 border row = 33 rows.
     // Each row: 8 squares x 5 chars/square + 1 border col = 41 chars + newline = 42.
@@ -1120,6 +1136,26 @@ bool ChessGame::makeMove(const ChessMove& cm) {
             else
                 halfmoveClock++;
             bool movedColor = whiteTurn;  // capture before flip
+
+            // Update independent castling rights.
+            // King move: clear both rights for that color.
+            if (piece->getType() == KING) {
+                board.clearCastlingRight(movedColor, true);
+                board.clearCastlingRight(movedColor, false);
+            }
+            // Rook move from starting square: clear that side's right.
+            if (piece->getType() == ROOK) {
+                int sx = cm.getStartX(), sy = cm.getStartY();
+                int homeRank = movedColor ? 0 : 7;
+                if (sx == homeRank && sy == 7) board.clearCastlingRight(movedColor, true);
+                if (sx == homeRank && sy == 0) board.clearCastlingRight(movedColor, false);
+            }
+            // Capture on a rook's starting square: clear that side's right.
+            int ex = cm.getEndX(), ey = cm.getEndY();
+            if (ex == 0 && ey == 7) board.clearCastlingRight(true, true);
+            if (ex == 0 && ey == 0) board.clearCastlingRight(true, false);
+            if (ex == 7 && ey == 7) board.clearCastlingRight(false, true);
+            if (ex == 7 && ey == 0) board.clearCastlingRight(false, false);
             // Handle pawn promotion: replace pawn with requested piece type.
             // Write directly to board.grid (ChessGame is a friend of ChessBoard)
             // rather than routing through setPiece() to avoid the rulesOn guard.
@@ -1200,42 +1236,12 @@ std::string ChessGame::toFen() const {
     // 2. Active color
     fen += whiteTurn ? " w" : " b";
 
-    // 3. Castling availability
+    // 3. Castling availability — uses independent flags on ChessBoard.
     std::string castling;
-    // White kingside: king at (0,4) unmoved, rook at (0,7) unmoved
-    const ChessPiece* wk = board.getPiece(0, 4);
-    if (wk != nullptr && wk->getType() == KING && wk->getWhite()) {
-        const King* king = dynamic_cast<const King*>(wk);
-        if (!king->getMoved()) {
-            const ChessPiece* wr = board.getPiece(0, 7);
-            if (wr != nullptr && wr->getType() == ROOK && wr->getWhite()) {
-                const Rook* rook = dynamic_cast<const Rook*>(wr);
-                if (!rook->getMoved()) castling += 'K';
-            }
-            const ChessPiece* wqr = board.getPiece(0, 0);
-            if (wqr != nullptr && wqr->getType() == ROOK && wqr->getWhite()) {
-                const Rook* rook = dynamic_cast<const Rook*>(wqr);
-                if (!rook->getMoved()) castling += 'Q';
-            }
-        }
-    }
-    // Black kingside: king at (7,4) unmoved, rook at (7,7) unmoved
-    const ChessPiece* bk = board.getPiece(7, 4);
-    if (bk != nullptr && bk->getType() == KING && !bk->getWhite()) {
-        const King* king = dynamic_cast<const King*>(bk);
-        if (!king->getMoved()) {
-            const ChessPiece* br = board.getPiece(7, 7);
-            if (br != nullptr && br->getType() == ROOK && !br->getWhite()) {
-                const Rook* rook = dynamic_cast<const Rook*>(br);
-                if (!rook->getMoved()) castling += 'k';
-            }
-            const ChessPiece* bqr = board.getPiece(7, 0);
-            if (bqr != nullptr && bqr->getType() == ROOK && !bqr->getWhite()) {
-                const Rook* rook = dynamic_cast<const Rook*>(bqr);
-                if (!rook->getMoved()) castling += 'q';
-            }
-        }
-    }
+    if (board.getCastlingRight(true, true)) castling += 'K';
+    if (board.getCastlingRight(true, false)) castling += 'Q';
+    if (board.getCastlingRight(false, true)) castling += 'k';
+    if (board.getCastlingRight(false, false)) castling += 'q';
     fen += ' ';
     fen += castling.empty() ? "-" : castling;
 
@@ -1479,45 +1485,16 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     // 2. Active color
     game->whiteTurn = (activeColor == "w");
 
-    // 3. Castling rights — pieces default to hasMoved=false.
-    //    Mark pieces as moved when they lack castling rights.
-    bool whiteKS = (castling.find('K') != std::string::npos);
-    bool whiteQS = (castling.find('Q') != std::string::npos);
-    bool blackKS = (castling.find('k') != std::string::npos);
-    bool blackQS = (castling.find('q') != std::string::npos);
-
-    // White king: if no castling rights at all, mark moved
-    if (!whiteKS && !whiteQS) {
-        ChessPiece* wk = game->board.getMoveablePiece(0, 4);
-        if (wk != nullptr && wk->getType() == KING)
-            dynamic_cast<King*>(wk)->markMoved();
-    }
-    if (!whiteKS) {
-        ChessPiece* wr = game->board.getMoveablePiece(0, 7);
-        if (wr != nullptr && wr->getType() == ROOK)
-            dynamic_cast<Rook*>(wr)->markMoved();
-    }
-    if (!whiteQS) {
-        ChessPiece* wr = game->board.getMoveablePiece(0, 0);
-        if (wr != nullptr && wr->getType() == ROOK)
-            dynamic_cast<Rook*>(wr)->markMoved();
-    }
-    // Black king: if no castling rights at all, mark moved
-    if (!blackKS && !blackQS) {
-        ChessPiece* bk = game->board.getMoveablePiece(7, 4);
-        if (bk != nullptr && bk->getType() == KING)
-            dynamic_cast<King*>(bk)->markMoved();
-    }
-    if (!blackKS) {
-        ChessPiece* br = game->board.getMoveablePiece(7, 7);
-        if (br != nullptr && br->getType() == ROOK)
-            dynamic_cast<Rook*>(br)->markMoved();
-    }
-    if (!blackQS) {
-        ChessPiece* br = game->board.getMoveablePiece(7, 0);
-        if (br != nullptr && br->getType() == ROOK)
-            dynamic_cast<Rook*>(br)->markMoved();
-    }
+    // 3. Castling rights — set independent flags on ChessBoard.
+    //    Default is all true; clear the ones not present in the FEN string.
+    if (castling.find('K') == std::string::npos)
+        game->board.clearCastlingRight(true, true);
+    if (castling.find('Q') == std::string::npos)
+        game->board.clearCastlingRight(true, false);
+    if (castling.find('k') == std::string::npos)
+        game->board.clearCastlingRight(false, true);
+    if (castling.find('q') == std::string::npos)
+        game->board.clearCastlingRight(false, false);
 
     // 4. En passant target square
     if (enPassant != "-") {

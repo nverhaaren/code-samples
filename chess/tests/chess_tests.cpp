@@ -26,6 +26,11 @@ struct CustomBoard {
         game.setRules(false);
         for (int x = 0; x < 8; x++)
             for (int y = 0; y < 8; y++) game.setPiece(x, y, nullptr);
+        // Clear all castling rights — tests that need castling must set them.
+        b.setCastlingRight(true, true, false);
+        b.setCastlingRight(true, false, false);
+        b.setCastlingRight(false, true, false);
+        b.setCastlingRight(false, false, false);
     }
 
     void place(int x, int y, ChessPiece* piece) {
@@ -636,6 +641,7 @@ TEST_CASE("King: kingside castling moves king to g-file and rook to f-file", "[K
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, true, true);  // white kingside
     cb.activate();
 
     REQUIRE(cb.game.getPiece(0, 4)->canMove(0, 6));
@@ -651,6 +657,7 @@ TEST_CASE("King: queenside castling moves king to c-file and rook to d-file", "[
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(0, 0, new Rook(WHITE, false, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, false, true);  // white queenside
     cb.activate();
 
     REQUIRE(cb.game.getPiece(0, 4)->canMove(0, 2));
@@ -666,6 +673,7 @@ TEST_CASE("King: cannot castle after king has moved", "[King]") {
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(7, 0, new Rook(BLACK, false, cb.b));
+    cb.b.setCastlingRight(true, true, true);  // white kingside
     cb.activate();
 
     cb.game.makeMove(ChessMove(0, 4, 0, 3));  // king moves
@@ -682,6 +690,7 @@ TEST_CASE("King: cannot castle through attacked square", "[King]") {
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
     cb.place(5, 5, new Rook(BLACK, false, cb.b));  // attacks (0,5) on f-file
     cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, true, true);  // white kingside
     cb.activate();
 
     REQUIRE(!cb.game.getPiece(0, 4)->canMove(0, 6));
@@ -693,6 +702,7 @@ TEST_CASE("King: cannot castle if rook has moved", "[King]") {
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(7, 0, new Rook(BLACK, false, cb.b));
+    cb.b.setCastlingRight(true, true, true);  // white kingside
     cb.activate();
 
     cb.game.makeMove(ChessMove(0, 7, 0, 6));  // rook moves
@@ -1004,6 +1014,8 @@ TEST_CASE("ChessGame: FEN castling rights removed after king moves", "[ChessGame
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(0, 0, new Rook(WHITE, false, cb.b));
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.b.setCastlingRight(true, true, true);
+    cb.b.setCastlingRight(true, false, true);
     cb.activate();
     // Move white king
     REQUIRE(cb.game.makeMove(ChessMove(0, 4, 0, 5)));
@@ -1027,6 +1039,8 @@ TEST_CASE("ChessGame: FEN castling rights after only kingside rook moves", "[Che
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(0, 0, new Rook(WHITE, false, cb.b));
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.b.setCastlingRight(true, true, true);
+    cb.b.setCastlingRight(true, false, true);
     cb.activate();
     // Move kingside rook
     REQUIRE(cb.game.makeMove(ChessMove(0, 7, 1, 7)));
@@ -1182,6 +1196,7 @@ TEST_CASE("ChessGame: parseSan kingside castling O-O", "[ChessGame][SAN]") {
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(0, 7, new Rook(WHITE, true, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, true, true);
     cb.activate();
     ChessMove move = cb.game.parseSan("O-O");
     REQUIRE(!move.isEnd());
@@ -1196,6 +1211,7 @@ TEST_CASE("ChessGame: parseSan queenside castling O-O-O", "[ChessGame][SAN]") {
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(0, 0, new Rook(WHITE, false, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, false, true);
     cb.activate();
     ChessMove move = cb.game.parseSan("O-O-O");
     REQUIRE(!move.isEnd());
@@ -1531,23 +1547,11 @@ TEST_CASE("ChessGame::fromFen: preserves partial castling rights", "[ChessGame][
     std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w Qk - 0 1";
     auto game = ChessGame::fromFen(fen);
     REQUIRE(game->toFen() == fen);
-    // Verify: white king unmoved, white kingside rook moved, white queenside rook unmoved
-    const ChessPiece* wk = game->getPiece(0, 4);
-    REQUIRE(wk != nullptr);
-    REQUIRE(wk->getType() == KING);
-    const King* whiteKing = dynamic_cast<const King*>(wk);
-    REQUIRE_FALSE(whiteKing->getMoved());
-    // White kingside rook at (0,7) should be marked moved (no K right)
-    const ChessPiece* wkr = game->getPiece(0, 7);
-    REQUIRE(wkr != nullptr);
-    REQUIRE(wkr->getType() == ROOK);
-    const Rook* whiteKSRook = dynamic_cast<const Rook*>(wkr);
-    REQUIRE(whiteKSRook->getMoved());
-    // White queenside rook at (0,0) should be unmoved (Q right present)
-    const ChessPiece* wqr = game->getPiece(0, 0);
-    REQUIRE(wqr != nullptr);
-    const Rook* whiteQSRook = dynamic_cast<const Rook*>(wqr);
-    REQUIRE_FALSE(whiteQSRook->getMoved());
+    ChessBoard& b = game->getPieceBoard();
+    REQUIRE(!b.getCastlingRight(true, true));   // no K
+    REQUIRE(b.getCastlingRight(true, false));    // Q present
+    REQUIRE(b.getCastlingRight(false, true));    // k present
+    REQUIRE(!b.getCastlingRight(false, false));  // no q
 }
 
 TEST_CASE("ChessGame::fromFen: preserves en passant target square", "[ChessGame][FEN]") {
@@ -1579,11 +1583,12 @@ TEST_CASE("ChessGame::fromFen: no castling rights (dash)", "[ChessGame][FEN]") {
     std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w - - 0 1";
     auto game = ChessGame::fromFen(fen);
     REQUIRE(game->toFen() == fen);
-    // Both kings should be marked as moved
-    const King* wk = dynamic_cast<const King*>(game->getPiece(0, 4));
-    REQUIRE(wk->getMoved());
-    const King* bk = dynamic_cast<const King*>(game->getPiece(7, 4));
-    REQUIRE(bk->getMoved());
+    // Castling flags should all be cleared
+    ChessBoard& b = game->getPieceBoard();
+    REQUIRE(!b.getCastlingRight(true, true));
+    REQUIRE(!b.getCastlingRight(true, false));
+    REQUIRE(!b.getCastlingRight(false, true));
+    REQUIRE(!b.getCastlingRight(false, false));
 }
 
 TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGame][FEN]") {
@@ -1593,4 +1598,123 @@ TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGa
     // White queen on f3 (x=2, y=5) captures f7 (x=6, y=5) — should be checkmate
     REQUIRE(game->makeMove(ChessMove(2, 5, 6, 5)));
     REQUIRE(game->checkmate(BLACK));
+}
+
+// ============================================================================
+// Independent castling rights
+// ============================================================================
+
+TEST_CASE("ChessBoard: getCastlingRight returns initial rights", "[ChessBoard][Castling]") {
+    ChessGame game;
+    ChessBoard& b = game.getPieceBoard();
+    REQUIRE(b.getCastlingRight(true, true));    // white kingside
+    REQUIRE(b.getCastlingRight(true, false));   // white queenside
+    REQUIRE(b.getCastlingRight(false, true));   // black kingside
+    REQUIRE(b.getCastlingRight(false, false));  // black queenside
+}
+
+TEST_CASE("ChessGame: castling right lost when rook captured on starting square",
+          "[ChessGame][Castling]") {
+    // White rook on a1, Black rook on a8, kings on e-file.
+    // White plays Rxa8 — captures the black queenside rook on its starting square.
+    // Black should lose queenside castling right.
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));  // a1
+    cb.place(7, 0, new Rook(BLACK, false, cb.b));   // a8
+    cb.place(7, 7, new Rook(BLACK, true, cb.b));     // h8
+    cb.b.setCastlingRight(false, true, true);   // black kingside
+    cb.b.setCastlingRight(false, false, true);  // black queenside
+    cb.activate();
+
+    // Verify black has both castling rights initially
+    REQUIRE(cb.b.getCastlingRight(false, true));   // black kingside
+    REQUIRE(cb.b.getCastlingRight(false, false));  // black queenside
+
+    // White rook captures black rook on a8 (row 7, col 0)
+    REQUIRE(cb.game.makeMove(ChessMove(0, 0, 7, 0)));
+
+    // Black queenside castling right should be gone
+    REQUIRE(!cb.b.getCastlingRight(false, false));
+    // Black kingside should still be available
+    REQUIRE(cb.b.getCastlingRight(false, true));
+}
+
+TEST_CASE("ChessGame: FEN reflects castling right lost on rook capture",
+          "[ChessGame][Castling][FEN]") {
+    // Position from SPEC.md test vector 9.4.2:
+    // r3k2r/8/8/8/8/8/8/R3K3 w Qkq - 0 1
+    // White plays Rxa8+ — captures Black's queenside rook.
+    // Expected FEN after: R3k2r/8/8/8/8/8/8/4K3 b k - 0 1
+    auto game = ChessGame::fromFen("r3k2r/8/8/8/8/8/8/R3K3 w Qkq - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->makeMove(ChessMove(0, 0, 7, 0)));  // Rxa8
+    REQUIRE(game->toFen() == "R3k2r/8/8/8/8/8/8/4K3 b k - 0 1");
+}
+
+TEST_CASE("ChessGame: king move clears both castling rights via flags",
+          "[ChessGame][Castling]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));
+    cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, true, true);
+    cb.b.setCastlingRight(true, false, true);
+    cb.activate();
+
+    REQUIRE(cb.b.getCastlingRight(true, true));
+    REQUIRE(cb.b.getCastlingRight(true, false));
+
+    // Move white king
+    REQUIRE(cb.game.makeMove(ChessMove(0, 4, 0, 5)));
+
+    REQUIRE(!cb.b.getCastlingRight(true, true));
+    REQUIRE(!cb.b.getCastlingRight(true, false));
+}
+
+TEST_CASE("ChessGame: rook move from starting square clears that side's right",
+          "[ChessGame][Castling]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));
+    cb.place(0, 7, new Rook(WHITE, true, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.b.setCastlingRight(true, true, true);
+    cb.b.setCastlingRight(true, false, true);
+    cb.activate();
+
+    // Move kingside rook
+    REQUIRE(cb.game.makeMove(ChessMove(0, 7, 1, 7)));
+
+    REQUIRE(!cb.b.getCastlingRight(true, true));   // kingside gone
+    REQUIRE(cb.b.getCastlingRight(true, false));    // queenside still there
+}
+
+TEST_CASE("ChessGame::fromFen: castling rights set from FEN flags, not piece state",
+          "[ChessGame][Castling][FEN]") {
+    // FEN says only white queenside (Q) — rooks may or may not be in starting positions.
+    auto game = ChessGame::fromFen("r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w Q - 0 1");
+    REQUIRE(game != nullptr);
+    ChessBoard& b = game->getPieceBoard();
+    REQUIRE(!b.getCastlingRight(true, true));   // white kingside: no
+    REQUIRE(b.getCastlingRight(true, false));    // white queenside: yes
+    REQUIRE(!b.getCastlingRight(false, true));   // black kingside: no
+    REQUIRE(!b.getCastlingRight(false, false));  // black queenside: no
+    // Round-trip FEN
+    REQUIRE(game->toFen() == "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w Q - 0 1");
+}
+
+TEST_CASE("ChessGame::fromFen: no castling rights preserved as flags",
+          "[ChessGame][Castling][FEN]") {
+    std::string fen = "r3k2r/pppppppp/8/8/8/8/PPPPPPPP/R3K2R w - - 0 1";
+    auto game = ChessGame::fromFen(fen);
+    REQUIRE(game != nullptr);
+    ChessBoard& b = game->getPieceBoard();
+    REQUIRE(!b.getCastlingRight(true, true));
+    REQUIRE(!b.getCastlingRight(true, false));
+    REQUIRE(!b.getCastlingRight(false, true));
+    REQUIRE(!b.getCastlingRight(false, false));
+    REQUIRE(game->toFen() == fen);
 }
