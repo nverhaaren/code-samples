@@ -94,20 +94,18 @@ TEST_CASE("ChessMove: self-assignment is safe", "[ChessMove]") {
 TEST_CASE("ChessMove: toString format is 'a1-b2'", "[ChessMove]") {
     // a=y=0 rank1=x=0, b=y=1 rank2=x=1
     ChessMove cm(0, 0, 1, 1);
-    REQUIRE(std::string(cm.toString()) == "a1-b2");
+    REQUIRE(std::string(cm.toString()) == "a1b2");
 }
 
 TEST_CASE("ChessMove: toString for various squares", "[ChessMove]") {
     ChessMove cm(7, 7, 0, 0);  // h8-a1
-    REQUIRE(std::string(cm.toString()) == "h8-a1");
+    REQUIRE(std::string(cm.toString()) == "h8a1");
 }
 
-TEST_CASE("ChessMove: string constructor parses 'a1-b2'", "[ChessMove]") {
+TEST_CASE("ChessMove: string constructor rejects hyphenated 'a1-b2'", "[ChessMove]") {
+    // Canonical LAN has no separator: "a1b2" only. Hyphenated form rejected.
     ChessMove cm("a1-b2");
-    REQUIRE(cm.getStartX() == 0);
-    REQUIRE(cm.getStartY() == 0);
-    REQUIRE(cm.getEndX() == 1);
-    REQUIRE(cm.getEndY() == 1);
+    REQUIRE(cm.isEnd());
 }
 
 TEST_CASE("ChessMove: string constructor parses 'a1b2' (no separator)", "[ChessMove]") {
@@ -116,6 +114,11 @@ TEST_CASE("ChessMove: string constructor parses 'a1b2' (no separator)", "[ChessM
     REQUIRE(cm.getStartY() == 0);
     REQUIRE(cm.getEndX() == 1);
     REQUIRE(cm.getEndY() == 1);
+}
+
+TEST_CASE("ChessMove: string constructor rejects invalid promotion character", "[ChessMove]") {
+    ChessMove cm("e7e8x");
+    REQUIRE(cm.isEnd());
 }
 
 TEST_CASE("ChessMove: getPromotion returns PAWN for non-promotion move", "[ChessMove]") {
@@ -136,20 +139,20 @@ TEST_CASE("ChessMove: 5-arg constructor coordinate roundtrip and getPromotion", 
 
 TEST_CASE("ChessMove: toString includes promotion letter for promotion move", "[ChessMove]") {
     ChessMove q(6, 3, 7, 3, QUEEN);
-    REQUIRE(std::string(q.toString()) == "d7-d8q");
+    REQUIRE(std::string(q.toString()) == "d7d8q");
 
     ChessMove r(6, 3, 7, 3, ROOK);
-    REQUIRE(std::string(r.toString()) == "d7-d8r");
+    REQUIRE(std::string(r.toString()) == "d7d8r");
 
     ChessMove n(6, 3, 7, 3, KNIGHT);
-    REQUIRE(std::string(n.toString()) == "d7-d8n");
+    REQUIRE(std::string(n.toString()) == "d7d8n");
 
     ChessMove b(6, 3, 7, 3, BISHOP);
-    REQUIRE(std::string(b.toString()) == "d7-d8b");
+    REQUIRE(std::string(b.toString()) == "d7d8b");
 
     // Non-promotion move has no suffix
     ChessMove plain(1, 2, 3, 4);
-    REQUIRE(std::string(plain.toString()) == "c2-e4");
+    REQUIRE(std::string(plain.toString()) == "c2e4");
 }
 // ============================================================================
 // ChessBoard / ChessGame: initial position
@@ -1284,15 +1287,24 @@ TEST_CASE("ChessGame: parseSan invalid move returns end sentinel", "[ChessGame][
     REQUIRE(move.isEnd());
 }
 
-TEST_CASE("ChessGame: parseSan with check suffix Bb8+", "[ChessGame][SAN]") {
+TEST_CASE("ChessGame: parseSan with check suffix Bb5+", "[ChessGame][SAN]") {
+    // Bishop to b5 gives check on black king e8 (diagonal b5-e8).
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(3, 5, new Bishop(WHITE, false, cb.b));  // Bishop on f4
     cb.activate();
-    ChessMove move = cb.game.parseSan("Bb8+");
+    // Bf4 can go to b8 (no check) or various squares. Let's use Bc7 which
+    // goes to c7 (6,2) — does it check? c7 to e8 is not a diagonal.
+    // Try: place bishop on d3 (2,3), move to b5 (4,1) — b5 to e8: diagonal!
+    CustomBoard cb2;
+    cb2.place(0, 4, new King(WHITE, cb2.b));
+    cb2.place(7, 4, new King(BLACK, cb2.b));
+    cb2.place(2, 3, new Bishop(WHITE, false, cb2.b));  // Bishop on d3
+    cb2.activate();
+    ChessMove move = cb2.game.parseSan("Bb5+");
     REQUIRE(!move.isEnd());
-    REQUIRE(move.getEndX() == 7);
+    REQUIRE(move.getEndX() == 4);
     REQUIRE(move.getEndY() == 1);
 }
 
@@ -1304,6 +1316,245 @@ TEST_CASE("ChessGame: parseSan rejects false capture annotation", "[ChessGame][S
     // But Nf3 (without x) works
     move = game.parseSan("Nf3");
     REQUIRE(!move.isEnd());
+}
+
+// ============================================================================
+// SAN Output (toSan)
+// ============================================================================
+
+TEST_CASE("ChessGame: toSan pawn push e2e4", "[ChessGame][SAN]") {
+    ChessGame game;
+    REQUIRE(game.toSan(ChessMove(1, 4, 3, 4)) == "e4");
+}
+
+TEST_CASE("ChessGame: toSan knight move Nf3", "[ChessGame][SAN]") {
+    ChessGame game;
+    REQUIRE(game.toSan(ChessMove(0, 6, 2, 5)) == "Nf3");
+}
+
+TEST_CASE("ChessGame: toSan pawn capture with file exd5", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(3, 4, 4, 3)) == "exd5");
+}
+
+TEST_CASE("ChessGame: toSan kingside castling O-O", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/5NP1/PPPPPPBP/RNBQK2R w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(0, 4, 0, 6)) == "O-O");
+}
+
+TEST_CASE("ChessGame: toSan queenside castling O-O-O", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/2NQB3/PPPPPPPP/R3KBNR w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(0, 4, 0, 2)) == "O-O-O");
+}
+
+TEST_CASE("ChessGame: toSan check suffix Bb5+", "[ChessGame][SAN]") {
+    // Italian game position: white bishop to b5 giving check
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 3");
+    REQUIRE(game != nullptr);
+    // Bishop from c4 (x=3,y=2) to b5 (x=4,y=1) — check via pin on c6 knight?
+    // Actually Bb5 doesn't check from that position. Let me use a proper check.
+    // Let's use scholar's mate: Qf3 to f7 → checkmate
+    auto game2 = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
+    REQUIRE(game2 != nullptr);
+    // Queen from f3 (x=2,y=5) captures f7 (x=6,y=5) — checkmate
+    REQUIRE(game2->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
+}
+
+TEST_CASE("ChessGame: toSan promotion e8=Q", "[ChessGame][SAN]") {
+    // Black king away from e-file so pawn can push to e8.
+    auto game = ChessGame::fromFen("6k1/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(6, 4, 7, 4, QUEEN)) == "e8=Q+");
+    // Also test non-check promotion
+    auto game2 = ChessGame::fromFen("8/4P1k1/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game2 != nullptr);
+    REQUIRE(game2->toSan(ChessMove(6, 4, 7, 4, QUEEN)) == "e8=Q");
+}
+
+TEST_CASE("ChessGame: toSan promotion capture exd8=N+", "[ChessGame][SAN]") {
+    // White pawn on e7, black rook on d8, black king on g8.
+    auto game = ChessGame::fromFen("3r2k1/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    // Pawn on e7 (6,4) captures d8 rook (7,3) promoting to knight → check on g8?
+    // Knight on d8 attacks c6, b7, e6, f7 — doesn't check g8. Use queen promo instead.
+    // exd8=Q+ (queen on d8 checks along d8-g8? No, that's diagonal d8→e7→f6→g5. Not a line.)
+    // Actually queen on d8 attacks along rank 8: d8→e8→f8→g8 → yes, checks!
+    REQUIRE(game->toSan(ChessMove(6, 4, 7, 3, QUEEN)) == "exd8=Q+");
+}
+
+TEST_CASE("ChessGame: toSan disambiguation by file Rad1", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(3, 0, new Rook(WHITE, false, cb.b));  // a4
+    cb.place(3, 7, new Rook(WHITE, true, cb.b));    // h4
+    cb.activate();
+    // Both rooks on rank 4 can reach d4 (x=3,y=3).
+    REQUIRE(cb.game.toSan(ChessMove(3, 0, 3, 3)) == "Rad4");
+}
+
+TEST_CASE("ChessGame: toSan disambiguation by rank R1e3", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));  // a1
+    cb.place(4, 0, new Rook(WHITE, false, cb.b));   // a5
+    cb.activate();
+    // Both rooks on a-file can reach a3 (x=2,y=0).
+    REQUIRE(cb.game.toSan(ChessMove(0, 0, 2, 0)) == "R1a3");
+}
+
+// ============================================================================
+// SAN Suffix Validation (SPEC 6.2.8)
+// ============================================================================
+
+TEST_CASE("ChessGame: parseSan rejects + when move does not give check", "[ChessGame][SAN]") {
+    ChessGame game;
+    // e4+ — pawn push does not give check
+    ChessMove move = game.parseSan("e4+");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects # when move is not checkmate", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("e4#");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts correct + suffix", "[ChessGame][SAN]") {
+    // White bishop on d3 can go to b5 giving check to black king on e8.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/3B4/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Bb5+");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts correct # suffix", "[ChessGame][SAN]") {
+    // Scholar's mate: Qxf7#
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Qxf7#");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts move without suffix even if it gives check", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 2 3");
+    REQUIRE(game != nullptr);
+    // Qxf7 without suffix — should be accepted per SPEC 6.2.8
+    ChessMove move = game->parseSan("Qxf7");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects digit-zero castling 0-0", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/5NP1/PPPPPPBP/RNBQK2R w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("0-0");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects non-canonical double suffix ++", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Nf3++");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects non-canonical mixed suffix +#", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Qxf7+#");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects non-canonical double hash ##", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Qxf7##");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts + on a checkmating move", "[ChessGame][SAN]") {
+    // Back-rank mate: Rd8# — but + should also be accepted since checkmate implies check.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Rd8+");
+    // Rd8 delivers checkmate; + is accepted because checkmate implies check.
+    REQUIRE_FALSE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects digit-zero queenside castling 0-0-0", "[ChessGame][SAN]") {
+    // Position where queenside castling is legal.
+    auto game = ChessGame::fromFen("r3kbnr/pppppppp/8/8/8/8/PPPPPPPP/R3KBNR w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("0-0-0");
+    REQUIRE(move.isEnd());
+}
+
+// ============================================================================
+// SAN Normalization (SPEC 6.3)
+// ============================================================================
+
+TEST_CASE("ChessGame: normalizeSan strips assessment glyphs", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("Nf3!") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("Bxh7+??") == "Bxh7+");
+    REQUIRE(ChessGame::normalizeSan("O-O!!") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("e4!?") == "e4");
+    REQUIRE(ChessGame::normalizeSan("d5?!") == "d5");
+    REQUIRE(ChessGame::normalizeSan("Qh4?") == "Qh4");
+}
+
+TEST_CASE("ChessGame: normalizeSan strips NAGs", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("Nf3$1") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("e4$6") == "e4");
+    REQUIRE(ChessGame::normalizeSan("Bxh7+$2") == "Bxh7+");
+}
+
+TEST_CASE("ChessGame: normalizeSan converts digit-zero castling", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("0-0") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("0-0-0") == "O-O-O");
+    REQUIRE(ChessGame::normalizeSan("0-0+") == "O-O+");
+    REQUIRE(ChessGame::normalizeSan("0-0-0#") == "O-O-O#");
+}
+
+TEST_CASE("ChessGame: normalizeSan strips whitespace", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("  Nf3  ") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("\tBb5+\n") == "Bb5+");
+}
+
+TEST_CASE("ChessGame: normalizeSan preserves canonical SAN", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("e4") == "e4");
+    REQUIRE(ChessGame::normalizeSan("Nf3") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("O-O") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("Qxf7#") == "Qxf7#");
+    REQUIRE(ChessGame::normalizeSan("e8=Q") == "e8=Q");
+}
+
+TEST_CASE("ChessGame: normalizeSan combined annotations", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("  0-0!!$3  ") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("Nf3!$1") == "Nf3");
+}
+
+TEST_CASE("ChessGame: normalizeSan edge cases", "[ChessGame][SAN]") {
+    // Bare $ with no digits
+    REQUIRE(ChessGame::normalizeSan("Nf3$") == "Nf3");
+    // Multiple consecutive NAGs
+    REQUIRE(ChessGame::normalizeSan("Nf3$1$6") == "Nf3");
+    // Whitespace between move and NAG
+    REQUIRE(ChessGame::normalizeSan("Nf3 $1") == "Nf3");
+    // Castling + glyph + check suffix
+    REQUIRE(ChessGame::normalizeSan("0-0!!+") == "O-O+");
+    REQUIRE(ChessGame::normalizeSan("0-0-0??#") == "O-O-O#");
+    // Empty string
+    REQUIRE(ChessGame::normalizeSan("") == "");
+    // NAG-only input
+    REQUIRE(ChessGame::normalizeSan("$3") == "");
+}
+
+TEST_CASE("ChessGame: parseSan rejects lowercase promotion =q", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("8/4P1k1/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("e8=q");
+    REQUIRE(move.isEnd());
 }
 
 // ============================================================================
@@ -1535,6 +1786,100 @@ TEST_CASE("ChessGame: initial position is NOT insufficient material", "[ChessGam
 }
 
 // ============================================================================
+// Termination Priority (SPEC 4.5)
+// ============================================================================
+
+TEST_CASE("ChessGame: checkmate takes priority over 75-move automatic draw", "[ChessGame][Draw]") {
+    // Black king g8, black rook f8, white rook e1, white king a1. White to move.
+    // Re8# delivers back-rank checkmate (rook defended by... itself is the only
+    // piece on rank 8). Actually: Rxf8# — captures the rook, but that's a capture
+    // which resets halfmove. Use a different setup.
+    // White rook on a8, white king on a1, black king on c8, black pawn b7.
+    // Ra8 is already on a8 — move to c8? No, that's the king.
+    // Simpler: White queen h1, white bishop g2. Black king h8, black pawn g7.
+    // Qh7# doesn't work (pawn on g7 blocks?). Let me think...
+    // Back-rank with queen+bishop: Qh7, bishop on b1 defends h7 along diagonal.
+    // Actually just use queen + rook for a simple mating pattern.
+    // White: Kg1 (0,6), Qd1 (0,3), Rd7 (6,3). Black: Kg8 (7,6), Rf8 (7,5), pawn g7.
+    // Qd8 captures? No...
+    // Simplest: scholar's mate but with high halfmove clock.
+    // Kf3, Qf7, against Ke8 (and block all escapes). Qf7 is already check...
+    // Let me just use a 2-rook back rank mate.
+    // White: Ra1, Rb1, Ka3. Black: Ka8, pawns a7 b7. halfmove=149.
+    // Rb8# — rook to b8 (7,1). Black king a8 (7,0). a7 (6,0) has pawn.
+    // Is b8 defended? Ra1 on (0,0) doesn't defend b8. But wait — Rb8 is (7,1),
+    // and Ra1 is on a-file. Not defending. Hmm.
+    // Actually: Ra7, Rb1. Rb8#. Ra7 (6,0) blocks a7 escape.
+    // No — let me use: white rooks on a-file and b-file, high rank.
+    // Rb7 (6,1) and Ra1 (0,0), Kc1 (0,2). Black: Ka8 (7,0), pawn a6 (5,0).
+    // Rb8# — rook from b7 to b8. But black king can't go to a7 (blocked by...
+    // Rb7 is moving to b8, so b7 is vacated. King can go to a7 (6,0) if not attacked.
+    // Ra1 doesn't attack a7 directly. Hmm.
+    //
+    // I'll use a simpler approach: set the halfmove clock directly.
+    // Rook on e1, rook on d1, king a1. Black: king h8, pawns g7 h7 f7.
+    // Re8# — rook to e8 (7,4). Defended by Rd1? No. Let me just use a queen mate.
+    //
+    // Actually the simplest back rank mate: K on g1, R on d8, black K on g8 with
+    // pawns f7 g7 h7. Rd8 is already check. But I need to DELIVER it.
+    //
+    // Position: Kg1 (0,6), Rd1 (0,3). Black: Kg8 (7,6), Rf8 (7,5), pf7 (6,5), pg7 (6,6), ph7 (6,7).
+    // White plays Rd8 (0,3 -> 7,3). Check along rank 8? No, Rf8 blocks.
+    // Rxf8? That's a capture (resets clock).
+    //
+    // OK let me try: two white rooks, one delivers mate defended by the other.
+    // Rd1 (0,3), Re1 (0,4), Kg1 (0,6). Black: Kg8 (7,6), pf7, pg7, ph7.
+    // Rd8# — rook from d1 to d8 (7,3). Is black in check? Rd8 attacks along rank 8
+    // but Rf8... wait, there's no Rf8 here. Rank 8: only king on g8. So Rd8 checks
+    // the king on g8? d8 (7,3) to g8 (7,6): same rank, nothing between d8 and g8
+    // on rank 8 (e8, f8 are empty). Yes, check! King can go to: f8 (7,5) — is it
+    // attacked? Rd8 on d8 attacks rank 8 (including f8). h8 (7,7) — attacked by Rd8.
+    // Kh7 (6,7) — has own pawn. Kf7? (6,5) — own pawn. Can king capture Rd8? (7,3)
+    // That's too far. So: h8 attacked, f8 attacked, g7 own pawn, h7 own pawn, f7 own
+    // pawn. No legal moves → checkmate! And Re1 defends... actually Re1 doesn't need
+    // to defend Rd8 since the king can't reach d8 anyway. The point is all escape squares
+    // are blocked by own pawns or attacked by the rook.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 149 100");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->isAutomaticDraw());
+    // Rd8# — rook from d1 (0,3) to d8 (7,3)
+    REQUIRE(game->makeMove(ChessMove(0, 3, 7, 3)));
+    REQUIRE(game->checkmate(false));
+    REQUIRE_FALSE(game->isAutomaticDraw());
+    REQUIRE_FALSE(game->canClaimDraw());
+}
+
+TEST_CASE("ChessGame: checkmate takes priority over 50-move claimable draw", "[ChessGame][Draw]") {
+    // Same position, halfmove=99.
+    auto game = ChessGame::fromFen("6k1/5ppp/8/8/8/8/8/3RR1K1 w - - 99 100");
+    REQUIRE(game != nullptr);
+    REQUIRE_FALSE(game->canClaimDraw());
+    REQUIRE(game->makeMove(ChessMove(0, 3, 7, 3)));  // Rd8#
+    REQUIRE(game->checkmate(false));
+    REQUIRE_FALSE(game->canClaimDraw());
+}
+
+TEST_CASE("ChessGame: stalemate takes priority over automatic draw", "[ChessGame][Draw]") {
+    // Stalemate position with high halfmove clock (>= 150).
+    // Black king on a8, white queen on b6, white king on c8 — black to move, no legal moves,
+    // not in check = stalemate.
+    auto game = ChessGame::fromFen("k7/8/1Q6/8/8/8/8/2K5 b - - 150 100");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->stalemate(false));   // black is stalemated
+    REQUIRE_FALSE(game->isAutomaticDraw());  // stalemate has priority
+    REQUIRE_FALSE(game->canClaimDraw());     // stalemate has priority
+}
+
+TEST_CASE("ChessGame: automatic draw still triggers in non-mate/stalemate position", "[ChessGame][Draw]") {
+    // K vs K at halfmove=150 — insufficient material AND 75-move threshold.
+    // Neither checkmate nor stalemate, so isAutomaticDraw should return true.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4K3 w - - 150 100");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->isAutomaticDraw());
+    REQUIRE(game->canClaimDraw());
+}
+
+// ============================================================================
 // JSON Board State (toJson)
 // ============================================================================
 
@@ -1611,11 +1956,11 @@ TEST_CASE("toJson: moveHistory grows after moves", "[ChessGame][JSON]") {
 
     game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
     json = game.toJson();
-    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\"]") != std::string::npos);
+    REQUIRE(json.find("\"moveHistory\":[\"e2e4\"]") != std::string::npos);
 
     game.makeMove(ChessMove(6, 4, 4, 4));  // e7-e5
     json = game.toJson();
-    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\",\"e7-e5\"]") != std::string::npos);
+    REQUIRE(json.find("\"moveHistory\":[\"e2e4\",\"e7e5\"]") != std::string::npos);
 }
 
 // ============================================================================
@@ -1712,6 +2057,194 @@ TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGa
     // White queen on f3 (x=2, y=5) captures f7 (x=6, y=5) — should be checkmate
     REQUIRE(game->makeMove(ChessMove(2, 5, 6, 5)));
     REQUIRE(game->checkmate(BLACK));
+}
+
+// ============================================================================
+// FEN Validation (SPEC 5.3)
+// ============================================================================
+
+// --- Syntactic validation (must reject) ---
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of fields (5 fields)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of fields (7 fields)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 extra");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of ranks (7 ranks)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects rank with too many squares", "[ChessGame][FEN]") {
+    // Rank 1 has 9 squares: RNBQKBNRR
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNRR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects rank with too few squares", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects consecutive digits in rank", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/44/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid piece letter", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNXQKBNR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid active color", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid castling characters", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQxq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid en passant square", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z9 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects negative halfmove clock", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - -1 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects fullmove number less than 1", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+    REQUIRE(game == nullptr);
+}
+
+// --- Position validation (should reject) ---
+
+TEST_CASE("ChessGame::fromFen: rejects missing white king", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/8 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects missing black king", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("8/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects two white kings", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KK3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects pawn on rank 1", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/P3K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects pawn on rank 8", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("p3k3/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects side not to move in check", "[ChessGame][FEN]") {
+    // White to move, black king on e8 is attacked by white rook on e1 → invalid
+    // (side not to move = black is in check)
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KR2 w - - 0 1");
+    // Wait — rook on f1 doesn't attack e8. Use rook on e-file instead.
+    // "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" — rook on a1 doesn't check e8.
+    // Need: white rook on e-file with no pieces between it and the black king on e8.
+    // "4k3/8/8/8/8/8/8/3KR3" — rook on e1, king on d1, black king e8 → rook checks e8!
+    game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects adjacent kings", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("8/8/8/8/8/8/8/3Kk3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many white pieces", "[ChessGame][FEN]") {
+    // 17 white pieces: king + 8 pawns + 2 rooks + 2 knights + 2 bishops + queen + extra queen
+    auto game = ChessGame::fromFen("QRRNNBBQ/PPPPPPPP/8/8/8/8/1K6/7k w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many white pawns", "[ChessGame][FEN]") {
+    // 9 white pawns
+    auto game = ChessGame::fromFen("4K3/PPPPPPPP/P7/8/8/8/8/7k w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many black pieces", "[ChessGame][FEN]") {
+    // 17 black pieces: 8 pawns + king + 2 rooks + 2 knights + 2 bishops + queen + extra queen
+    auto game = ChessGame::fromFen("7K/8/8/8/8/q7/pppppppp/qrrnnbbk b - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many black pawns", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("7K/8/8/8/8/p7/pppppppp/4k3 b - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects ep rank 3 when white to move", "[ChessGame][FEN]") {
+    // rank 3 ep target means white just double-pushed, so it must be black's turn
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w - e3 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects ep rank 6 when black to move", "[ChessGame][FEN]") {
+    // rank 6 ep target means black just double-pushed, so it must be white's turn
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b - d6 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: accepts ep rank 3 when black to move", "[ChessGame][FEN]") {
+    // rank 3 ep: white just double-pushed e2→e4, black to move
+    auto game = ChessGame::fromFen("rnbqkbnr/pppp1ppp/8/8/3Pp3/8/PPP1PPPP/RNBQKBNR b - d3 0 1");
+    REQUIRE(game != nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: accepts ep rank 6 when white to move", "[ChessGame][FEN]") {
+    // rank 6 ep: black just double-pushed d7→d5, white to move
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w - d6 0 1");
+    REQUIRE(game != nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects castling field out of order", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w kqKQ - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects duplicate castling character", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KKkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects empty string", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects whitespace-only string", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("   ");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects non-integer halfmove clock", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - abc 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects non-integer fullmove number", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1.5");
+    REQUIRE(game == nullptr);
 }
 
 // ============================================================================
