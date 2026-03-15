@@ -1310,13 +1310,17 @@ std::string ChessGame::toFen() const {
 ChessMove ChessGame::parseSan(const std::string& san) const {
     if (san.empty()) return ChessMove();
 
-    // Strip and record check/checkmate suffixes (+, #).
+    // Strip and record check/checkmate suffix (+, #).
+    // Only one suffix character is canonical; reject ++, ##, +#, etc.
     std::string s = san;
     bool hasCheck = false, hasCheckmate = false;
-    while (!s.empty() && (s.back() == '+' || s.back() == '#')) {
+    if (!s.empty() && (s.back() == '+' || s.back() == '#')) {
         if (s.back() == '#') hasCheckmate = true;
         else hasCheck = true;
         s.pop_back();
+        // Reject if another suffix character follows (non-canonical).
+        if (!s.empty() && (s.back() == '+' || s.back() == '#'))
+            return ChessMove();
     }
     if (s.empty()) return ChessMove();
 
@@ -1666,6 +1670,11 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
         if (enPassant[1] < '1' || enPassant[1] > '8') return nullptr;
         // ep target must be on rank 3 or 6
         if (enPassant[1] != '3' && enPassant[1] != '6') return nullptr;
+        // ep rank must be consistent with active color:
+        // rank 3 target means white just double-pushed (e2→e4, target e3), so it's black's turn.
+        // rank 6 target means black just double-pushed (d7→d5, target d6), so it's white's turn.
+        if (enPassant[1] == '3' && activeColor != "b") return nullptr;
+        if (enPassant[1] == '6' && activeColor != "w") return nullptr;
     }
 
     // Validate and parse piece placement.
@@ -1686,8 +1695,10 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
     if (ranks.size() != 8) return nullptr;
 
     // Validate each rank: no consecutive digits, exactly 8 squares, valid piece chars.
-    // Also count kings and check for pawns on back ranks.
+    // Also count kings, pawns, and total pieces; check for pawns on back ranks.
     int whiteKings = 0, blackKings = 0;
+    int whitePieces = 0, blackPieces = 0;
+    int whitePawns = 0, blackPawns = 0;
     int whiteKingX = -1, whiteKingY = -1, blackKingX = -1, blackKingY = -1;
 
     // Build a piece map: ranks[0] = rank 8 (x=7), ranks[7] = rank 1 (x=0).
@@ -1721,6 +1732,10 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
                     else         { blackKings++; blackKingX = boardX; blackKingY = squares; }
                 }
 
+                // Count pieces and pawns per side.
+                if (isWhite) { whitePieces++; if (lower == 'p') whitePawns++; }
+                else         { blackPieces++; if (lower == 'p') blackPawns++; }
+
                 pieces.push_back({boardX, squares, lower, isWhite});
                 squares++;
             }
@@ -1730,6 +1745,10 @@ std::unique_ptr<ChessGame> ChessGame::fromFen(const std::string& fen) {
 
     // Exactly one king per side.
     if (whiteKings != 1 || blackKings != 1) return nullptr;
+
+    // No more than 16 pieces per side, no more than 8 pawns per side.
+    if (whitePieces > 16 || blackPieces > 16) return nullptr;
+    if (whitePawns > 8 || blackPawns > 8) return nullptr;
 
     // Kings must not be adjacent.
     if (std::abs(whiteKingX - blackKingX) <= 1 && std::abs(whiteKingY - blackKingY) <= 1)
@@ -1876,14 +1895,16 @@ int ChessGame::positionCount() const {
 }
 
 bool ChessGame::canClaimDraw() const {
-    // Per SPEC 4.5: checkmate has priority over claimable draws.
-    if (checkmate(true) || checkmate(false)) return false;
+    // Per SPEC 4.5: checkmate and stalemate have priority over claimable draws.
+    // Only the side to move can be in checkmate or stalemate.
+    if (checkmate(whiteTurn) || stalemate(whiteTurn)) return false;
     return halfmoveClock >= 100 || positionCount() >= 3;
 }
 
 bool ChessGame::isAutomaticDraw() const {
-    // Per SPEC 4.5: checkmate has priority over automatic draws.
-    if (checkmate(true) || checkmate(false)) return false;
+    // Per SPEC 4.5: checkmate and stalemate have priority over automatic draws.
+    // Only the side to move can be in checkmate or stalemate.
+    if (checkmate(whiteTurn) || stalemate(whiteTurn)) return false;
     return halfmoveClock >= 150 || positionCount() >= 5;
 }
 

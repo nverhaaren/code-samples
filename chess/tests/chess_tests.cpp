@@ -1450,6 +1450,24 @@ TEST_CASE("ChessGame: parseSan rejects digit-zero castling 0-0", "[ChessGame][SA
     REQUIRE(move.isEnd());
 }
 
+TEST_CASE("ChessGame: parseSan rejects non-canonical double suffix ++", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Nf3++");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects non-canonical mixed suffix +#", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Qxf7+#");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects non-canonical double hash ##", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("Qxf7##");
+    REQUIRE(move.isEnd());
+}
+
 // ============================================================================
 // SAN Normalization (SPEC 6.3)
 // ============================================================================
@@ -1803,6 +1821,17 @@ TEST_CASE("ChessGame: checkmate takes priority over 50-move claimable draw", "[C
     REQUIRE_FALSE(game->canClaimDraw());
 }
 
+TEST_CASE("ChessGame: stalemate takes priority over automatic draw", "[ChessGame][Draw]") {
+    // Stalemate position with high halfmove clock (>= 150).
+    // Black king on a8, white queen on b6, white king on c8 — black to move, no legal moves,
+    // not in check = stalemate.
+    auto game = ChessGame::fromFen("k7/8/1Q6/8/8/8/8/2K5 b - - 150 100");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->stalemate(false));   // black is stalemated
+    REQUIRE_FALSE(game->isAutomaticDraw());  // stalemate has priority
+    REQUIRE_FALSE(game->canClaimDraw());     // stalemate has priority
+}
+
 // ============================================================================
 // JSON Board State (toJson)
 // ============================================================================
@@ -2092,6 +2121,53 @@ TEST_CASE("ChessGame::fromFen: rejects side not to move in check", "[ChessGame][
 TEST_CASE("ChessGame::fromFen: rejects adjacent kings", "[ChessGame][FEN]") {
     auto game = ChessGame::fromFen("8/8/8/8/8/8/8/3Kk3 w - - 0 1");
     REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many white pieces", "[ChessGame][FEN]") {
+    // 17 white pieces: king + 8 pawns + 2 rooks + 2 knights + 2 bishops + queen + extra queen
+    auto game = ChessGame::fromFen("QRRNNBBQ/PPPPPPPP/8/8/8/8/1K6/7k w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many white pawns", "[ChessGame][FEN]") {
+    // 9 white pawns
+    auto game = ChessGame::fromFen("4K3/PPPPPPPP/P7/8/8/8/8/7k w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many black pieces", "[ChessGame][FEN]") {
+    // 17 black pieces: 8 pawns + king + 2 rooks + 2 knights + 2 bishops + queen + extra queen
+    auto game = ChessGame::fromFen("7K/8/8/8/8/q7/pppppppp/qrrnnbbk b - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects too many black pawns", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("7K/8/8/8/8/p7/pppppppp/4k3 b - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects ep rank 3 when white to move", "[ChessGame][FEN]") {
+    // rank 3 ep target means white just double-pushed, so it must be black's turn
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w - e3 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects ep rank 6 when black to move", "[ChessGame][FEN]") {
+    // rank 6 ep target means black just double-pushed, so it must be white's turn
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR b - d6 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: accepts ep rank 3 when black to move", "[ChessGame][FEN]") {
+    // rank 3 ep: white just double-pushed e2→e4, black to move
+    auto game = ChessGame::fromFen("rnbqkbnr/pppp1ppp/8/8/3Pp3/8/PPP1PPPP/RNBQKBNR b - d3 0 1");
+    REQUIRE(game != nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: accepts ep rank 6 when white to move", "[ChessGame][FEN]") {
+    // rank 6 ep: black just double-pushed d7→d5, white to move
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3pP3/8/8/PPPP1PPP/RNBQKBNR w - d6 0 1");
+    REQUIRE(game != nullptr);
 }
 
 // ============================================================================
