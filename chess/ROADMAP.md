@@ -238,6 +238,23 @@ The spec must cover at minimum:
 - What state is returned after each move (updated FEN, game status, legal moves for
   next player)
 
+---
+
+## Postponed Work
+
+Items deferred from the initial MCP server implementation (PR #33) to revisit later.
+
+### Inactivity timeout
+The plan called for a 10-minute inactivity timeout that auto-draws the game. `GameManager` tracks `_last_activity` timestamps on each tool call, but no timeout mechanism checks it. Implementing this properly requires either a background timer task or a lazy check on every tool call. Low priority since the primary use case is LLM-driven games where inactivity is unlikely.
+
+### CI for Python tests
+The MCP server has 139 pytest tests but no CI workflow yet. Should add a GitHub Actions job that builds the C++ engine, then runs `uv run pytest` in `chess/mcp-server/`.
+
+### Mypy strict pass
+`pyproject.toml` has `strict = true` for mypy but a full strict pass hasn't been run and verified clean. Some type narrowing may be needed.
+
+---
+
 ### Test Harness Design
 
 The test harness is a standalone program (likely Python) that:

@@ -1,7 +1,7 @@
 """CLI entry point for the chess MCP server.
 
 Usage:
-    python -m chess_mcp [--port PORT] [--engine PATH] [--seed N]
+    python -m chess_mcp [--port PORT] [--engine PATH] [--seed N] [--record PATH]
 """
 
 from __future__ import annotations
