@@ -22,11 +22,28 @@ async def srv(engine_path: str) -> None:
     await server.shutdown()
 
 
-class FakeContext:
-    """Minimal MCP context stub for testing."""
+class _FakeSession:
+    """Sentinel object whose ``id()`` serves as the session identifier."""
 
-    def __init__(self, session_id: str = "default") -> None:
-        self.session_id = session_id
+
+# Registry so that FakeContext("white") always maps to the same session object,
+# even across multiple instantiations within a single test.
+_fake_session_registry: dict[str, _FakeSession] = {}
+
+
+class FakeContext:
+    """Minimal MCP context stub for testing.
+
+    Mirrors the real MCP ``Context`` just enough for ``_get_session_id`` to
+    work: it exposes a ``.session`` attribute whose ``id()`` is used as the
+    session key.  A module-level registry ensures that two ``FakeContext``
+    instances created with the same *label* share the same session object.
+    """
+
+    def __init__(self, label: str = "default") -> None:
+        if label not in _fake_session_registry:
+            _fake_session_registry[label] = _FakeSession()
+        self.session = _fake_session_registry[label]
 
 
 async def test_server_lists_tools(srv: None) -> None:
@@ -232,7 +249,7 @@ async def test_recording_has_elapsed_ms(recorded_srv: str) -> None:
 
 
 async def test_recording_session_ids(recorded_srv: str) -> None:
-    """Tool call records include the correct session IDs."""
+    """Tool call records include distinct session IDs for different players."""
     w = FakeContext("white")
     b = FakeContext("black")
 
@@ -243,8 +260,8 @@ async def test_recording_session_ids(recorded_srv: str) -> None:
     records = Recorder.read(recorded_srv)
     tool_records = [r for r in records if "tool" in r]
     session_ids = {r["session_id"] for r in tool_records}
-    assert "white" in session_ids
-    assert "black" in session_ids
+    # Two distinct players should produce two distinct session IDs
+    assert len(session_ids) >= 2
 
 
 # ============================================================================

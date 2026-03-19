@@ -28,24 +28,17 @@ _recorder: Recorder | None = None
 
 
 def _get_session_id(ctx: Context) -> str:
-    """Extract session ID from MCP context.
+    """Derive a session identifier from the MCP context.
 
-    Each MCP transport connection should provide a unique session ID. If
-    multiple connections share the same ID, they will share the same game
-    session (same role, same message queue). Falls back to "default" when
-    no session ID is available (e.g. in single-client scenarios).
+    Uses the identity of the underlying ``ServerSession`` object, which is
+    unique per transport connection and stable across tool calls within
+    that connection.  Two connections that share the same session object
+    will share the same game session (same role, same message queue).
     """
-    session_id = getattr(ctx, "session_id", None)
-    if session_id:
-        return str(session_id)
-    request_context = getattr(ctx, "request_context", None)
-    if request_context:
-        meta = getattr(request_context, "meta", None)
-        if meta:
-            session_id = getattr(meta, "sessionId", None)
-            if session_id:
-                return str(session_id)
-    return "default"
+    session = getattr(ctx, "session", None)
+    if session is None:
+        raise RuntimeError("Cannot determine session identity from MCP context")
+    return str(id(session))
 
 
 def _gm() -> GameManager:
