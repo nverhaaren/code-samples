@@ -6,16 +6,18 @@ Uses FastMCP with streamable HTTP transport.
 
 from __future__ import annotations
 
-import os
-import pathlib
+import logging
 import time
 from typing import Any
 
 from mcp.server.fastmcp import Context, FastMCP
 
+from .engine_path import find_engine_binary
 from .game import GameManager
 from .recording import Recorder
-from .types import GameError, GameState
+from .types import EngineError, GameError, GameState
+
+logger = logging.getLogger(__name__)
 
 # Create the MCP server
 mcp = FastMCP("Chess MCP Server")
@@ -25,30 +27,17 @@ _game_manager: GameManager | None = None
 _recorder: Recorder | None = None
 
 
-def _find_engine_binary() -> str:
-    """Locate the chess engine binary."""
-    env_path = os.environ.get("CHESS_ENGINE_PATH")
-    if env_path:
-        return env_path
-    base = pathlib.Path(__file__).resolve().parent.parent.parent
-    candidates = [
-        base / "build" / "chess",
-        base / "build" / "Debug" / "chess",
-        base / "build" / "Release" / "chess",
-    ]
-    for candidate in candidates:
-        if candidate.is_file():
-            return str(candidate)
-    raise FileNotFoundError("Chess engine binary not found. Set CHESS_ENGINE_PATH.")
-
-
 def _get_session_id(ctx: Context) -> str:
-    """Extract session ID from MCP context."""
-    # Use the MCP session ID if available, fall back to a default
+    """Extract session ID from MCP context.
+
+    Each MCP transport connection should provide a unique session ID. If
+    multiple connections share the same ID, they will share the same game
+    session (same role, same message queue). Falls back to "default" when
+    no session ID is available (e.g. in single-client scenarios).
+    """
     session_id = getattr(ctx, "session_id", None)
     if session_id:
         return str(session_id)
-    # Try to get from request context
     request_context = getattr(ctx, "request_context", None)
     if request_context:
         meta = getattr(request_context, "meta", None)
@@ -98,16 +87,17 @@ async def create_game(
     t0 = time.monotonic_ns()
     try:
         session_id = _get_session_id(ctx)
-        await _gm().create_game(session_id=session_id, fen=fen, time_control=time_control)
+        gm = _gm()
+        await gm.create_game(session_id=session_id, fen=fen, time_control=time_control)
         result = {
-            "game_id": _gm()._game_id,
-            "fen": _gm()._engine_state.fen if _gm()._engine_state else None,
+            "game_id": gm.game_id,
+            "fen": gm.current_fen,
             "game_status": "awaiting_players",
         }
         if _recorder is not None:
             _recorder.record_game_start(
-                _gm()._game_id,
-                _gm()._engine_state.fen if _gm()._engine_state else "unknown",
+                gm.game_id or "unknown",
+                gm.current_fen or "unknown",
             )
         elapsed = (time.monotonic_ns() - t0) // 1_000_000
         _record(session_id, "create_game", {"fen": fen, "time_control": time_control}, result, elapsed)
@@ -307,15 +297,13 @@ async def make_move(ctx: Context, move: str) -> dict[str, Any]:
         # Record game end if game is over
         if _recorder is not None and _gm().state == GameState.GAME_OVER:
             _recorder.record_game_end(
-                _gm()._game_id,
+                _gm().game_id or "unknown",
                 status_dict.get("result", "*"),
                 status_dict.get("termination_reason", "unknown"),
             )
         return status_dict
-    except GameError as e:
+    except (GameError, EngineError) as e:
         return _error_response("move_error", str(e))
-    except Exception as e:
-        return _error_response("illegal_move", str(e))
 
 
 @mcp.tool()
@@ -330,7 +318,7 @@ async def claim_draw(ctx: Context) -> dict[str, Any]:
         _record(session_id, "claim_draw", {}, result, elapsed)
         if _recorder is not None:
             _recorder.record_game_end(
-                _gm()._game_id,
+                _gm().game_id,
                 result.get("result", "1/2-1/2"),
                 result.get("termination_reason", "draw_claim"),
             )
@@ -366,7 +354,7 @@ async def accept_draw(ctx: Context) -> dict[str, Any]:
         _record(session_id, "accept_draw", {}, result, elapsed)
         if _recorder is not None:
             _recorder.record_game_end(
-                _gm()._game_id,
+                _gm().game_id,
                 result.get("result", "1/2-1/2"),
                 result.get("termination_reason", "draw_agreement"),
             )
@@ -402,7 +390,7 @@ async def resign(ctx: Context) -> dict[str, Any]:
         _record(session_id, "resign", {}, result, elapsed)
         if _recorder is not None:
             _recorder.record_game_end(
-                _gm()._game_id,
+                _gm().game_id,
                 result.get("result", "*"),
                 result.get("termination_reason", "resignation"),
             )
@@ -433,7 +421,7 @@ async def initialize(
 ) -> None:
     """Initialize the game manager and optional recorder."""
     global _game_manager, _recorder
-    path = engine_path or _find_engine_binary()
+    path = engine_path or find_engine_binary()
     _game_manager = GameManager(path, seed=seed)
     await _game_manager.start()
     if record_path is not None:

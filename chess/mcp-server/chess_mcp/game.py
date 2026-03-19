@@ -69,6 +69,15 @@ class GameManager:
     def state(self) -> GameState:
         return self._state
 
+    @property
+    def game_id(self) -> str | None:
+        return self._game_id
+
+    @property
+    def current_fen(self) -> str | None:
+        """Current FEN string, or None if no game is active."""
+        return self._engine_state.fen if self._engine_state else None
+
     async def start(self) -> None:
         """Start the engine subprocess."""
         self._engine = ChessEngine(self._engine_path)
@@ -294,11 +303,11 @@ class GameManager:
         }
 
     # ========================================================================
-    # Action tools (stubs — full implementation in PR 6)
+    # Action tools
     # ========================================================================
 
     async def make_move(self, session_id: str, move: str) -> MoveRecord:
-        """Make a move. Full implementation in PR 6."""
+        """Make a move (SAN or LAN). Returns the recorded move with SAN, LAN, and clock."""
         self._require_ongoing()
         session = self._require_player(session_id)
         assert self._engine is not None
@@ -386,13 +395,10 @@ class GameManager:
             self._result = "1/2-1/2"
             self._termination_reason = "insufficient material"
             self._state = GameState.GAME_OVER
-        elif self._clock and self._clock.is_flagged(is_white=session.role == SessionRole.WHITE):
-            # The player who just moved flagged (shouldn't happen normally, but check)
-            pass  # Flag is checked for the opponent below
-
-        # Check opponent's flag (time ran out on their turn — detected when we move)
-        # Actually, flag should be checked for the moving player since we deducted time.
-        # If the moving player's clock went negative, they lose on time.
+        # Check if the moving player's clock expired. Time is deducted from the
+        # moving player in move_made() above, so if their remaining time went
+        # negative, they lose on time (or draw if the opponent has insufficient
+        # material).
         if self._state == GameState.ONGOING and self._clock:
             is_white_moved = session.role == SessionRole.WHITE
             if self._clock.is_flagged(is_white=is_white_moved):

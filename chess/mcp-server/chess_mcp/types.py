@@ -46,13 +46,6 @@ class GameState(str, Enum):
     GAME_OVER = "game_over"
 
 
-class PlayerColor(str, Enum):
-    """Player color assignment."""
-
-    WHITE = "white"
-    BLACK = "black"
-
-
 class SessionRole(str, Enum):
     """Role a session can have in the game."""
 

@@ -73,7 +73,17 @@ class ChessEngine:
 
     async def _send_command(self, cmd: dict[str, Any]) -> dict[str, Any]:
         """Send a JSON command and read the JSON response line."""
-        assert self._process is not None, "Engine not started"
+        if self._process is None:
+            raise EngineError("Engine not started")
+        if self._process.returncode is not None:
+            stderr = ""
+            if self._process.stderr:
+                stderr_bytes = await self._process.stderr.read()
+                stderr = stderr_bytes.decode(errors="replace").strip()
+            raise EngineError(
+                f"Engine process crashed (exit code {self._process.returncode})"
+                + (f": {stderr}" if stderr else "")
+            )
         assert self._process.stdin is not None
         assert self._process.stdout is not None
 
@@ -83,7 +93,15 @@ class ChessEngine:
 
         response_line = await self._process.stdout.readline()
         if not response_line:
-            raise EngineError("Engine process closed unexpectedly")
+            exit_code = self._process.returncode
+            stderr = ""
+            if self._process.stderr:
+                stderr_bytes = await self._process.stderr.read()
+                stderr = stderr_bytes.decode(errors="replace").strip()
+            raise EngineError(
+                f"Engine process closed unexpectedly (exit code {exit_code})"
+                + (f": {stderr}" if stderr else "")
+            )
 
         return json.loads(response_line)  # type: ignore[no-any-return]
 
