@@ -1717,6 +1717,117 @@ TEST_CASE("ChessGame::fromFen: legal moves from loaded position work", "[ChessGa
 }
 
 // ============================================================================
+// FEN Validation (SPEC 5.3)
+// ============================================================================
+
+// --- Syntactic validation (must reject) ---
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of fields (5 fields)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of fields (7 fields)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 extra");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects wrong number of ranks (7 ranks)", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects rank with too many squares", "[ChessGame][FEN]") {
+    // Rank 1 has 9 squares: RNBQKBNRR
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNRR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects rank with too few squares", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBN w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects consecutive digits in rank", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/44/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid piece letter", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNXQKBNR w KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid active color", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR x KQkq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid castling characters", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQxq - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects invalid en passant square", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq z9 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects negative halfmove clock", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - -1 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects fullmove number less than 1", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 0");
+    REQUIRE(game == nullptr);
+}
+
+// --- Position validation (should reject) ---
+
+TEST_CASE("ChessGame::fromFen: rejects missing white king", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/8 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects missing black king", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("8/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects two white kings", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KK3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects pawn on rank 1", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/P3K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects pawn on rank 8", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("p3k3/8/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects side not to move in check", "[ChessGame][FEN]") {
+    // White to move, black king on e8 is attacked by white rook on e1 → invalid
+    // (side not to move = black is in check)
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KR2 w - - 0 1");
+    // Wait — rook on f1 doesn't attack e8. Use rook on e-file instead.
+    // "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" — rook on a1 doesn't check e8.
+    // Need: white rook on e-file with no pieces between it and the black king on e8.
+    // "4k3/8/8/8/8/8/8/3KR3" — rook on e1, king on d1, black king e8 → rook checks e8!
+    game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+TEST_CASE("ChessGame::fromFen: rejects adjacent kings", "[ChessGame][FEN]") {
+    auto game = ChessGame::fromFen("8/8/8/8/8/8/8/3Kk3 w - - 0 1");
+    REQUIRE(game == nullptr);
+}
+
+// ============================================================================
 // Independent castling rights
 // ============================================================================
 
