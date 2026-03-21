@@ -2,17 +2,27 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <iostream>
 #include <string>
 #include <vector>
 
+#include "bridge.h"
 #include "chess.h"
 
 void printMoves(bool color, const ChessGame& game);
 void printMoveList(const std::vector<ChessMove>& moves);
 
 int main(int argc, char* argv[]) {
+    // Check for --json-bridge flag
+    for (int i = 1; i < argc; i++) {
+        if (std::strcmp(argv[i], "--json-bridge") == 0) {
+            runBridgeLoop();
+            return 0;
+        }
+    }
+
     srand(time(nullptr));  // initialize random number generator
     bool print = true;
     ChessGame game = ChessGame();
