@@ -57,23 +57,23 @@ json handleMakeMove(BridgeContext& ctx, const json& cmd) {
     // Try SAN first, fall back to LAN (same logic as Main.cpp)
     ChessMove move = ctx.game->parseSan(moveStr);
     if (move.isEnd()) {
-        // Validate LAN format before constructing ChessMove (constructor asserts valid coords).
-        // LAN format: "a1b2", "a1-b2", or with promotion suffix "a7a8q", "a7-a8q".
-        // Minimum length is 4 (e.g., "e2e4"), with optional separator and promotion char.
+        // Validate LAN format before constructing ChessMove.
+        // Canonical LAN: "a1b2" or with promotion "a7a8q" (no separator).
+        // Also accept hyphenated/spaced forms ("a1-b2", "a1 b2") by stripping the separator.
+        std::string lanStr = moveStr;
+        if (lanStr.size() >= 3 && (lanStr[2] == '-' || lanStr[2] == ' ')) {
+            lanStr.erase(2, 1);  // strip separator to canonical form
+        }
         bool validLan = false;
-        if (moveStr.size() >= 4) {
-            char f1 = moveStr[0], r1 = moveStr[1];
-            int offset = (moveStr[2] == '-' || moveStr[2] == ' ') ? 1 : 0;
-            if (moveStr.size() >= (size_t)(4 + offset)) {
-                char f2 = moveStr[2 + offset], r2 = moveStr[3 + offset];
-                validLan = (f1 >= 'a' && f1 <= 'h' && r1 >= '1' && r1 <= '8' &&
-                            f2 >= 'a' && f2 <= 'h' && r2 >= '1' && r2 <= '8');
-            }
+        if (lanStr.size() >= 4 && lanStr.size() <= 5) {
+            char f1 = lanStr[0], r1 = lanStr[1], f2 = lanStr[2], r2 = lanStr[3];
+            validLan = (f1 >= 'a' && f1 <= 'h' && r1 >= '1' && r1 <= '8' &&
+                        f2 >= 'a' && f2 <= 'h' && r2 >= '1' && r2 <= '8');
         }
         if (!validLan) {
             return makeError("illegal or invalid move: " + moveStr);
         }
-        move = ChessMove(moveStr.c_str());
+        move = ChessMove(lanStr.c_str());
     }
 
     if (!ctx.game->makeMove(move)) {

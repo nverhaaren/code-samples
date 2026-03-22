@@ -34,11 +34,10 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY)
     ey = (int8_t)eY;
     repr[0] = fileLetters[sy];
     repr[1] = ChessPiece::digits[sx + 1];
-    repr[2] = '-';
-    repr[3] = fileLetters[ey];
-    repr[4] = ChessPiece::digits[ex + 1];
-    repr[5] = '\0';
-    repr[6] = repr[7] = '\0';
+    repr[2] = fileLetters[ey];
+    repr[3] = ChessPiece::digits[ex + 1];
+    repr[4] = '\0';
+    repr[5] = repr[6] = repr[7] = '\0';
 }
 
 // 5-arg ctor (with promotion) — delegates to 4-arg
@@ -52,20 +51,49 @@ ChessMove::ChessMove(int sX, int sY, int eX, int eY, PieceType promo)
             static_assert(PAWN == 0 && ROOK == 1 && KNIGHT == 2 && BISHOP == 3 && QUEEN == 5,
                           "letters[] indexing assumes specific PieceType enum values");
             const char letters[] = {'p', 'r', 'n', 'b', 'k', 'q'};
-            repr[5] = letters[promo];
-            repr[6] = '\0';
+            repr[4] = letters[promo];
+            repr[5] = '\0';
         }
     }
 }
 
-// String ctor — delegates to 4-arg; accepts "a1-b2" or "a1b2" format.
+// String ctor — canonical LAN only: "a1b2" or "a1b2q" (with promotion).
 // Argument mapping: sX=rank(str[1]-'1'), sY=file(str[0]-'a'),
 //   separator at str[2] (' ' or '-') shifts end-square indices by 1.
 ChessMove::ChessMove(const char* const str)
-    : ChessMove((int)(str[1] - '1'),
-                (int)(str[0] - 'a'),
-                (str[2] == ' ' || str[2] == '-') ? (int)(str[4] - '1') : (int)(str[3] - '1'),
-                (str[2] == ' ' || str[2] == '-') ? (int)(str[3] - 'a') : (int)(str[2] - 'a')) {}
+    : sx(-1), sy(-1), ex(-1), ey(-1), promotion(PAWN) {
+    repr[0] = 'E'; repr[1] = 'N'; repr[2] = 'D'; repr[3] = '\0';
+    repr[4] = repr[5] = repr[6] = repr[7] = '\0';
+
+    // Canonical LAN only: 4 chars (e.g., "e2e4") or 5 chars with promotion
+    // (e.g., "e7e8q"). Reject hyphenated or spaced forms.
+    if (str == nullptr) return;
+    size_t len = strlen(str);
+    if (len < 4 || len > 5) return;
+
+    int sY = str[0] - 'a', sX = str[1] - '1';
+    int eY = str[2] - 'a', eX = str[3] - '1';
+    if (sX < 0 || sX > 7 || sY < 0 || sY > 7 ||
+        eX < 0 || eX > 7 || eY < 0 || eY > 7) return;
+
+    sx = (int8_t)sX; sy = (int8_t)sY;
+    ex = (int8_t)eX; ey = (int8_t)eY;
+    repr[0] = str[0]; repr[1] = str[1];
+    repr[2] = str[2]; repr[3] = str[3];
+    repr[4] = '\0';
+
+    if (len == 5) {
+        char pc = str[4];
+        switch (pc) {
+            case 'q': promotion = QUEEN; break;
+            case 'r': promotion = ROOK; break;
+            case 'n': promotion = KNIGHT; break;
+            case 'b': promotion = BISHOP; break;
+            default: sx = -1; return;  // invalid promotion char
+        }
+        repr[4] = pc; repr[5] = '\0';
+    }
+}
 
 // Copy ctor
 ChessMove::ChessMove(const ChessMove& rcm)

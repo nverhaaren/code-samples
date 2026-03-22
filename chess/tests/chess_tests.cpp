@@ -96,20 +96,18 @@ TEST_CASE("ChessMove: self-assignment is safe", "[ChessMove]") {
 TEST_CASE("ChessMove: toString format is 'a1-b2'", "[ChessMove]") {
     // a=y=0 rank1=x=0, b=y=1 rank2=x=1
     ChessMove cm(0, 0, 1, 1);
-    REQUIRE(std::string(cm.toString()) == "a1-b2");
+    REQUIRE(std::string(cm.toString()) == "a1b2");
 }
 
 TEST_CASE("ChessMove: toString for various squares", "[ChessMove]") {
     ChessMove cm(7, 7, 0, 0);  // h8-a1
-    REQUIRE(std::string(cm.toString()) == "h8-a1");
+    REQUIRE(std::string(cm.toString()) == "h8a1");
 }
 
-TEST_CASE("ChessMove: string constructor parses 'a1-b2'", "[ChessMove]") {
+TEST_CASE("ChessMove: string constructor rejects hyphenated 'a1-b2'", "[ChessMove]") {
+    // Canonical LAN has no separator: "a1b2" only. Hyphenated form rejected.
     ChessMove cm("a1-b2");
-    REQUIRE(cm.getStartX() == 0);
-    REQUIRE(cm.getStartY() == 0);
-    REQUIRE(cm.getEndX() == 1);
-    REQUIRE(cm.getEndY() == 1);
+    REQUIRE(cm.isEnd());
 }
 
 TEST_CASE("ChessMove: string constructor parses 'a1b2' (no separator)", "[ChessMove]") {
@@ -138,20 +136,20 @@ TEST_CASE("ChessMove: 5-arg constructor coordinate roundtrip and getPromotion", 
 
 TEST_CASE("ChessMove: toString includes promotion letter for promotion move", "[ChessMove]") {
     ChessMove q(6, 3, 7, 3, QUEEN);
-    REQUIRE(std::string(q.toString()) == "d7-d8q");
+    REQUIRE(std::string(q.toString()) == "d7d8q");
 
     ChessMove r(6, 3, 7, 3, ROOK);
-    REQUIRE(std::string(r.toString()) == "d7-d8r");
+    REQUIRE(std::string(r.toString()) == "d7d8r");
 
     ChessMove n(6, 3, 7, 3, KNIGHT);
-    REQUIRE(std::string(n.toString()) == "d7-d8n");
+    REQUIRE(std::string(n.toString()) == "d7d8n");
 
     ChessMove b(6, 3, 7, 3, BISHOP);
-    REQUIRE(std::string(b.toString()) == "d7-d8b");
+    REQUIRE(std::string(b.toString()) == "d7d8b");
 
     // Non-promotion move has no suffix
     ChessMove plain(1, 2, 3, 4);
-    REQUIRE(std::string(plain.toString()) == "c2-e4");
+    REQUIRE(std::string(plain.toString()) == "c2e4");
 }
 // ============================================================================
 // ChessBoard / ChessGame: initial position
@@ -1801,11 +1799,11 @@ TEST_CASE("toJson: moveHistory grows after moves", "[ChessGame][JSON]") {
 
     game.makeMove(ChessMove(1, 4, 3, 4));  // e2-e4
     json = game.toJson();
-    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\"]") != std::string::npos);
+    REQUIRE(json.find("\"moveHistory\":[\"e2e4\"]") != std::string::npos);
 
     game.makeMove(ChessMove(6, 4, 4, 4));  // e7-e5
     json = game.toJson();
-    REQUIRE(json.find("\"moveHistory\":[\"e2-e4\",\"e7-e5\"]") != std::string::npos);
+    REQUIRE(json.find("\"moveHistory\":[\"e2e4\",\"e7e5\"]") != std::string::npos);
 }
 
 // ============================================================================
@@ -2160,16 +2158,26 @@ TEST_CASE("Bridge: make_move with SAN 'e4' succeeds", "[bridge]") {
     REQUIRE(resp["state"]["turn"] == "black");
 }
 
-TEST_CASE("Bridge: make_move with LAN 'e2-e4' succeeds", "[bridge]") {
+TEST_CASE("Bridge: make_move with LAN 'e2e4' succeeds", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e2e4"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["state"]["turn"] == "black");
+    REQUIRE(resp.contains("move_lan"));
+    std::string lan = resp["move_lan"];
+    REQUIRE(lan == "e2e4");
+}
+
+TEST_CASE("Bridge: make_move accepts hyphenated LAN 'e2-e4'", "[bridge]") {
     BridgeContext ctx;
     bridgeCmd(ctx, {{"command", "new_game"}});
     auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e2-e4"}});
     REQUIRE(resp["ok"] == true);
     REQUIRE(resp["state"]["turn"] == "black");
-    // move_lan should be present
     REQUIRE(resp.contains("move_lan"));
     std::string lan = resp["move_lan"];
-    REQUIRE(lan == "e2-e4");
+    REQUIRE(lan == "e2e4");  // output is canonical (unhyphenated)
 }
 
 TEST_CASE("Bridge: make_move with illegal move returns ok:false", "[bridge]") {
@@ -2196,12 +2204,12 @@ TEST_CASE("Bridge: from_fen with invalid FEN returns ok:false", "[bridge]") {
     REQUIRE(resp.contains("error"));
 }
 
-TEST_CASE("Bridge: parse_san 'Nf3' returns LAN 'g1-f3'", "[bridge]") {
+TEST_CASE("Bridge: parse_san 'Nf3' returns LAN 'g1f3'", "[bridge]") {
     BridgeContext ctx;
     bridgeCmd(ctx, {{"command", "new_game"}});
     auto resp = bridgeCmd(ctx, {{"command", "parse_san"}, {"san", "Nf3"}});
     REQUIRE(resp["ok"] == true);
-    REQUIRE(resp["lan"] == "g1-f3");
+    REQUIRE(resp["lan"] == "g1f3");
 }
 
 TEST_CASE("Bridge: parse_san with invalid SAN returns ok:false", "[bridge]") {
