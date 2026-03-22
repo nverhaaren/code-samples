@@ -1286,15 +1286,24 @@ TEST_CASE("ChessGame: parseSan invalid move returns end sentinel", "[ChessGame][
     REQUIRE(move.isEnd());
 }
 
-TEST_CASE("ChessGame: parseSan with check suffix Bb8+", "[ChessGame][SAN]") {
+TEST_CASE("ChessGame: parseSan with check suffix Bb5+", "[ChessGame][SAN]") {
+    // Bishop to b5 gives check on black king e8 (diagonal b5-e8).
     CustomBoard cb;
     cb.place(0, 4, new King(WHITE, cb.b));
     cb.place(7, 4, new King(BLACK, cb.b));
     cb.place(3, 5, new Bishop(WHITE, false, cb.b));  // Bishop on f4
     cb.activate();
-    ChessMove move = cb.game.parseSan("Bb8+");
+    // Bf4 can go to b8 (no check) or various squares. Let's use Bc7 which
+    // goes to c7 (6,2) — does it check? c7 to e8 is not a diagonal.
+    // Try: place bishop on d3 (2,3), move to b5 (4,1) — b5 to e8: diagonal!
+    CustomBoard cb2;
+    cb2.place(0, 4, new King(WHITE, cb2.b));
+    cb2.place(7, 4, new King(BLACK, cb2.b));
+    cb2.place(2, 3, new Bishop(WHITE, false, cb2.b));  // Bishop on d3
+    cb2.activate();
+    ChessMove move = cb2.game.parseSan("Bb5+");
     REQUIRE(!move.isEnd());
-    REQUIRE(move.getEndX() == 7);
+    REQUIRE(move.getEndX() == 4);
     REQUIRE(move.getEndY() == 1);
 }
 
@@ -1386,6 +1395,61 @@ TEST_CASE("ChessGame: toSan disambiguation by rank R1e3", "[ChessGame][SAN]") {
     cb.activate();
     // Both rooks on a-file can reach a3 (x=2,y=0).
     REQUIRE(cb.game.toSan(ChessMove(0, 0, 2, 0)) == "R1a3");
+}
+
+// ============================================================================
+// SAN Suffix Validation (SPEC 6.2.8)
+// ============================================================================
+
+TEST_CASE("ChessGame: parseSan rejects + when move does not give check", "[ChessGame][SAN]") {
+    ChessGame game;
+    // e4+ — pawn push does not give check
+    ChessMove move = game.parseSan("e4+");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects # when move is not checkmate", "[ChessGame][SAN]") {
+    ChessGame game;
+    ChessMove move = game.parseSan("e4#");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts correct + suffix", "[ChessGame][SAN]") {
+    // White bishop on d3 can go to b5 giving check to black king on e8.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/3B4/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Bb5+");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts correct # suffix", "[ChessGame][SAN]") {
+    // Scholar's mate: Qxf7#
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("Qxf7#");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan accepts move without suffix even if it gives check", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppp1ppp/8/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 2 3");
+    REQUIRE(game != nullptr);
+    // Qxf7 without suffix — should be accepted per SPEC 6.2.8
+    ChessMove move = game->parseSan("Qxf7");
+    REQUIRE(!move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects digit-zero castling 0-0", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/5NP1/PPPPPPBP/RNBQK2R w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("0-0");
+    REQUIRE(move.isEnd());
+}
+
+TEST_CASE("ChessGame: parseSan rejects lowercase promotion =q", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("8/4P1k1/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    ChessMove move = game->parseSan("e8=q");
+    REQUIRE(move.isEnd());
 }
 
 // ============================================================================
