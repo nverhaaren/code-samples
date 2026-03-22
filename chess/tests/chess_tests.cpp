@@ -1338,17 +1338,11 @@ TEST_CASE("ChessGame: toSan queenside castling O-O-O", "[ChessGame][SAN]") {
     REQUIRE(game->toSan(ChessMove(0, 4, 0, 2)) == "O-O-O");
 }
 
-TEST_CASE("ChessGame: toSan check suffix Bb5+", "[ChessGame][SAN]") {
-    // Italian game position: white bishop to b5 giving check
-    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 3");
+TEST_CASE("ChessGame: toSan checkmate suffix Qxf7#", "[ChessGame][SAN]") {
+    // Scholar's mate setup: queen on f3 captures f7 delivering checkmate.
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
     REQUIRE(game != nullptr);
-    // Bishop from c4 (x=3,y=2) to b5 (x=4,y=1) — check via pin on c6 knight?
-    // Actually Bb5 doesn't check from that position. Let me use a proper check.
-    // Let's use scholar's mate: Qf3 to f7 → checkmate
-    auto game2 = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
-    REQUIRE(game2 != nullptr);
-    // Queen from f3 (x=2,y=5) captures f7 (x=6,y=5) — checkmate
-    REQUIRE(game2->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
+    REQUIRE(game->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
 }
 
 TEST_CASE("ChessGame: toSan promotion e8=Q", "[ChessGame][SAN]") {
@@ -1366,10 +1360,7 @@ TEST_CASE("ChessGame: toSan promotion capture exd8=N+", "[ChessGame][SAN]") {
     // White pawn on e7, black rook on d8, black king on g8.
     auto game = ChessGame::fromFen("3r2k1/4P3/8/8/8/8/8/4K3 w - - 0 1");
     REQUIRE(game != nullptr);
-    // Pawn on e7 (6,4) captures d8 rook (7,3) promoting to knight → check on g8?
-    // Knight on d8 attacks c6, b7, e6, f7 — doesn't check g8. Use queen promo instead.
-    // exd8=Q+ (queen on d8 checks along d8-g8? No, that's diagonal d8→e7→f6→g5. Not a line.)
-    // Actually queen on d8 attacks along rank 8: d8→e8→f8→g8 → yes, checks!
+    // Pawn on e7 captures d8 rook, promoting to queen — checks king on g8 along rank 8.
     REQUIRE(game->toSan(ChessMove(6, 4, 7, 3, QUEEN)) == "exd8=Q+");
 }
 
@@ -1898,14 +1889,8 @@ TEST_CASE("ChessGame::fromFen: rejects pawn on rank 8", "[ChessGame][FEN]") {
 }
 
 TEST_CASE("ChessGame::fromFen: rejects side not to move in check", "[ChessGame][FEN]") {
-    // White to move, black king on e8 is attacked by white rook on e1 → invalid
-    // (side not to move = black is in check)
-    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KR2 w - - 0 1");
-    // Wait — rook on f1 doesn't attack e8. Use rook on e-file instead.
-    // "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" — rook on a1 doesn't check e8.
-    // Need: white rook on e-file with no pieces between it and the black king on e8.
-    // "4k3/8/8/8/8/8/8/3KR3" — rook on e1, king on d1, black king e8 → rook checks e8!
-    game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
+    // White to move, but black king on e8 is attacked by white rook on e1 → invalid.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
     REQUIRE(game == nullptr);
 }
 
