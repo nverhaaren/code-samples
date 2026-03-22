@@ -8,8 +8,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile_commands.json for clang-tidy
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-# chess_lib: the engine logic, usable without the CLI
-add_library(chess_lib STATIC chess.cpp)
+# chess_lib: the engine logic + JSON bridge, usable without the CLI
+add_library(chess_lib STATIC chess.cpp bridge.cpp)
 target_include_directories(chess_lib PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(chess_lib PRIVATE -Wall -Wextra -Wpedantic)
 
@@ -22,8 +22,20 @@ target_compile_options(chess PRIVATE -Wall -Wextra)
 option(ENABLE_TESTS "Build tests" ON)
 option(ENABLE_COVERAGE "Enable code coverage reporting" OFF)
 
+include(FetchContent)
+
+# nlohmann/json for the JSON bridge mode
+FetchContent_Declare(
+    json
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+    GIT_TAG        v3.11.3
+)
+FetchContent_MakeAvailable(json)
+
+# Link nlohmann_json to chess_lib so bridge code can use it
+target_link_libraries(chess_lib PUBLIC nlohmann_json::nlohmann_json)
+
 if(ENABLE_TESTS)
-    include(FetchContent)
     FetchContent_Declare(
         Catch2
         GIT_REPOSITORY https://github.com/catchorg/Catch2.git

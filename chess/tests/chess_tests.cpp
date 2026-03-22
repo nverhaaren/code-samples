@@ -6,7 +6,9 @@
 #include <memory>
 #include <string>
 
+#include "bridge.h"
 #include "chess.h"
+#include <nlohmann/json.hpp>
 
 // ============================================================================
 // Helper: set up a custom board position from scratch.
@@ -2289,4 +2291,153 @@ TEST_CASE("ChessGame::fromFen: no castling rights preserved as flags",
     REQUIRE(!b.getCastlingRight(false, true));
     REQUIRE(!b.getCastlingRight(false, false));
     REQUIRE(game->toFen() == fen);
+}
+
+// ============================================================================
+// JSON Bridge
+// ============================================================================
+
+using json = nlohmann::json;
+
+static json bridgeCmd(BridgeContext& ctx, const json& cmd) {
+    bool quit = false;
+    std::string response = handleBridgeCommand(cmd.dump(), ctx, quit);
+    return json::parse(response);
+}
+
+TEST_CASE("Bridge: new_game returns initial FEN in state", "[bridge]") {
+    BridgeContext ctx;
+    auto resp = bridgeCmd(ctx, {{"command", "new_game"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp.contains("state"));
+    std::string fen = resp["state"]["fen"];
+    REQUIRE(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+}
+
+TEST_CASE("Bridge: make_move with SAN 'e4' succeeds", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e4"}});
+    REQUIRE(resp["ok"] == true);
+    std::string fen = resp["state"]["fen"];
+    REQUIRE(fen.find("e4") == std::string::npos);  // FEN won't contain "e4" literally
+    // After e4 it should be black's turn
+    REQUIRE(resp["state"]["turn"] == "black");
+}
+
+TEST_CASE("Bridge: make_move with LAN 'e2e4' succeeds", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e2e4"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["state"]["turn"] == "black");
+    REQUIRE(resp.contains("move_lan"));
+    std::string lan = resp["move_lan"];
+    REQUIRE(lan == "e2e4");
+}
+
+TEST_CASE("Bridge: make_move accepts hyphenated LAN 'e2-e4'", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e2-e4"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["state"]["turn"] == "black");
+    REQUIRE(resp.contains("move_lan"));
+    std::string lan = resp["move_lan"];
+    REQUIRE(lan == "e2e4");  // output is canonical (unhyphenated)
+}
+
+TEST_CASE("Bridge: make_move with illegal move returns ok:false", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e5"}});
+    REQUIRE(resp["ok"] == false);
+    REQUIRE(resp.contains("error"));
+}
+
+TEST_CASE("Bridge: from_fen with valid FEN returns matching state", "[bridge]") {
+    BridgeContext ctx;
+    std::string fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1";
+    auto resp = bridgeCmd(ctx, {{"command", "from_fen"}, {"fen", fen}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["state"]["fen"] == fen);
+    REQUIRE(resp["state"]["turn"] == "black");
+}
+
+TEST_CASE("Bridge: from_fen with invalid FEN returns ok:false", "[bridge]") {
+    BridgeContext ctx;
+    auto resp = bridgeCmd(ctx, {{"command", "from_fen"}, {"fen", "not a valid fen"}});
+    REQUIRE(resp["ok"] == false);
+    REQUIRE(resp.contains("error"));
+}
+
+TEST_CASE("Bridge: parse_san 'Nf3' returns LAN 'g1f3'", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "parse_san"}, {"san", "Nf3"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["lan"] == "g1f3");
+}
+
+TEST_CASE("Bridge: parse_san with invalid SAN returns ok:false", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    auto resp = bridgeCmd(ctx, {{"command", "parse_san"}, {"san", "Zz9"}});
+    REQUIRE(resp["ok"] == false);
+}
+
+TEST_CASE("Bridge: quit sets should_quit", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    bool quit = false;
+    std::string response = handleBridgeCommand(R"({"command":"quit"})", ctx, quit);
+    auto resp = json::parse(response);
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(quit == true);
+}
+
+TEST_CASE("Bridge: sequential new_game calls reset state", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    // Make a move
+    bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e4"}});
+    // Reset
+    auto resp = bridgeCmd(ctx, {{"command", "new_game"}});
+    REQUIRE(resp["ok"] == true);
+    std::string fen = resp["state"]["fen"];
+    REQUIRE(fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    // Move history should be empty
+    REQUIRE(resp["state"]["moveHistory"].empty());
+}
+
+TEST_CASE("Bridge: get_state returns current state", "[bridge]") {
+    BridgeContext ctx;
+    bridgeCmd(ctx, {{"command", "new_game"}});
+    bridgeCmd(ctx, {{"command", "make_move"}, {"move", "e4"}});
+    auto resp = bridgeCmd(ctx, {{"command", "get_state"}});
+    REQUIRE(resp["ok"] == true);
+    REQUIRE(resp["state"]["turn"] == "black");
+}
+
+TEST_CASE("Bridge: get_state without game returns error", "[bridge]") {
+    BridgeContext ctx;
+    auto resp = bridgeCmd(ctx, {{"command", "get_state"}});
+    REQUIRE(resp["ok"] == false);
+    REQUIRE(resp.contains("error"));
+}
+
+TEST_CASE("Bridge: unknown command returns error", "[bridge]") {
+    BridgeContext ctx;
+    auto resp = bridgeCmd(ctx, {{"command", "foobar"}});
+    REQUIRE(resp["ok"] == false);
+    REQUIRE(resp.contains("error"));
+}
+
+TEST_CASE("Bridge: invalid JSON returns error", "[bridge]") {
+    BridgeContext ctx;
+    bool quit = false;
+    std::string response = handleBridgeCommand("not json at all", ctx, quit);
+    auto resp = json::parse(response);
+    REQUIRE(resp["ok"] == false);
+    REQUIRE(resp.contains("error"));
 }
