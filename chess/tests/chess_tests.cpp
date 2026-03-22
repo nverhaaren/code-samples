@@ -1350,14 +1350,11 @@ TEST_CASE("ChessGame: toSan queenside castling O-O-O", "[ChessGame][SAN]") {
     REQUIRE(game->toSan(ChessMove(0, 4, 0, 2)) == "O-O-O");
 }
 
-TEST_CASE("ChessGame: toSan check suffix Bb5+", "[ChessGame][SAN]") {
-    // Italian game position: white bishop to b5 giving check
-    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq - 4 3");
-    REQUIRE(game != nullptr);
+TEST_CASE("ChessGame: toSan checkmate suffix Qxf7#", "[ChessGame][SAN]") {
     // Scholar's mate setup: queen on f3 captures f7 delivering checkmate.
-    auto game2 = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
-    REQUIRE(game2 != nullptr);
-    REQUIRE(game2->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
 }
 
 TEST_CASE("ChessGame: toSan promotion e8=Q", "[ChessGame][SAN]") {
