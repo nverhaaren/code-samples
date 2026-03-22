@@ -1309,6 +1309,86 @@ TEST_CASE("ChessGame: parseSan rejects false capture annotation", "[ChessGame][S
 }
 
 // ============================================================================
+// SAN Output (toSan)
+// ============================================================================
+
+TEST_CASE("ChessGame: toSan pawn push e2e4", "[ChessGame][SAN]") {
+    ChessGame game;
+    REQUIRE(game.toSan(ChessMove(1, 4, 3, 4)) == "e4");
+}
+
+TEST_CASE("ChessGame: toSan knight move Nf3", "[ChessGame][SAN]") {
+    ChessGame game;
+    REQUIRE(game.toSan(ChessMove(0, 6, 2, 5)) == "Nf3");
+}
+
+TEST_CASE("ChessGame: toSan pawn capture with file exd5", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/ppp1pppp/8/3p4/4P3/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 2");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(3, 4, 4, 3)) == "exd5");
+}
+
+TEST_CASE("ChessGame: toSan kingside castling O-O", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/5NP1/PPPPPPBP/RNBQK2R w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(0, 4, 0, 6)) == "O-O");
+}
+
+TEST_CASE("ChessGame: toSan queenside castling O-O-O", "[ChessGame][SAN]") {
+    auto game = ChessGame::fromFen("rnbqkbnr/pppppppp/8/8/8/2NQB3/PPPPPPPP/R3KBNR w KQkq - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(0, 4, 0, 2)) == "O-O-O");
+}
+
+TEST_CASE("ChessGame: toSan checkmate suffix Qxf7#", "[ChessGame][SAN]") {
+    // Scholar's mate setup: queen on f3 captures f7 delivering checkmate.
+    auto game = ChessGame::fromFen("r1bqkbnr/pppp1ppp/2n5/4p3/2B1P3/5Q2/PPPP1PPP/RNB1K1NR w KQkq - 4 3");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(2, 5, 6, 5)) == "Qxf7#");
+}
+
+TEST_CASE("ChessGame: toSan promotion e8=Q", "[ChessGame][SAN]") {
+    // Black king away from e-file so pawn can push to e8.
+    auto game = ChessGame::fromFen("6k1/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    REQUIRE(game->toSan(ChessMove(6, 4, 7, 4, QUEEN)) == "e8=Q+");
+    // Also test non-check promotion
+    auto game2 = ChessGame::fromFen("8/4P1k1/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game2 != nullptr);
+    REQUIRE(game2->toSan(ChessMove(6, 4, 7, 4, QUEEN)) == "e8=Q");
+}
+
+TEST_CASE("ChessGame: toSan promotion capture exd8=N+", "[ChessGame][SAN]") {
+    // White pawn on e7, black rook on d8, black king on g8.
+    auto game = ChessGame::fromFen("3r2k1/4P3/8/8/8/8/8/4K3 w - - 0 1");
+    REQUIRE(game != nullptr);
+    // Pawn on e7 captures d8 rook, promoting to queen — checks king on g8 along rank 8.
+    REQUIRE(game->toSan(ChessMove(6, 4, 7, 3, QUEEN)) == "exd8=Q+");
+}
+
+TEST_CASE("ChessGame: toSan disambiguation by file Rad1", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(3, 0, new Rook(WHITE, false, cb.b));  // a4
+    cb.place(3, 7, new Rook(WHITE, true, cb.b));    // h4
+    cb.activate();
+    // Both rooks on rank 4 can reach d4 (x=3,y=3).
+    REQUIRE(cb.game.toSan(ChessMove(3, 0, 3, 3)) == "Rad4");
+}
+
+TEST_CASE("ChessGame: toSan disambiguation by rank R1e3", "[ChessGame][SAN]") {
+    CustomBoard cb;
+    cb.place(0, 4, new King(WHITE, cb.b));
+    cb.place(7, 4, new King(BLACK, cb.b));
+    cb.place(0, 0, new Rook(WHITE, false, cb.b));  // a1
+    cb.place(4, 0, new Rook(WHITE, false, cb.b));   // a5
+    cb.activate();
+    // Both rooks on a-file can reach a3 (x=2,y=0).
+    REQUIRE(cb.game.toSan(ChessMove(0, 0, 2, 0)) == "R1a3");
+}
+
+// ============================================================================
 // Draw Detection
 // ============================================================================
 
@@ -1811,14 +1891,8 @@ TEST_CASE("ChessGame::fromFen: rejects pawn on rank 8", "[ChessGame][FEN]") {
 }
 
 TEST_CASE("ChessGame::fromFen: rejects side not to move in check", "[ChessGame][FEN]") {
-    // White to move, black king on e8 is attacked by white rook on e1 → invalid
-    // (side not to move = black is in check)
-    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/4KR2 w - - 0 1");
-    // Wait — rook on f1 doesn't attack e8. Use rook on e-file instead.
-    // "4k3/8/8/8/8/8/8/R3K3 w - - 0 1" — rook on a1 doesn't check e8.
-    // Need: white rook on e-file with no pieces between it and the black king on e8.
-    // "4k3/8/8/8/8/8/8/3KR3" — rook on e1, king on d1, black king e8 → rook checks e8!
-    game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
+    // White to move, but black king on e8 is attacked by white rook on e1 → invalid.
+    auto game = ChessGame::fromFen("4k3/8/8/8/8/8/8/3KR3 w - - 0 1");
     REQUIRE(game == nullptr);
 }
 
