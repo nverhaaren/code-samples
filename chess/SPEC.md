@@ -1594,7 +1594,8 @@ Send a message to the opponent. **Not turn-gated.** Not available to spectators.
 
 ### 8.6 Error Format
 
-All errors are returned as MCP tool errors with a structured content object:
+All errors are returned as MCP tool errors — that is, the `CallToolResult` must have
+`isError` set to `true`, with the error details in a structured content object:
 
 ```json
 {
