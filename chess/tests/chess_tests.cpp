@@ -1445,6 +1445,50 @@ TEST_CASE("ChessGame: parseSan rejects digit-zero castling 0-0", "[ChessGame][SA
     REQUIRE(move.isEnd());
 }
 
+// ============================================================================
+// SAN Normalization (SPEC 6.3)
+// ============================================================================
+
+TEST_CASE("ChessGame: normalizeSan strips assessment glyphs", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("Nf3!") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("Bxh7+??") == "Bxh7+");
+    REQUIRE(ChessGame::normalizeSan("O-O!!") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("e4!?") == "e4");
+    REQUIRE(ChessGame::normalizeSan("d5?!") == "d5");
+    REQUIRE(ChessGame::normalizeSan("Qh4?") == "Qh4");
+}
+
+TEST_CASE("ChessGame: normalizeSan strips NAGs", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("Nf3$1") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("e4$6") == "e4");
+    REQUIRE(ChessGame::normalizeSan("Bxh7+$2") == "Bxh7+");
+}
+
+TEST_CASE("ChessGame: normalizeSan converts digit-zero castling", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("0-0") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("0-0-0") == "O-O-O");
+    REQUIRE(ChessGame::normalizeSan("0-0+") == "O-O+");
+    REQUIRE(ChessGame::normalizeSan("0-0-0#") == "O-O-O#");
+}
+
+TEST_CASE("ChessGame: normalizeSan strips whitespace", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("  Nf3  ") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("\tBb5+\n") == "Bb5+");
+}
+
+TEST_CASE("ChessGame: normalizeSan preserves canonical SAN", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("e4") == "e4");
+    REQUIRE(ChessGame::normalizeSan("Nf3") == "Nf3");
+    REQUIRE(ChessGame::normalizeSan("O-O") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("Qxf7#") == "Qxf7#");
+    REQUIRE(ChessGame::normalizeSan("e8=Q") == "e8=Q");
+}
+
+TEST_CASE("ChessGame: normalizeSan combined annotations", "[ChessGame][SAN]") {
+    REQUIRE(ChessGame::normalizeSan("  0-0!!$3  ") == "O-O");
+    REQUIRE(ChessGame::normalizeSan("Nf3!$1") == "Nf3");
+}
+
 TEST_CASE("ChessGame: parseSan rejects lowercase promotion =q", "[ChessGame][SAN]") {
     auto game = ChessGame::fromFen("8/4P1k1/8/8/8/8/8/4K3 w - - 0 1");
     REQUIRE(game != nullptr);
